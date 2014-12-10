@@ -38,8 +38,8 @@ follows.
 -----------
 
 Both the Yubico U2F host and server libaries are needed
-https://developers.yubico.com/libu2f-host[libu2f-host]
-https://developers.yubico.com/libuwf-server[libu2f-server]
+https://developers.yubico.com/libu2f-host[libu2f-host],
+https://developers.yubico.com/libu2f-server[libu2f-server]
 
 Building from Git
 -----------------
