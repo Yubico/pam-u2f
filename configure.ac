@@ -29,7 +29,7 @@ PKG_CHECK_MODULES([LIBU2FSERVER], [u2f-server], [], [])
 AC_SUBST(PAMDIR, "/lib/x86_64-linux-gnu/security")
 AC_ARG_WITH(pam-dir,
   AC_HELP_STRING([--with-pam-dir=DIR],
-                 [Where to install PAM module [[PREFIX/lib/security]]]),
+                 [Where to install PAM module [[PREFIX/lib/x86_64-linux-gnu/security]]]),
             [case "${withval}" in
             /*) PAMDIR="${withval}";;
             ./*|../*) AC_MSG_ERROR(Bad value for --with-pam-dir);;
