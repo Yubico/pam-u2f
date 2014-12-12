@@ -44,23 +44,23 @@ extern "C" {
                          /**< @brief Print help and exit help description.  */
     const char *version_help;
                             /**< @brief Print version and exit help description.  */
-    char *origin_arg;   /**< @brief Origin URL to use. Defaults to pam://hostname.  */
-    char *origin_orig;  /**< @brief Origin URL to use. Defaults to pam://hostname original value given at command line.  */
+    char *origin_arg;   /**< @brief Origin URL to use during registration. Defaults to pam://hostname.  */
+    char *origin_orig;  /**< @brief Origin URL to use during registration. Defaults to pam://hostname original value given at command line.  */
     const char *origin_help;
-                           /**< @brief Origin URL to use. Defaults to pam://hostname help description.  */
-    char *appid_arg;    /**< @brief Application ID to use. Defaults to pam://hostname.  */
-    char *appid_orig;   /**< @brief Application ID to use. Defaults to pam://hostname original value given at command line.  */
+                           /**< @brief Origin URL to use during registration. Defaults to pam://hostname help description.  */
+    char *appid_arg;    /**< @brief Application ID to use during registration. Defaults to pam://hostname.  */
+    char *appid_orig;   /**< @brief Application ID to use during registration. Defaults to pam://hostname original value given at command line.  */
     const char *appid_help;
-                          /**< @brief Application ID to use. Defaults to pam://hostname help description.  */
-    int debug_flag;     /**< @brief Print debug information to standard error (default=off).  */
+                          /**< @brief Application ID to use during registration. Defaults to pam://hostname help description.  */
+    int debug_flag;     /**< @brief Print debug information (highly verbose) (default=off).  */
     const char *debug_help;
-                          /**< @brief Print debug information to standard error help description.  */
+                          /**< @brief Print debug information (highly verbose) help description.  */
     char *username_arg; /**< @brief The name of the user registering the device. Defaults to the current user name.  */
     char *username_orig;/**< @brief The name of the user registering the device. Defaults to the current user name original value given at command line.  */
     const char *username_help;
                              /**< @brief The name of the user registering the device. Defaults to the current user name help description.  */
     const char *nouser_help;
-                           /**< @brief Print only registration information (keyHandle and public key) help description.  */
+                           /**< @brief Print only registration information (keyHandle and public key). Useful for appending help description.  */
 
     unsigned int help_given;    /**< @brief Whether help was given.  */
     unsigned int version_given; /**< @brief Whether version was given.  */

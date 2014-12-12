@@ -37,4 +37,5 @@ tests/Makefile.in
 tests/basic
 pam_u2f.la
 pam_u2f.8
-pamu2fcfg
+pamu2fcfg/pamu2fcfg
+pamu2fcfg/pamu2fcfg.1

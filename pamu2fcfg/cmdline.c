@@ -38,12 +38,12 @@ const char *gengetopt_args_info_description = "";
 const char *gengetopt_args_info_help[] = {
   "  -h, --help             Print help and exit",
   "  -V, --version          Print version and exit",
-  "  -o, --origin=STRING    Origin URL to use. Defaults to pam://hostname",
-  "  -i, --appid=STRING     Application ID to use. Defaults to pam://hostname",
-  "  -d, --debug            Print debug information to standard error\n                           (default=off)",
+  "  -o, --origin=STRING    Origin URL to use during registration. Defaults to\n                           pam://hostname",
+  "  -i, --appid=STRING     Application ID to use during registration. Defaults to\n                           pam://hostname",
+  "  -d, --debug            Print debug information (highly verbose)\n                           (default=off)",
   "\n Group: user",
   "  -u, --username=STRING  The name of the user registering the device. Defaults\n                           to the current user name",
-  "  -n, --nouser           Print only registration information (keyHandle and\n                           public key)",
+  "  -n, --nouser           Print only registration information (keyHandle and\n                           public key). Useful for appending",
   0
 };
 
@@ -518,7 +518,7 @@ cmdline_parser_internal(int argc, char **argv,
       cmdline_parser_free(&local_args_info);
       exit(EXIT_SUCCESS);
 
-    case 'o':                  /* Origin URL to use. Defaults to pam://hostname.  */
+    case 'o':                  /* Origin URL to use during registration. Defaults to pam://hostname.  */
 
 
       if (update_arg((void *) &(args_info->origin_arg),
@@ -529,7 +529,7 @@ cmdline_parser_internal(int argc, char **argv,
         goto failure;
 
       break;
-    case 'i':                  /* Application ID to use. Defaults to pam://hostname.  */
+    case 'i':                  /* Application ID to use during registration. Defaults to pam://hostname.  */
 
 
       if (update_arg((void *) &(args_info->appid_arg),
@@ -540,7 +540,7 @@ cmdline_parser_internal(int argc, char **argv,
         goto failure;
 
       break;
-    case 'd':                  /* Print debug information to standard error.  */
+    case 'd':                  /* Print debug information (highly verbose).  */
 
 
       if (update_arg
@@ -566,7 +566,7 @@ cmdline_parser_internal(int argc, char **argv,
         goto failure;
 
       break;
-    case 'n':                  /* Print only registration information (keyHandle and public key).  */
+    case 'n':                  /* Print only registration information (keyHandle and public key). Useful for appending.  */
 
       if (args_info->user_group_counter && override)
         reset_group_user(args_info);

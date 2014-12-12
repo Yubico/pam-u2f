@@ -140,7 +140,7 @@ int main(int argc, char *argv[])
         fprintf(stderr, "\nDevice found!\n");
         break;
       }
-      
+
       if (h_rc != U2FH_NO_U2F_DEVICE) {
         fprintf(stderr, "\nUnable to discover device(s), %s (%d)",
                 u2fh_strerror(h_rc), h_rc);
@@ -150,7 +150,8 @@ int main(int argc, char *argv[])
   }
 
   if (h_rc != U2FH_OK) {
-    fprintf(stderr, "\rNo device found. Aborting.                                         \n");
+    fprintf(stderr,
+            "\rNo device found. Aborting.                                         \n");
     exit(EXIT_FAILURE);
   }
 
