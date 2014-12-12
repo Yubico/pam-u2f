@@ -73,7 +73,7 @@ Installation
 ------------
 
 Once the module is built copy the file +pam_u2f.so+ to the correct
-directory for your system. Typically +/lib/security/ or
+directory for your system. Typically +/lib/security/+ or
 +/lib/x86_64-linux-gnu/security/+.
 
 Create a file for a new service in +/etc/pam.d/+ or edit an already
@@ -153,29 +153,19 @@ Obtaining key-handles and public keys
 
 In order to obtain the required information for the authentication procedure,
 a token should be first registered. This can be done by using the command line
-tools provided with libu2f-host and libu2f-server. For example the command:
+configuration tool provided with the module:
 
 ----
-$ u2f-server -aregister -opam://myorigin \
--ipam://myappid -kkeyhandle.dat -puserkey.dat
+$ pamu2fcfg -uusername -opam://myorigin \
+-ipam://myappid
 ----
 
-will produce two files with the required information. The content of
-the key-handle file can be used as it is since it is Base64 encoded.
-The content of the user key file must be first ASCII encoded.
-One way of doing so is by invoking the following command:
-
-----
-$ xxd -p userkey.dat
-----
-
-or
-
-----
-$ hexdump -e '65/1 "%02x " "\n"' userkey.dat
-----
-
-The output can then be copied into the authentication file.
+the tool will register a connected token by using the specified origin and
+appid. If neither are specified they will default to +pam://$HOSTNAME+.
+During the U2F registration, the user is required to touch the token.
+On success the tool prints to standard output a configuration line that
+can be directly used with the module. For additional information on the
+tool read the relative manpage (+man pamu2fcfg+)
 
 Multiple Devices
 ----------------
