@@ -74,8 +74,17 @@ int pam_sm_authenticate(pam_handle_t * pamh, int flags, int argc,
   parse_cfg(flags, argc, argv, cfg);
 
   if (!cfg->origin) {
-    DBG(("Origin not specified, using \"%s\"", DEFAULT_ORIGIN));
-    cfg->origin = strdup(DEFAULT_ORIGIN);
+    if (!strcpy(buffer, DEFAULT_ORIGIN_PREFIX)) {
+      DBG(("Unable to create origin string"));
+      goto done;
+    }
+
+    if (gethostname(buffer+strlen(DEFAULT_ORIGIN_PREFIX), BUFSIZE-strlen(DEFAULT_ORIGIN_PREFIX)) == -1) {
+      DBG(("Unable to get host name"));
+      goto done;
+    }
+    DBG(("Origin not specified, using \"%s\"", buffer));
+    cfg->origin = strdup(buffer);
   }
 
   if (!cfg->origin) {

@@ -18,10 +18,10 @@ The module provides U2F authentication against Yubikeys and other compliant auth
 Turns on debugging to STDOUT
 
 *origin*=_origin_::
-Set the origin for the U2F authentication procedure. If no value is specified, the origin "http://localhost" is used.
+Set the origin for the U2F authentication procedure. If no value is specified, the origin "pam://$HOSTNAME" is used.
 
 *appid*=_appid_::
-Set the application ID for the U2F authentication procedure. If no value is specified, the same value used for origin is taken ("http://localhost" if also origin is not specified).
+Set the application ID for the U2F authentication procedure. If no value is specified, the same value used for origin is taken ("pam://$HOSTNAME" if also origin is not specified).
 
 *authfile*=_file_::
 Set the location of the file that holds the mappings of user names to keyHandles and user keys.  The format is username:number_of_devices:first_keyHandle,first_public_key:second_keyHandle,second_public_key:...  default location of the file is $HOME/.yubico/u2f_keys.
@@ -35,7 +35,7 @@ in the authentication file that exceed this value will be ignored.
 
 == EXAMPLES
 
-auth sufficient pam_u2f.so debug origin=http://localhost appid=http://localhost
+auth sufficient pam_u2f.so debug origin=pam://$HOSTNAME appid=pam://$HOSTNAME
 
 auth required pam_u2f.so origin=http://example.com appid=http://example.com authfile=/etc/yubikey_mappings
 

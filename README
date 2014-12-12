@@ -91,12 +91,12 @@ Turns on debugging to STDOUT
 
 origin=origin::
 Set the origin for the U2F authentication procedure.
-If no value is specified, the origin "http://localhost" is used.
+If no value is specified, the origin "pam://$HOSTNAME" is used.
 
 appid=appid::
 Set the application ID for the U2F authentication procedure.
 If no value is specified, the same value used for origin is taken
-("http://localhost" if also origin is not specified).
+("pam://$HOSTNAME" if also origin is not specified).
 
 authfile=file::
 Set the location of the file that holds the mappings of user names
@@ -156,8 +156,8 @@ a token should be first registered. This can be done by using the command line
 tools provided with libu2f-host and libu2f-server. For example the command:
 
 ----
-$ u2f-server -aregister -ohttp://localhost \
--ihttp://localhost -kkeyhandle.dat -puserkey.dat
+$ u2f-server -aregister -opam://myorigin \
+-ipam://myappid -kkeyhandle.dat -puserkey.dat
 ----
 
 will produce two files with the required information. The content of

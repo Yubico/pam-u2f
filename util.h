@@ -14,7 +14,7 @@
 #define RD_LEN 40               // Rounding
 #define DEVSIZE (((PK_LEN)+(KH_LEN)+(RD_LEN)))
 #define DEFAULT_AUTHFILE "/.yubico/u2f_keys"
-#define DEFAULT_ORIGIN "http://localhost"
+#define DEFAULT_ORIGIN_PREFIX "pam://"
 
 #if defined(DEBUG_PAM)
 #if defined(HAVE_SECURITY__PAM_MACROS_H)
