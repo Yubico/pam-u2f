@@ -198,7 +198,6 @@ int main(int argc, char *argv[])
   for (i = 0; i < U2FS_PUBLIC_KEY_LEN; i++) {
     printf("%02x", pk[i] & 0xFF);
   }
-  printf("\n");
 
   exit_code = EXIT_SUCCESS;
 
