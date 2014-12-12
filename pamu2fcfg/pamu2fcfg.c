@@ -22,12 +22,11 @@ int main(int argc, char *argv[])
 {
   int exit_code = EXIT_FAILURE;
   struct gengetopt_args_info args_info;
-  char buf[BUFSIZ];
+  char buf[BUFSIZE];
   char *p;
   char *response;
   u2fs_ctx_t *ctx;
   u2fs_reg_res_t *reg_result;
-  u2fs_auth_res_t *auth_result;
   u2fs_rc s_rc;
   u2fh_rc h_rc;
   char *origin = NULL;
@@ -129,25 +128,30 @@ int main(int argc, char *argv[])
   }
 
   if (h_rc == U2FH_NO_U2F_DEVICE) {
-    fprintf(stderr,
-            "No U2F device available, please insert one now, you have %d seconds\n",
-            TIMEOUT);
     for (i = 0; i < TIMEOUT; i += FREQUENCY) {
+      fprintf(stderr,
+              "\rNo U2F device available, please insert one now, you have %2d seconds",
+              TIMEOUT - i);
+      fflush(stderr);
       sleep(FREQUENCY);
-      fprintf(stderr, "%d\n", i);
 
       h_rc = u2fh_devs_discover(devs, &max_index);
       if (h_rc == U2FH_OK) {
-        fprintf(stderr, "Device found!\n");
+        fprintf(stderr, "\nDevice found!\n");
         break;
       }
-
+      
       if (h_rc != U2FH_NO_U2F_DEVICE) {
-        fprintf(stderr, "Unable to discover device(s), %s (%d)",
+        fprintf(stderr, "\nUnable to discover device(s), %s (%d)",
                 u2fh_strerror(h_rc), h_rc);
         exit(EXIT_FAILURE);
       }
     }
+  }
+
+  if (h_rc != U2FH_OK) {
+    fprintf(stderr, "\rNo device found. Aborting.                                         \n");
+    exit(EXIT_FAILURE);
   }
 
   s_rc = u2fs_registration_challenge(ctx, &p);
