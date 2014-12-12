@@ -33,8 +33,8 @@ SUFFIXES = .1.txt .1 .8.txt .8
 # Release
 
 indent:
-	indent -kr -nut -i2 *.c *.h
-	indent -kr -nut -i2 *.c *.h
+	indent -kr -nut -i2 *.c *.h pamu2fcfg/*.c pamu2fcfg/*.h
+	indent -kr -nut -i2 *.c *.h pamu2fcfg/*.c pamu2fcfg/*.h
 
 ChangeLog:
 	cd $(srcdir) && git2cl > ChangeLog

@@ -12,8 +12,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-//#include <stdint.h>
-//#include <stdbool.h>
 #include <string.h>
 #include <getopt.h>
 #include <unistd.h>
@@ -61,7 +59,8 @@ int main(int argc, char *argv[])
 
   s_rc = u2fs_init(&ctx);
   if (s_rc != U2FS_OK) {
-    fprintf(stderr, "error: u2fs_init (%d): %s\n", s_rc, u2fs_strerror(s_rc));
+    fprintf(stderr, "error: u2fs_init (%d): %s\n", s_rc,
+            u2fs_strerror(s_rc));
     exit(EXIT_FAILURE);
   }
 
@@ -70,7 +69,8 @@ int main(int argc, char *argv[])
   else {
     if (!strcpy(buf, PAM_PREFIX))
       fprintf(stderr, "strcpy failed\n");
-    if (gethostname(buf+strlen(PAM_PREFIX), BUFSIZE-strlen(PAM_PREFIX)) == -1) {
+    if (gethostname(buf + strlen(PAM_PREFIX), BUFSIZE - strlen(PAM_PREFIX))
+        == -1) {
       perror("gethostname");
       exit(EXIT_FAILURE);
     }
@@ -89,7 +89,8 @@ int main(int argc, char *argv[])
     if (args_info.origin_given) {
       if (!strcpy(buf, PAM_PREFIX))
         fprintf(stderr, "strcpy failed\n");
-      if (gethostname(buf+strlen(PAM_PREFIX), BUFSIZE-strlen(PAM_PREFIX)) == -1) {
+      if (gethostname
+          (buf + strlen(PAM_PREFIX), BUFSIZE - strlen(PAM_PREFIX)) == -1) {
         perror("gethostname");
         exit(EXIT_FAILURE);
       }
@@ -114,31 +115,36 @@ int main(int argc, char *argv[])
     }
   }
 
-  if (u2fh_global_init(args_info.debug_flag ? U2FS_DEBUG : 0) != U2FH_OK || u2fh_devs_init(&devs) != U2FH_OK) {
+  if (u2fh_global_init(args_info.debug_flag ? U2FS_DEBUG : 0) != U2FH_OK
+      || u2fh_devs_init(&devs) != U2FH_OK) {
     fprintf(stderr, "Unable to initialize libu2f-host");
     exit(EXIT_FAILURE);
   }
-  
+
   h_rc = u2fh_devs_discover(devs, &max_index);
   if (h_rc != U2FH_OK && h_rc != U2FH_NO_U2F_DEVICE) {
-    fprintf(stderr, "Unable to discover device(s), %s (%d)", u2fh_strerror(h_rc), h_rc);
+    fprintf(stderr, "Unable to discover device(s), %s (%d)",
+            u2fh_strerror(h_rc), h_rc);
     exit(EXIT_FAILURE);
   }
 
   if (h_rc == U2FH_NO_U2F_DEVICE) {
-    fprintf(stderr, "No U2F device available, please insert one now, you have %d seconds\n", TIMEOUT);
+    fprintf(stderr,
+            "No U2F device available, please insert one now, you have %d seconds\n",
+            TIMEOUT);
     for (i = 0; i < TIMEOUT; i += FREQUENCY) {
       sleep(FREQUENCY);
       fprintf(stderr, "%d\n", i);
 
       h_rc = u2fh_devs_discover(devs, &max_index);
       if (h_rc == U2FH_OK) {
-          fprintf(stderr, "Device found!\n");
-          break;
+        fprintf(stderr, "Device found!\n");
+        break;
       }
 
       if (h_rc != U2FH_NO_U2F_DEVICE) {
-        fprintf(stderr, "Unable to discover device(s), %s (%d)", u2fh_strerror(h_rc), h_rc);
+        fprintf(stderr, "Unable to discover device(s), %s (%d)",
+                u2fh_strerror(h_rc), h_rc);
         exit(EXIT_FAILURE);
       }
     }
@@ -146,16 +152,20 @@ int main(int argc, char *argv[])
 
   s_rc = u2fs_registration_challenge(ctx, &p);
   if (s_rc != U2FS_OK) {
-    fprintf(stderr, "Unable to generate registration challenge, %s (%d)", u2fs_strerror(s_rc), s_rc);
+    fprintf(stderr, "Unable to generate registration challenge, %s (%d)",
+            u2fs_strerror(s_rc), s_rc);
     exit(EXIT_FAILURE);
   }
 
-  h_rc = u2fh_register (devs, p, origin, &response, U2FH_REQUEST_USER_PRESENCE);
+  h_rc =
+      u2fh_register(devs, p, origin, &response,
+                    U2FH_REQUEST_USER_PRESENCE);
   if (s_rc != U2FS_OK) {
-    fprintf(stderr, "Unable to generate registration challenge, %s (%d)", u2fs_strerror(s_rc), s_rc);
+    fprintf(stderr, "Unable to generate registration challenge, %s (%d)",
+            u2fs_strerror(s_rc), s_rc);
     exit(EXIT_FAILURE);
   }
-  
+
   s_rc = u2fs_registration_verify(ctx, response, &reg_result);
   if (s_rc != U2FS_OK) {
     fprintf(stderr, "error: (%d) %s\n", s_rc, u2fs_strerror(s_rc));
@@ -164,13 +174,15 @@ int main(int argc, char *argv[])
 
   kh = u2fs_get_registration_keyHandle(reg_result);
   if (!kh) {
-    fprintf(stderr, "Unable to extract keyHandle: (%d) %s\n", s_rc, u2fs_strerror(s_rc));
+    fprintf(stderr, "Unable to extract keyHandle: (%d) %s\n", s_rc,
+            u2fs_strerror(s_rc));
     exit(EXIT_FAILURE);
   }
 
   pk = u2fs_get_registration_publicKey(reg_result);
   if (!pk) {
-    fprintf(stderr, "Unable to extract public key: (%d) %s\n", s_rc, u2fs_strerror(s_rc));
+    fprintf(stderr, "Unable to extract public key: (%d) %s\n", s_rc,
+            u2fs_strerror(s_rc));
     exit(EXIT_FAILURE);
   }
 
