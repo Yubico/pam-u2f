@@ -1,0 +1,12 @@
+#  Copyright (C) 2014 Yubico AB - See COPYING
+#
+
+purpose "Perform a U2F registration operation and print a configuration line that can be used with the pam_u2f module."
+
+defgroup "user"
+
+option "origin" o "Origin URL to use. Defaults to pam://hostname" string optional
+option "appid" i "Application ID to use. Defaults to pam://hostname" string optional
+option "debug" d "Print debug information to standard error" flag off
+groupoption "username" u "The name of the user registering the device. Defaults to the current user name" string group="user"
+groupoption "nouser" n "Print only registration information (keyHandle and public key)" group="user"

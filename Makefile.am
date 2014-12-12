@@ -1,6 +1,6 @@
 #  Copyright (C) 2014 Yubico AB - See COPYING
 
-SUBDIRS = . tests
+SUBDIRS = . pamu2fcfg tests
 
 ACLOCAL_AMFLAGS = -I m4
 

@@ -68,6 +68,7 @@ fi
 
 AC_CONFIG_FILES([
   Makefile
+  pamu2fcfg/Makefile
   tests/Makefile
 ])
 AC_OUTPUT
