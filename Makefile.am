@@ -25,7 +25,7 @@ DISTCLEANFILES = $(dist_man8_MANS)
 MANSOURCES = pam_u2f.8.txt
 EXTRA_DIST = $(MANSOURCES)
 
-SUFFIXES = .1.txt .1 .8.txt .8
+SUFFIXES = .8.txt .8
 
 .8.txt.8:
 	$(A2X) --format=manpage -a revdate="Version $(VERSION)" $<
