@@ -9,6 +9,7 @@ export PKG_CONFIG_PATH=/tmp/hidapi/pc:$PKG_CONFIG_PATH
 git clone git://github.com/signal11/hidapi.git
 cd hidapi
 ./bootstrap && ./configure && make && sudo make install
+sudo ldconfig
 
 cd ..
 
@@ -17,6 +18,7 @@ git clone https://github.com/yubico/libu2f-server.git
 cd libu2f-server
 autoreconf -i
 ./configure && make && sudo make install
+sudo ldconfig
 
 cd ..
 
@@ -25,7 +27,6 @@ git clone https://github.com/yubico/libu2f-host.git
 cd libu2f-host
 autoreconf -i
 ./configure && make && sudo make install
-
 sudo ldconfig
 
 cd $HERE
