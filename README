@@ -167,6 +167,7 @@ On success the tool prints to standard output a configuration line that
 can be directly used with the module. For additional information on the
 tool read the relative manpage (+man pamu2fcfg+)
 
+[[devices]]
 Multiple Devices
 ----------------
 
