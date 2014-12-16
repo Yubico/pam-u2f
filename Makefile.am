@@ -54,7 +54,7 @@ release:
 		echo "  make release KEYID=2117364A"; \
 		exit 1; \
 	fi
-	@head -3 $(srcdir)/NEWS | \
+	@head -5 $(srcdir)/NEWS | \
 		grep -q "Version $(VERSION) .released `date -I`" || \
 		(echo 'error: Update date/version in $(srcdir)/NEWS.'; exit 1)
 	rm -f $(srcdir)/ChangeLog
