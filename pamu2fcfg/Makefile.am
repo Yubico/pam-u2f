@@ -18,6 +18,9 @@ MAINTAINERCLEANFILES = $(BUILT_SOURCES)
 dist_man1_MANS = pamu2fcfg.1
 DISTCLEANFILES = $(dist_man1_MANS)
 
+MANSOURCES = pamu2fcfg.1.txt
+EXTRA_DIST = $(MANSOURCES)
+
 SUFFIXES = .1.txt .1
 
 .1.txt.1:

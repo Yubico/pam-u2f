@@ -35,13 +35,18 @@ SUFFIXES = .8.txt .8
 indent:
 	indent -kr -nut -i2 *.c *.h pamu2fcfg/*.c pamu2fcfg/*.h
 	indent -kr -nut -i2 *.c *.h pamu2fcfg/*.c pamu2fcfg/*.h
-
+https://myaccount.google.com/?pli=1
 ChangeLog:
 	cd $(srcdir) && git2cl > ChangeLog
 
 PROJECT = pam-u2f
 
 release:
+	@if test ! -d "$(YUBICO_WWW_REPO)"; then \
+		echo "WWW repo not found!"; \
+		echo "Make sure that YUBICO_WWW_REPO is set"; \
+		exit 1; \
+	fi
 	@if test -z "$(KEYID)"; then \
 		echo "Try this instead:"; \
 		echo "  make release KEYID=[PGPKEYID]"; \
@@ -49,20 +54,14 @@ release:
 		echo "  make release KEYID=2117364A"; \
 		exit 1; \
 	fi
-	@head -3 $(srcdir)/NEWS | grep -q "Version $(VERSION) .released `date -I`" || \
+	@head -3 $(srcdir)/NEWS | \
+		grep -q "Version $(VERSION) .released `date -I`" || \
 		(echo 'error: Update date/version in $(srcdir)/NEWS.'; exit 1)
-	@if test ! -d "$(YUBICO_WWW_REPO)"; then \
-		echo "WWW repo not found!"; \
-		echo "Make sure that YUBICO_WWW_REPO is set"; \
-		exit 1; \
-		fi
-	rm -f ChangeLog
-	make check-doc-dist ChangeLog distcheck
+	rm -f $(srcdir)/ChangeLog
+	make ChangeLog distcheck
 	gpg --detach-sign --default-key $(KEYID) $(PACKAGE)-$(VERSION).tar.gz
 	gpg --verify $(PACKAGE)-$(VERSION).tar.gz.sig
 	cd $(srcdir) && git push
-	cd $(srcdir) && git tag -u $(KEYID) -m $(VERSION) $(VERSION)
+	cd $(srcdir) && git tag -u $(KEYID) -m $(VERSION) $(PACKAGE)-$(VERSION)
 	cd $(srcdir) && git push --tags
-	$(YUBICO_WWW_REPO)/save-mans $(PROJECT) $(MANSOURCES)
 	$(YUBICO_WWW_REPO)/publish $(PROJECT) $(VERSION) $(PACKAGE)-$(VERSION).tar.gz*
-
