@@ -63,6 +63,6 @@ release:
 	cd $(srcdir) && git push
 	cd $(srcdir) && git tag -u $(KEYID) -m $(VERSION) $(VERSION)
 	cd $(srcdir) && git push --tags
-	$(YUBICO_GITHUB_REPO)/save-mans $(PROJECT) $(MANSOURCES)
-	$(YUBICO_GITHUB_REPO)/publish $(PROJECT) $(VERSION) $(PACKAGE)-$(VERSION).tar.gz*
+	$(YUBICO_WWW_REPO)/save-mans $(PROJECT) $(MANSOURCES)
+	$(YUBICO_WWW_REPO)/publish $(PROJECT) $(VERSION) $(PACKAGE)-$(VERSION).tar.gz*
 
