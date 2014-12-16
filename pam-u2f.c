@@ -78,7 +78,9 @@ int pam_sm_authenticate(pam_handle_t * pamh, int flags, int argc,
       goto done;
     }
 
-    if (gethostname(buffer+strlen(DEFAULT_ORIGIN_PREFIX), BUFSIZE-strlen(DEFAULT_ORIGIN_PREFIX)) == -1) {
+    if (gethostname
+        (buffer + strlen(DEFAULT_ORIGIN_PREFIX),
+         BUFSIZE - strlen(DEFAULT_ORIGIN_PREFIX)) == -1) {
       DBG(("Unable to get host name"));
       goto done;
     }

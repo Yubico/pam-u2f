@@ -20,7 +20,7 @@ get_devices_from_authfile(const char *authfile, const char *username,
 {
 
   char buf[DEVSIZE * max_devs];
-char *s_user, *s_token;
+  char *s_user, *s_token;
   int retval = 0;
   int fd;
   struct stat st;
@@ -64,7 +64,7 @@ char *s_user, *s_token;
   }
 
   retval = -2;
-  while (fgets(buf, (int)(DEVSIZE * (max_devs - 1)), opwfile)) {
+  while (fgets(buf, (int) (DEVSIZE * (max_devs - 1)), opwfile)) {
     char *saveptr = NULL;
     if (buf[strlen(buf) - 1] == '\n')
       buf[strlen(buf) - 1] = '\0';
