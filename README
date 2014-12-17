@@ -10,7 +10,7 @@ Introduction
 ------------
 
 This module implements PAM authentication over U2F. Registration should
-be performed using other tools. Multiple devices are supported, for
+be performed using the included tool. Multiple devices are supported, for
 details check the <<devices, Multiple Devices>> section.
 
 For more information visit the project page
