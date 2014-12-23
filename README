@@ -94,7 +94,7 @@ Set the origin for the U2F authentication procedure.
 If no value is specified, the origin "pam://$HOSTNAME" is used.
 
 appid=appid::
-Set the application ID for the U2F authentication procedure.
+Set the https://developers.yubico.com/U2F/App_ID.html[application ID] for the U2F authentication procedure.
 If no value is specified, the same value used for origin is taken
 ("pam://$HOSTNAME" if also origin is not specified).
 
