@@ -106,7 +106,7 @@ second_keyHandle,second_public_key:...+ the default location of the
 file is $HOME/.yubico/u2f_keys
 (more on <<files,Authorization Mapping Files>>).
 
-*nouserok*::
+nouserok::
 Set to enable authentication attempts to succeed even if the user trying to
 authenticate is not found inside authfile.
 
