@@ -35,6 +35,7 @@ typedef struct {
   unsigned max_devs;
   const char *client_key;
   int debug;
+  int nouserok;
   int alwaysok;
   const char *auth_file;
   const char *origin;
