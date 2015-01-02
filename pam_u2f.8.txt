@@ -26,6 +26,9 @@ Set the application ID for the U2F authentication procedure. If no value is spec
 *authfile*=_file_::
 Set the location of the file that holds the mappings of user names to keyHandles and user keys.  The format is username:number_of_devices:first_keyHandle,first_public_key:second_keyHandle,second_public_key:...  default location of the file is $HOME/.yubico/u2f_keys.
 
+*nouserok*::
+Set to enable authentication attempts to succeed even if the user trying to authenticate is not found inside authfile.
+
 *alwaysok*::
 Set to enable all authentication attempts to succeed (aka presentation mode).
 
