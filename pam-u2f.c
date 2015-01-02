@@ -173,10 +173,7 @@ int pam_sm_authenticate(pam_handle_t * pamh, int flags, int argc,
   retval = do_authentication(cfg, devices, n_devices);
   if (retval != 1) {
     DBG(("do_authentication returned %d", retval));
-    if (retval == -2)
-      retval = PAM_IGNORE;
-    else
-      retval = PAM_AUTH_ERR;
+    retval = PAM_AUTH_ERR;
     goto done;
   }
 
@@ -190,8 +187,7 @@ done:
     retval = PAM_SUCCESS;
   }
   DBG(("done. [%s]", pam_strerror(pamh, retval)));
-  pam_set_data(pamh, "yubico_setcred_return", (void *) (intptr_t) retval,
-               NULL);
+
   return retval;
 
 
