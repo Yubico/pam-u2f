@@ -1,6 +1,10 @@
-Copyright (c) 2014 Yubico AB - See COPYING
+Copyright (c) 2014-2015 Yubico AB - See COPYING
 
 pam-u2f NEWS -- History of user-visible changes.          -*- outline -*-
+
+* Version 0.0.1 (released 2015-01-16)
+ ** Changed failure mode after authentication error.
+ ** Added call to setcred.
 
 * Version 0.0.0 (released 2014-12-16)
  ** Initial release.
