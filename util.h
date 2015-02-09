@@ -13,7 +13,8 @@
 #define KH_LEN 86               // Key handle
 #define RD_LEN 40               // Rounding
 #define DEVSIZE (((PK_LEN)+(KH_LEN)+(RD_LEN)))
-#define DEFAULT_AUTHFILE "/.yubico/u2f_keys"
+#define DEFAULT_AUTHFILE_DIR_VAR "XDG_CONFIG_HOME"
+#define DEFAULT_AUTHFILE "/Yubico/u2f_keys"
 #define DEFAULT_ORIGIN_PREFIX "pam://"
 
 #if defined(DEBUG_PAM)

@@ -68,6 +68,8 @@ int pam_sm_authenticate(pam_handle_t * pamh, int flags, int argc,
   cfg_t *cfg = &cfg_st;
   char buffer[BUFSIZE];
   char *buf;
+  char *authfile_dir;
+  int authfile_dir_len;
   int pgu_ret, gpn_ret;
   int retval = PAM_IGNORE;
   device_t *devices = NULL;
@@ -139,17 +141,42 @@ int pam_sm_authenticate(pam_handle_t * pamh, int flags, int argc,
   DBG(("Home directory for %s is %s", user, pw->pw_dir));
 
   if (!cfg->auth_file) {
-    buf =
-        malloc(sizeof(char) *
-               (strlen(pw->pw_dir) + strlen(DEFAULT_AUTHFILE) + 1));
-    if (!buf) {
-      DBG(("Unable to allocate memory"));
-      retval = PAM_IGNORE;
-      goto done;
+    buf = NULL;
+    authfile_dir = getenv(DEFAULT_AUTHFILE_DIR_VAR);
+    if (!authfile_dir) {
+      DBG(("Variable %s is not set. Using default value ($HOME/.config/)",
+           DEFAULT_AUTHFILE_DIR_VAR));
+      authfile_dir_len =
+          strlen(pw->pw_dir) + strlen("/.config") +
+          strlen(DEFAULT_AUTHFILE) + 1;
+      buf = malloc(sizeof(char) * (authfile_dir_len));
+
+      if (!buf) {
+        DBG(("Unable to allocate memory"));
+        retval = PAM_IGNORE;
+        goto done;
+      }
+
+      strcpy(buf, pw->pw_dir);
+      strcat(buf, "/.config");
+      strcat(buf, DEFAULT_AUTHFILE);
+    } else {
+      DBG(("Variable %s set to %s", DEFAULT_AUTHFILE_DIR_VAR,
+           authfile_dir));
+      authfile_dir_len =
+          strlen(authfile_dir) + strlen(DEFAULT_AUTHFILE) + 1;
+      buf = malloc(sizeof(char) * (authfile_dir_len));
+
+      if (!buf) {
+        DBG(("Unable to allocate memory"));
+        retval = PAM_IGNORE;
+        goto done;
+      }
+
+      strcpy(buf, authfile_dir);
+      strcat(buf, DEFAULT_AUTHFILE);
     }
 
-    strcpy(buf, pw->pw_dir);
-    strcat(buf, DEFAULT_AUTHFILE);
     DBG(("Using default authentication file %s", buf));
 
     cfg->auth_file = strdup(buf);
@@ -178,8 +205,7 @@ int pam_sm_authenticate(pam_handle_t * pamh, int flags, int argc,
       DBG(("Found no devices but nouserok specified. Skipping authentication"));
       retval = PAM_SUCCESS;
       goto done;
-    }
-    else {
+    } else {
       DBG(("Found no devices. Aborting."));
       retval = PAM_AUTHINFO_UNAVAIL;
       goto done;
@@ -208,7 +234,8 @@ done:
 
 }
 
-PAM_EXTERN int 
-pam_sm_setcred(pam_handle_t *pamh, int flags, int argc, const char **argv){
+PAM_EXTERN int
+pam_sm_setcred(pam_handle_t * pamh, int flags, int argc, const char **argv)
+{
   return PAM_SUCCESS;
 }
