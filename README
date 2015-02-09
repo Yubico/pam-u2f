@@ -103,7 +103,8 @@ Set the location of the file that holds the mappings of user names
 to keyHandles and user keys.  The format is
 +username:first_keyHandle,first_public_key:
 second_keyHandle,second_public_key:...+ the default location of the
-file is $HOME/.yubico/u2f_keys
+file is $XDG_CONFIG_HOME/Yubico/u2f_keys. If the environment variable
+is not set, $HOME/.config/Yubico/u2f_keys is used.
 (more on <<files,Authorization Mapping Files>>).
 
 nouserok::
@@ -144,7 +145,7 @@ looks like:
  auth sufficient pam_u2f.so authfile=/etc/u2f_mappings
 
 == Individual authorization mapping by user
-Each user creates a `~/.yubico/u2f_keys` file inside of their home
+Each user creates a `~/config/Yubico/u2f_keys` file inside of their home
 directory and places the mapping in that file, the file must have only one
 line:
 
