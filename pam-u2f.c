@@ -29,6 +29,8 @@ static void parse_cfg(int flags, int argc, const char **argv, cfg_t * cfg)
       cfg->nouserok = 1;
     if (strcmp(argv[i], "alwaysok") == 0)
       cfg->alwaysok = 1;
+    if (strcmp(argv[i], "interactive") == 0)
+      cfg->interactive = 1;
     if (strncmp(argv[i], "authfile=", 9) == 0)
       cfg->auth_file = argv[i] + 9;
     if (strncmp(argv[i], "origin=", 7) == 0)
@@ -44,6 +46,7 @@ static void parse_cfg(int flags, int argc, const char **argv, cfg_t * cfg)
       D(("argv[%d]=%s", i, argv[i]));
     D(("max_devices=%d", cfg->max_devs));
     D(("debug=%d", cfg->debug));
+    D(("interactive=%d", cfg->interactive));
     D(("nouserok=%d", cfg->nouserok));
     D(("alwaysok=%d", cfg->alwaysok));
     D(("authfile=%s", cfg->auth_file ? cfg->auth_file : "(null)"));
@@ -210,6 +213,11 @@ int pam_sm_authenticate(pam_handle_t * pamh, int flags, int argc,
       retval = PAM_AUTHINFO_UNAVAIL;
       goto done;
     }
+  }
+
+  if (cfg->interactive) {
+    printf("Insert your U2F device, then press ENTER.\n");
+    while (getchar() != 10);
   }
 
   retval = do_authentication(cfg, devices, n_devices);

@@ -38,6 +38,7 @@ typedef struct {
   int debug;
   int nouserok;
   int alwaysok;
+  int interactive;
   const char *auth_file;
   const char *origin;
   const char *appid;
