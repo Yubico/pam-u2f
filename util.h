@@ -35,6 +35,7 @@
 typedef struct {
   unsigned max_devs;
   const char *client_key;
+  int manual;
   int debug;
   int nouserok;
   int alwaysok;
@@ -56,6 +57,8 @@ int get_devices_from_authfile(const char *authfile, const char *username,
 void free_devices(device_t * devices, const unsigned n_devs);
 
 int do_authentication(const cfg_t * cfg, const device_t * devices,
+                      const unsigned n_devs);
+int do_manual_authentication(const cfg_t * cfg, const device_t * devices,
                       const unsigned n_devs);
 
 #endif                          /* UTIL_H */

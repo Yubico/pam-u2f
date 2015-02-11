@@ -23,6 +23,8 @@ static void parse_cfg(int flags, int argc, const char **argv, cfg_t * cfg)
   for (i = 0; i < argc; i++) {
     if (strncmp(argv[i], "max_devices=", 12) == 0)
       sscanf(argv[i], "max_devices=%u", &cfg->max_devs);
+    if (strcmp(argv[i], "manual") == 0)
+      cfg->manual = 1;
     if (strcmp(argv[i], "debug") == 0)
       cfg->debug = 1;
     if (strcmp(argv[i], "nouserok") == 0)
@@ -203,6 +205,7 @@ int pam_sm_authenticate(pam_handle_t * pamh, int flags, int argc,
     goto done;
   }
 
+
   if (n_devices == 0) {
     if (cfg->nouserok) {
       DBG(("Found no devices but nouserok specified. Skipping authentication"));
@@ -215,12 +218,16 @@ int pam_sm_authenticate(pam_handle_t * pamh, int flags, int argc,
     }
   }
 
-  if (cfg->interactive) {
-    printf("Insert your U2F device, then press ENTER.\n");
-    while (getchar() != 10);
-  }
+  if (cfg->manual == 0) {
+    if (cfg->interactive) {
+      printf("Insert your U2F device, then press ENTER.\n");
+      while (getchar() != 10);
+    }
 
-  retval = do_authentication(cfg, devices, n_devices);
+    retval = do_authentication(cfg, devices, n_devices);
+  } else {
+    retval = do_manual_authentication(cfg, devices, n_devices);
+  }
   if (retval != 1) {
     DBG(("do_authentication returned %d", retval));
     retval = PAM_AUTH_ERR;
