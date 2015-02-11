@@ -222,12 +222,12 @@ int pam_sm_authenticate(pam_handle_t * pamh, int flags, int argc,
     if (cfg->interactive) {
       //printf("Insert your U2F device, then press ENTER.\n");
       //while (getchar() != 10);
-      const char *p = converse(pamh, PAM_TEXT_INFO, "Insert your U2F device, then press ENTER.\n");
+      const char *p = converse(pamh, PAM_PROMPT_ECHO_ON, "Insert your U2F device, then press ENTER.\n");
     }
 
     retval = do_authentication(cfg, devices, n_devices);
   } else {
-    retval = do_manual_authentication(cfg, devices, n_devices);
+    retval = do_manual_authentication(cfg, devices, n_devices, pamh);
   }
   if (retval != 1) {
     DBG(("do_authentication returned %d", retval));

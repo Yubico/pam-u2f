@@ -6,6 +6,7 @@
 #define UTIL_H
 
 #include <stdio.h>
+#include <security/pam_appl.h>
 
 #define BUFSIZE 1024
 #define MAX_DEVS 24
@@ -59,7 +60,7 @@ void free_devices(device_t * devices, const unsigned n_devs);
 int do_authentication(const cfg_t * cfg, const device_t * devices,
                       const unsigned n_devs);
 int do_manual_authentication(const cfg_t * cfg, const device_t * devices,
-                      const unsigned n_devs);
+                      const unsigned n_devs, pam_handle_t * pamh);
 char *converse(pam_handle_t *pamh, int echocode,
-                          const char *prompt)
+                          const char *prompt);
 #endif                          /* UTIL_H */
