@@ -373,7 +373,7 @@ int do_manual_authentication(const cfg_t * cfg, const device_t * devices,
 
   converse(pamh, PAM_TEXT_INFO, "Now, please enter the response(s) below, one per line.");
   retval = -1;
-  for (i = 0; i < n_devs; ++i) {
+  for (i = 0; (i < n_devs) && (retval != 1); ++i) {
     sprintf(prompt, "[%d]: ", i);
     response = converse(pamh, PAM_PROMPT_ECHO_ON, prompt);
     converse(pamh, PAM_TEXT_INFO, response);
@@ -381,7 +381,6 @@ int do_manual_authentication(const cfg_t * cfg, const device_t * devices,
         u2fs_authentication_verify(ctx_arr[i], response, &auth_result)
         == U2FS_OK) {
       retval = 1;
-      break;
     }
     free(response);
   }
@@ -415,7 +414,7 @@ char *converse(pam_handle_t *pamh, int echocode,
   char *ret = NULL;
   if (retval != PAM_SUCCESS || resp == NULL || resp->resp == NULL ||
       *resp->resp == '\000') {
-    D(("Did not receive verification code from user"));
+    D(("Failed to get response from user input!"));
     if (retval == PAM_SUCCESS && resp && resp->resp) {
       ret = resp->resp;
     }
@@ -423,7 +422,7 @@ char *converse(pam_handle_t *pamh, int echocode,
     ret = resp->resp;
   }
 
-  // Deallocate temporary storage
+  // Deallocate temporary storage.
   if (resp) {
     if (!ret) {
       free(resp->resp);

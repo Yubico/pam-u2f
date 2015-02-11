@@ -118,11 +118,11 @@ max_devices=n_devices::
 Maximum number of devices allowed per user (default is 24). Devices specified
 in the authentication file that exceed this value will be ignored.
 
-*interactive*::
+interactive::
 Set to prompt a message and wait before testing the presence of a U2F device. Recommended
 if your device doesn't have a button.
 
-*manual*::
+manual::
 Set to drop to a manual console where challenges are printed on screen
 and response input from keyboard. Useful for debugging and SSH sessions without
 U2F-supporting from SSH client/server.
