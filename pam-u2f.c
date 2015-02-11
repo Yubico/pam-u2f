@@ -220,8 +220,9 @@ int pam_sm_authenticate(pam_handle_t * pamh, int flags, int argc,
 
   if (cfg->manual == 0) {
     if (cfg->interactive) {
-      printf("Insert your U2F device, then press ENTER.\n");
-      while (getchar() != 10);
+      //printf("Insert your U2F device, then press ENTER.\n");
+      //while (getchar() != 10);
+      const char *p = converse(pamh, PAM_TEXT_INFO, "Insert your U2F device, then press ENTER.\n");
     }
 
     retval = do_authentication(cfg, devices, n_devices);

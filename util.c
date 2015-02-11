@@ -388,3 +388,43 @@ int do_manual_authentication(const cfg_t * cfg, const device_t * devices,
   return retval;
 
 }
+
+static int _converse(pam_handle_t *pamh, int nargs,
+             const struct pam_message **message,
+             struct pam_response **response) {
+  struct pam_conv *conv;
+  int retval = pam_get_item(pamh, PAM_CONV, (void *)&conv);
+  if (retval != PAM_SUCCESS) {
+    return retval;
+  }
+  return conv->conv(nargs, message, response, conv->appdata_ptr);
+}
+
+char *converse(pam_handle_t *pamh, int echocode,
+                          const char *prompt) {
+  const struct pam_message msg = { .msg_style = echocode,
+                                   .msg       = prompt };
+  const struct pam_message *msgs = &msg;
+  struct pam_response *resp = NULL;
+  int retval = _converse(pamh, 1, &msgs, &resp);
+  char *ret = NULL;
+  if (retval != PAM_SUCCESS || resp == NULL || resp->resp == NULL ||
+      *resp->resp == '\000') {
+    log_message(LOG_ERR, pamh, "Did not receive verification code from user");
+    if (retval == PAM_SUCCESS && resp && resp->resp) {
+      ret = resp->resp;
+    }
+  } else {
+    ret = resp->resp;
+  }
+
+  // Deallocate temporary storage
+  if (resp) {
+    if (!ret) {
+      free(resp->resp);
+    }
+    free(resp);
+  }
+
+  return ret;
+}
