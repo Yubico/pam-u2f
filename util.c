@@ -381,6 +381,7 @@ int do_manual_authentication(const cfg_t * cfg, const device_t * devices,
         u2fs_authentication_verify(ctx_arr[i], response, &auth_result)
         == U2FS_OK) {
       retval = 1;
+      break;
     }
     free(response);
   }
