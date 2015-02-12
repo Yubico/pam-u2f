@@ -1,4 +1,4 @@
-#  Copyright (C) 2014 Yubico AB - See COPYING
+#  Copyright (C) 2014-2015 Yubico AB - See COPYING
 
 SUBDIRS = . pamu2fcfg tests
 
