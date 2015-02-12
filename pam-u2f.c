@@ -221,12 +221,12 @@ int pam_sm_authenticate(pam_handle_t * pamh, int flags, int argc,
 
   if (cfg->manual == 0) {
     if (cfg->interactive) {
-      converse(pamh, PAM_PROMPT_ECHO_ON, "Insert your U2F device, then press ENTER.\n");
+      converse(pamh, PAM_PROMPT_ECHO_ON,
+               "Insert your U2F device, then press ENTER.\n");
     }
 
     retval = do_authentication(cfg, devices, n_devices);
-  }
-  else {
+  } else {
     retval = do_manual_authentication(cfg, devices, n_devices, pamh);
   }
 
