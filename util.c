@@ -19,7 +19,7 @@ get_devices_from_authfile(const char *authfile, const char *username,
                           device_t * devices, unsigned *n_devs)
 {
 
-  char buf[DEVSIZE * max_devs];
+  char *buf;
   char *s_user, *s_token;
   int retval = 0;
   int fd;
@@ -63,6 +63,13 @@ get_devices_from_authfile(const char *authfile, const char *username,
     return retval;
   }
 
+  buf = malloc(sizeof(char) * (DEVSIZE * max_devs));
+  if (!buf) {
+    if (verbose)
+      D(("Unable to allocate memory"));
+    return retval;
+  }
+
   retval = -2;
   while (fgets(buf, (int) (DEVSIZE * (max_devs - 1)), opwfile)) {
     char *saveptr = NULL;
@@ -97,6 +104,8 @@ get_devices_from_authfile(const char *authfile, const char *username,
             D(("Unable to retrieve keyHandle number %d", i + 1));
           fclose(opwfile);
           *n_devs = 0;
+          free(buf);
+          buf = NULL;
           return retval;
         }
 
@@ -110,6 +119,8 @@ get_devices_from_authfile(const char *authfile, const char *username,
             D(("Unable to allocate memory for keyHandle number %d", i));
           *n_devs = 0;
           fclose(opwfile);
+          free(buf);
+          buf = NULL;
           return retval;
         }
 
@@ -120,6 +131,8 @@ get_devices_from_authfile(const char *authfile, const char *username,
             D(("Unable to retrieve publicKey number %d", i + 1));
           *n_devs = 0;
           fclose(opwfile);
+          free(buf);
+          buf = NULL;
           return retval;
         }
 
@@ -131,6 +144,8 @@ get_devices_from_authfile(const char *authfile, const char *username,
             D(("Length of key number %d not even", i + 1));
           *n_devs = 0;
           fclose(opwfile);
+          free(buf);
+          buf = NULL;
           return retval;
         }
 
@@ -148,6 +163,8 @@ get_devices_from_authfile(const char *authfile, const char *username,
 
           *n_devs = 0;
           fclose(opwfile);
+          free(buf);
+          buf = NULL;
           return retval;
         }
 
@@ -164,6 +181,9 @@ get_devices_from_authfile(const char *authfile, const char *username,
 
   if (verbose)
     D(("Found %d device(s) for user %s", *n_devs, username));
+
+  free(buf);
+  buf = NULL;
 
   retval = 1;
   return retval;
