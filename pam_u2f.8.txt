@@ -37,13 +37,10 @@ Maximum number of devices allowed per user (default is 24). Devices specified
 in the authentication file that exceed this value will be ignored.
 
 *interactive*::
-Set to prompt a message and wait before testing the presence of a U2F device. Recommended
-if your device doesn't have a button.
+Set to prompt a message and wait before testing the presence of a U2F device. Recommended if your device doesn't have tactile trigger.
 
 *manual*::
-Set to drop to a manual console where challenges are printed on screen
-and response input from keyboard. Useful for debugging and SSH sessions without
-U2F-supporting from SSH client/server.
+Set to drop to a manual console where challenges are printed on screen and response read from standard input. Useful for debugging and SSH sessions without U2F-support from the SSH client/server. If enabled, interactive mode becomes redundant and has no effect.
 
 == EXAMPLES
 
