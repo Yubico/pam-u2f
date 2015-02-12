@@ -49,6 +49,7 @@ static void parse_cfg(int flags, int argc, const char **argv, cfg_t * cfg)
     D(("max_devices=%d", cfg->max_devs));
     D(("debug=%d", cfg->debug));
     D(("interactive=%d", cfg->interactive));
+    D(("manual=%d", cfg->manual));
     D(("nouserok=%d", cfg->nouserok));
     D(("alwaysok=%d", cfg->alwaysok));
     D(("authfile=%s", cfg->auth_file ? cfg->auth_file : "(null)"));
@@ -69,6 +70,7 @@ int pam_sm_authenticate(pam_handle_t * pamh, int flags, int argc,
 
   struct passwd *pw = NULL, pw_s;
   const char *user = NULL;
+//  const char *p = NULL;
   cfg_t cfg_st;
   cfg_t *cfg = &cfg_st;
   char buffer[BUFSIZE];
@@ -205,7 +207,6 @@ int pam_sm_authenticate(pam_handle_t * pamh, int flags, int argc,
     goto done;
   }
 
-
   if (n_devices == 0) {
     if (cfg->nouserok) {
       DBG(("Found no devices but nouserok specified. Skipping authentication"));
@@ -220,15 +221,15 @@ int pam_sm_authenticate(pam_handle_t * pamh, int flags, int argc,
 
   if (cfg->manual == 0) {
     if (cfg->interactive) {
-      //printf("Insert your U2F device, then press ENTER.\n");
-      //while (getchar() != 10);
-      const char *p = converse(pamh, PAM_PROMPT_ECHO_ON, "Insert your U2F device, then press ENTER.\n");
+      converse(pamh, PAM_PROMPT_ECHO_ON, "Insert your U2F device, then press ENTER.\n");
     }
 
     retval = do_authentication(cfg, devices, n_devices);
-  } else {
+  }
+  else {
     retval = do_manual_authentication(cfg, devices, n_devices, pamh);
   }
+
   if (retval != 1) {
     DBG(("do_authentication returned %d", retval));
     retval = PAM_AUTH_ERR;
