@@ -383,7 +383,7 @@ int do_manual_authentication(const cfg_t * cfg, const device_t * devices,
     if (cfg->debug)
       D(("Challenge: %s", buf));
 
-    if ( !i ) {
+    if ( i == 0 ) {
       sprintf(prompt, "Now please copy-paste the below challenge(s) to 'u2f-host -aauthenticate -o %s'", cfg->origin);
       converse(pamh, PAM_TEXT_INFO, prompt);
     }
@@ -392,11 +392,14 @@ int do_manual_authentication(const cfg_t * cfg, const device_t * devices,
   }
 
   converse(pamh, PAM_TEXT_INFO, "Now, please enter the response(s) below, one per line.");
+
   retval = -1;
+
   for (i = 0; (i < n_devs) && (retval != 1); ++i) {
     sprintf(prompt, "[%d]: ", i);
     response = converse(pamh, PAM_PROMPT_ECHO_ON, prompt);
     converse(pamh, PAM_TEXT_INFO, response);
+
     if (retval != 1 &&
         u2fs_authentication_verify(ctx_arr[i], response, &auth_result)
         == U2FS_OK) {
@@ -417,10 +420,14 @@ static int _converse(pam_handle_t *pamh, int nargs,
              const struct pam_message **message,
              struct pam_response **response) {
   struct pam_conv *conv;
-  int retval = pam_get_item(pamh, PAM_CONV, (void *)&conv);
+  int retval;
+
+  retval = pam_get_item(pamh, PAM_CONV, (void *)&conv);
+
   if (retval != PAM_SUCCESS) {
     return retval;
   }
+
   return conv->conv(nargs, message, response, conv->appdata_ptr);
 }
 
@@ -435,10 +442,12 @@ char *converse(pam_handle_t *pamh, int echocode,
   if (retval != PAM_SUCCESS || resp == NULL || resp->resp == NULL ||
       *resp->resp == '\000') {
     D(("Failed to get response from user input!"));
+
     if (retval == PAM_SUCCESS && resp && resp->resp) {
       ret = resp->resp;
     }
-  } else {
+  }
+  else {
     ret = resp->resp;
   }
 
