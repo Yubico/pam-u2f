@@ -23,12 +23,16 @@ static void parse_cfg(int flags, int argc, const char **argv, cfg_t * cfg)
   for (i = 0; i < argc; i++) {
     if (strncmp(argv[i], "max_devices=", 12) == 0)
       sscanf(argv[i], "max_devices=%u", &cfg->max_devs);
+    if (strcmp(argv[i], "manual") == 0)
+      cfg->manual = 1;
     if (strcmp(argv[i], "debug") == 0)
       cfg->debug = 1;
     if (strcmp(argv[i], "nouserok") == 0)
       cfg->nouserok = 1;
     if (strcmp(argv[i], "alwaysok") == 0)
       cfg->alwaysok = 1;
+    if (strcmp(argv[i], "interactive") == 0)
+      cfg->interactive = 1;
     if (strncmp(argv[i], "authfile=", 9) == 0)
       cfg->auth_file = argv[i] + 9;
     if (strncmp(argv[i], "origin=", 7) == 0)
@@ -44,6 +48,7 @@ static void parse_cfg(int flags, int argc, const char **argv, cfg_t * cfg)
       D(("argv[%d]=%s", i, argv[i]));
     D(("max_devices=%d", cfg->max_devs));
     D(("debug=%d", cfg->debug));
+    D(("interactive=%d", cfg->interactive));
     D(("nouserok=%d", cfg->nouserok));
     D(("alwaysok=%d", cfg->alwaysok));
     D(("authfile=%s", cfg->auth_file ? cfg->auth_file : "(null)"));
@@ -200,6 +205,7 @@ int pam_sm_authenticate(pam_handle_t * pamh, int flags, int argc,
     goto done;
   }
 
+
   if (n_devices == 0) {
     if (cfg->nouserok) {
       DBG(("Found no devices but nouserok specified. Skipping authentication"));
@@ -212,7 +218,17 @@ int pam_sm_authenticate(pam_handle_t * pamh, int flags, int argc,
     }
   }
 
-  retval = do_authentication(cfg, devices, n_devices);
+  if (cfg->manual == 0) {
+    if (cfg->interactive) {
+      //printf("Insert your U2F device, then press ENTER.\n");
+      //while (getchar() != 10);
+      const char *p = converse(pamh, PAM_PROMPT_ECHO_ON, "Insert your U2F device, then press ENTER.\n");
+    }
+
+    retval = do_authentication(cfg, devices, n_devices);
+  } else {
+    retval = do_manual_authentication(cfg, devices, n_devices, pamh);
+  }
   if (retval != 1) {
     DBG(("do_authentication returned %d", retval));
     retval = PAM_AUTH_ERR;
