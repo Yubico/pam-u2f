@@ -12,7 +12,7 @@ lib_LTLIBRARIES = pam_u2f.la
 
 pam_u2f_la_SOURCES = pam-u2f.c
 pam_u2f_la_SOURCES += util.c util.h
-# XXX add -Wl,-x too?  PAM documentation suggests it.
+
 pam_u2f_la_LIBADD = -lpam
 pam_u2f_la_LIBADD += $(LIBU2FHOST_LIBS) $(LIBU2FSERVER_LIBS)
 pam_u2f_la_LDFLAGS = -module -avoid-version
@@ -32,10 +32,14 @@ SUFFIXES = .8.txt .8
 
 # Release
 
+install-exec-hook:
+	rm -f $(PAMDIR)/pam_u2f.la
+	chmod 644 $(PAMDIR)/pam_u2f.so
+
 indent:
 	indent -kr -nut -i2 *.c *.h pamu2fcfg/*.c pamu2fcfg/*.h
 	indent -kr -nut -i2 *.c *.h pamu2fcfg/*.c pamu2fcfg/*.h
-https://myaccount.google.com/?pli=1
+
 ChangeLog:
 	cd $(srcdir) && git2cl > ChangeLog
 
