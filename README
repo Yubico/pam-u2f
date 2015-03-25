@@ -74,7 +74,9 @@ Installation
 
 Once the module is built copy the file +pam_u2f.so+ to the correct
 directory for your system. Typically +/lib/security/+ or
-+/lib/x86_64-linux-gnu/security/+.
++/lib/x86_64-linux-gnu/security/+. This is automated by +make install+
+assuming that the pam directory chosen by +configure+ is correct.
+If that is not the case it can be specified with +./configure --with-pam-dir=+.
 
 Create a file for a new service in +/etc/pam.d/+ or edit an already
 existing one by adding a line similar to this:
@@ -155,7 +157,7 @@ looks like:
  auth sufficient pam_u2f.so authfile=/etc/u2f_mappings
 
 == Individual authorization mapping by user
-Each user creates a `~/config/Yubico/u2f_keys` file inside of their home
+Each user creates a `~/.config/Yubico/u2f_keys` file inside of their home
 directory and places the mapping in that file, the file must have only one
 line:
 
