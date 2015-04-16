@@ -124,6 +124,9 @@ interactive::
 Set to prompt a message and wait before testing the presence of a U2F device.
 Recommended if your device doesn't have a tactile trigger.
 
+verbose::
+Set to prompt a message to remind you to push the button.
+
 manual::
 Set to drop to a manual console where challenges are printed on screen
 and response read from standard input. Useful for debugging and SSH sessions
