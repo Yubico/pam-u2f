@@ -41,7 +41,7 @@ typedef struct {
   int nouserok;
   int alwaysok;
   int interactive;
-  int verbose;
+  int cue;
   const char *auth_file;
   const char *origin;
   const char *appid;
@@ -54,7 +54,7 @@ typedef struct {
 } device_t;
 
 int get_devices_from_authfile(const char *authfile, const char *username,
-                              unsigned max_devs, int verbose,
+                              unsigned max_devs, int cue,
                               device_t * devices, unsigned *n_devs);
 void free_devices(device_t * devices, const unsigned n_devs);
 
