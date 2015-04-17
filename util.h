@@ -54,7 +54,7 @@ typedef struct {
 } device_t;
 
 int get_devices_from_authfile(const char *authfile, const char *username,
-                              unsigned max_devs, int cue,
+                              unsigned max_devs, int verbose,
                               device_t * devices, unsigned *n_devs);
 void free_devices(device_t * devices, const unsigned n_devs);
 
