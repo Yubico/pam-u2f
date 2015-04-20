@@ -131,7 +131,7 @@ without U2F-support from the SSH client/server.
 If enabled, interactive mode becomes redundant and has no effect.
 
 cue::
-Set to prompt a message to remind you to push the button.
+Set to prompt a message to remind to touch the device.
 
 [[files]]
 Authorization Mapping Files

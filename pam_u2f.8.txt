@@ -42,6 +42,9 @@ Set to prompt a message and wait before testing the presence of a U2F device. Re
 *manual*::
 Set to drop to a manual console where challenges are printed on screen and response read from standard input. Useful for debugging and SSH sessions without U2F-support from the SSH client/server. If enabled, interactive mode becomes redundant and has no effect.
 
+*cue*::
+Set to prompt a message to remind to touch the device.
+
 == EXAMPLES
 
 auth sufficient pam_u2f.so debug origin=pam://$HOSTNAME appid=pam://$HOSTNAME
