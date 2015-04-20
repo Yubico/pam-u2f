@@ -228,7 +228,7 @@ int pam_sm_authenticate(pam_handle_t * pamh, int flags, int argc,
                "Insert your U2F device, then press ENTER.\n");
     }
 
-    retval = do_authentication(cfg, devices, n_devices);
+    retval = do_authentication(cfg, devices, n_devices, pamh);
   } else {
     retval = do_manual_authentication(cfg, devices, n_devices, pamh);
   }

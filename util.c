@@ -210,7 +210,7 @@ void free_devices(device_t * devices, const unsigned n_devs)
 }
 
 int do_authentication(const cfg_t * cfg, const device_t * devices,
-                      const unsigned n_devs)
+                      const unsigned n_devs, pam_handle_t * pamh)
 {
   u2fs_ctx_t *ctx;
   u2fs_auth_res_t *auth_result;
@@ -234,7 +234,7 @@ int do_authentication(const cfg_t * cfg, const device_t * devices,
     return retval;
   }else if(cfg->manual == 0){
     if (cfg->cue) {
-      D(("Press the button!"));
+      converse(pamh, PAM_TEXT_INFO, "Please touch the device.");
     }
   }
   max_index_prev = max_index;
@@ -456,7 +456,6 @@ char *converse(pam_handle_t * pamh, int echocode, const char *prompt)
 
   if (retval != PAM_SUCCESS || resp == NULL || resp->resp == NULL ||
       *resp->resp == '\000') {
-    D(("Failed to get response from user input!"));
 
     if (retval == PAM_SUCCESS && resp && resp->resp) {
       ret = resp->resp;
