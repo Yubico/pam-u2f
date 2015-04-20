@@ -130,6 +130,9 @@ and response read from standard input. Useful for debugging and SSH sessions
 without U2F-support from the SSH client/server.
 If enabled, interactive mode becomes redundant and has no effect.
 
+cue::
+Set to prompt a message to remind you to push the button.
+
 [[files]]
 Authorization Mapping Files
 ---------------------------

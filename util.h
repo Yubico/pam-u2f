@@ -41,6 +41,7 @@ typedef struct {
   int nouserok;
   int alwaysok;
   int interactive;
+  int cue;
   const char *auth_file;
   const char *origin;
   const char *appid;
