@@ -59,7 +59,7 @@ This will create a directory 'pam-u2f'. Enter the directory:
 Autoconf, automake, libtool, and libpam must be installed. AsciiDoc and xsltproc are used to
 generate the manpages.
 
-  Debian:   apt-get install autoconf automake libtool libpam-dev asciidoc xsltproc --no-install-recommends
+  Debian:   apt-get install autoconf automake libtool libpam-dev asciidoc xsltproc libxml2-utils docbook-xml --no-install-recommends
 
 Generate the build system using:
 
