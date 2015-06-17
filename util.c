@@ -232,7 +232,7 @@ int do_authentication(const cfg_t * cfg, const device_t * devices,
   if ((h_rc = u2fh_devs_discover(devs, &max_index)) != U2FH_OK) {
     D(("Unable to discover device(s), %s", u2fh_strerror(h_rc)));
     return retval;
-  }else if(cfg->manual == 0){
+  } else if (cfg->manual == 0) {
     if (cfg->cue) {
       converse(pamh, PAM_TEXT_INFO, "Please touch the device.");
     }
