@@ -2,6 +2,8 @@ Copyright (c) 2014-2015 Yubico AB - See COPYING
 
 pam-u2f NEWS -- History of user-visible changes.          -*- outline -*-
 
+* Version 1.0.1 (unreleased)
+
 * Version 1.0.0 (released 2015-06-17)
  ** Use XDG_CONFIG_HOME as default for config files.
  ** Added manual and interactive mode.
