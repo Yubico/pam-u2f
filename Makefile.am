@@ -34,7 +34,7 @@ SUFFIXES = .8.txt .8
 
 install-exec-hook:
 	rm -f $(PAMDIR)/pam_u2f.la
-	chmod 644 $(PAMDIR)/pam_u2f.so
+	chmod -f 644 $(PAMDIR)/pam_u2f.so || true
 
 indent:
 	indent -kr -nut -i2 *.c *.h pamu2fcfg/*.c pamu2fcfg/*.h
