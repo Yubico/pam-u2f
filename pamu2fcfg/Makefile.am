@@ -15,10 +15,10 @@ cmdline.c cmdline.h: cmdline.ggo Makefile.am
 BUILT_SOURCES = cmdline.c cmdline.h
 MAINTAINERCLEANFILES = $(BUILT_SOURCES)
 
-dist_man1_MANS = pamu2fcfg.1
+dist_man1_MANS = $(top_builddir)/man/pamu2fcfg.1
 DISTCLEANFILES = $(dist_man1_MANS)
 
-MANSOURCES = pamu2fcfg.1.txt
+MANSOURCES = $(top_builddir)/man/pamu2fcfg.1.txt
 EXTRA_DIST = $(MANSOURCES)
 
 SUFFIXES = .1.txt .1

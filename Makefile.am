@@ -19,10 +19,10 @@ pam_u2f_la_LDFLAGS = -module -avoid-version
 
 DEFS = -DDEBUG_PAM -DPAM_DEBUG @DEFS@
 
-dist_man8_MANS = pam_u2f.8
+dist_man8_MANS = $(top_builddir)/man/pam_u2f.8
 DISTCLEANFILES = $(dist_man8_MANS)
 
-MANSOURCES = pam_u2f.8.txt
+MANSOURCES = $(top_builddir)/man/pam_u2f.8.txt
 EXTRA_DIST = $(MANSOURCES)
 
 SUFFIXES = .8.txt .8
