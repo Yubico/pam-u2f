@@ -134,7 +134,7 @@ int pam_sm_authenticate(pam_handle_t * pamh, int flags, int argc,
   if (pgu_ret != PAM_SUCCESS || user == NULL) {
     DBG(("Unable to access user %s", user));
     free(devices);
-    device = NULL;
+    devices = NULL;
     return PAM_CONV_ERR;
   }
 
