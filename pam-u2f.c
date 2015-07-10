@@ -133,6 +133,8 @@ int pam_sm_authenticate(pam_handle_t * pamh, int flags, int argc,
   pgu_ret = pam_get_user(pamh, &user, NULL);
   if (pgu_ret != PAM_SUCCESS || user == NULL) {
     DBG(("Unable to access user %s", user));
+    free(devices);
+    device = NULL;
     return PAM_CONV_ERR;
   }
 
@@ -243,6 +245,11 @@ int pam_sm_authenticate(pam_handle_t * pamh, int flags, int argc,
 
 done:
   free_devices(devices, n_devices);
+
+  if (buf) {
+    free(buf);
+    buf = NULL;
+  }
 
   if (cfg->alwaysok && retval != PAM_SUCCESS) {
     DBG(("alwaysok needed (otherwise return with %d)", retval));

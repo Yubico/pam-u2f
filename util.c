@@ -67,6 +67,8 @@ get_devices_from_authfile(const char *authfile, const char *username,
   if (!buf) {
     if (verbose)
       D(("Unable to allocate memory"));
+    fclose(opwfile);
+    close(fd);
     return retval;
   }
 
