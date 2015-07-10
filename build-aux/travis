@@ -31,4 +31,4 @@ sudo ldconfig
 
 cd $HERE
 
-autoreconf -i && ./configure && make check
+autoreconf -i && ./configure --disable-silent-rules && make check
