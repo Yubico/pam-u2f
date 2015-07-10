@@ -4,8 +4,8 @@
 
 #include "util.h"
 
-#include <u2f-server/u2f-server.h>
-#include <u2f-host/u2f-host.h>
+#include <u2f-server.h>
+#include <u2f-host.h>
 
 #include <stdlib.h>
 #include <fcntl.h>
