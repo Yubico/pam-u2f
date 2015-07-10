@@ -77,7 +77,7 @@ int pam_sm_authenticate(pam_handle_t * pamh, int flags, int argc,
   cfg_t cfg_st;
   cfg_t *cfg = &cfg_st;
   char buffer[BUFSIZE];
-  char *buf;
+  char *buf = NULL;
   char *authfile_dir;
   int authfile_dir_len;
   int pgu_ret, gpn_ret;
