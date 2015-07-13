@@ -17,7 +17,7 @@ export PKG_CONFIG_PATH=/tmp/libu2f-server/u2f-server:$PKG_CONFIG_PATH
 git clone https://github.com/yubico/libu2f-server.git
 cd libu2f-server
 autoreconf -i
-./configure && make && sudo make install
+./configure --disable-h2a && make && sudo make install
 sudo ldconfig
 
 cd ..
