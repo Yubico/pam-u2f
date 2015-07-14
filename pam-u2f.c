@@ -73,7 +73,7 @@ int pam_sm_authenticate(pam_handle_t * pamh, int flags, int argc,
 
   struct passwd *pw = NULL, pw_s;
   const char *user = NULL;
-//  const char *p = NULL;
+
   cfg_t cfg_st;
   cfg_t *cfg = &cfg_st;
   char buffer[BUFSIZE];

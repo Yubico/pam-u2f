@@ -101,7 +101,7 @@ get_devices_from_authfile(const char *authfile, const char *username,
           break;
         }
 
-        if (!s_token) {
+        /*if (!s_token) { // Check not needed, s_token can never be NULL
           if (verbose)
             D(("Unable to retrieve keyHandle number %d", i + 1));
           fclose(opwfile);
@@ -109,7 +109,7 @@ get_devices_from_authfile(const char *authfile, const char *username,
           free(buf);
           buf = NULL;
           return retval;
-        }
+          }*/
 
         if (verbose)
           D(("KeyHandle for device number %d: %s", i + 1, s_token));
