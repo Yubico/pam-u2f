@@ -1,6 +1,9 @@
 Pluggable Authentication Module (PAM) Universal 2nd Factor (U2F)
 ================================================================
 
+image:https://travis-ci.org/Yubico/pam-u2f.svg?branch=master["Build Status", link="https://travis-ci.org/Yubico/pam-u2f"]
+image:https://scan.coverity.com/projects/5711/badge.svg["Coverity Status", link=https://scan.coverity.com/projects/5711]
+
 The PAM U2F module provides an easy way to integrate the Yubikey (or
 other U2F-compliant authenticators) into your existing user
 authentication infrastructure. PAM is used by GNU/Linux, Solaris and
