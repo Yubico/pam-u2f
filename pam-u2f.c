@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <pwd.h>
 #include <string.h>
+#include <errno.h>
 
 #include "util.h"
 
