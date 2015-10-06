@@ -2,7 +2,9 @@ Copyright (c) 2014-2015 Yubico AB - See COPYING
 
 pam-u2f NEWS -- History of user-visible changes.          -*- outline -*-
 
-* Version 1.0.2 (unreleased)
+* Version 1.0.2 (released 2015-10-06)
+ ** Changes to automake flags.
+ ** Improve build on OS X.
 
 * Version 1.0.1 (released 2015-06-18)
  ** Minor changes to man pages and install hooks.
