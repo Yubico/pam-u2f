@@ -102,16 +102,6 @@ get_devices_from_authfile(const char *authfile, const char *username,
           break;
         }
 
-        /*if (!s_token) { // Check not needed, s_token can never be NULL
-          if (verbose)
-            D(("Unable to retrieve keyHandle number %d", i + 1));
-          fclose(opwfile);
-          *n_devs = 0;
-          free(buf);
-          buf = NULL;
-          return retval;
-          }*/
-
         if (verbose)
           D(("KeyHandle for device number %d: %s", i + 1, s_token));
 
@@ -228,12 +218,14 @@ int do_authentication(const cfg_t * cfg, const device_t * devices,
   unsigned max_index_prev = 0;
 
   if (u2fh_global_init(0) != U2FH_OK || u2fh_devs_init(&devs) != U2FH_OK) {
-    D(("Unable to initialize libu2f-host"));
+    if (cfg->debug)
+      D(("Unable to initialize libu2f-host"));
     return retval;
   }
 
   if ((h_rc = u2fh_devs_discover(devs, &max_index)) != U2FH_OK) {
-    D(("Unable to discover device(s), %s", u2fh_strerror(h_rc)));
+    if (cfg->debug)
+      D(("Unable to discover device(s), %s", u2fh_strerror(h_rc)));
     return retval;
   } else if (cfg->manual == 0) {
     if (cfg->cue) {
@@ -246,17 +238,20 @@ int do_authentication(const cfg_t * cfg, const device_t * devices,
     D(("Device max index is %u", max_index));
 
   if (u2fs_global_init(0) != U2FS_OK || u2fs_init(&ctx) != U2FS_OK) {
-    D(("Unable to initialize libu2f-server"));
+    if (cfg->debug)
+      D(("Unable to initialize libu2f-server"));
     return retval;
   }
 
   if ((s_rc = u2fs_set_origin(ctx, cfg->origin)) != U2FS_OK) {
-    D(("Unable to set origin: %s", u2fs_strerror(s_rc)));
+    if (cfg->debug)
+      D(("Unable to set origin: %s", u2fs_strerror(s_rc)));
     return retval;
   }
 
   if ((s_rc = u2fs_set_appid(ctx, cfg->appid)) != U2FS_OK) {
-    D(("Unable to set appid: %s", u2fs_strerror(s_rc)));
+    if (cfg->debug)
+      D(("Unable to set appid: %s", u2fs_strerror(s_rc)));
     return retval;
   }
 
@@ -269,18 +264,21 @@ int do_authentication(const cfg_t * cfg, const device_t * devices,
       D(("Attempting authentication with device number %d", i + 1));
 
     if ((s_rc = u2fs_set_keyHandle(ctx, devices[i].keyHandle)) != U2FS_OK) {
-      D(("Unable to set keyHandle: %s", u2fs_strerror(s_rc)));
+      if (cfg->debug)
+        D(("Unable to set keyHandle: %s", u2fs_strerror(s_rc)));
       return retval;
     }
 
     if ((s_rc = u2fs_set_publicKey(ctx, devices[i].publicKey)) != U2FS_OK) {
-      D(("Unable to set publicKey %s", u2fs_strerror(s_rc)));
+      if (cfg->debug)
+        D(("Unable to set publicKey %s", u2fs_strerror(s_rc)));
       return retval;
     }
 
     if ((s_rc = u2fs_authentication_challenge(ctx, &buf)) != U2FS_OK) {
-      D(("Unable to produce authentication challenge: %s",
-         u2fs_strerror(s_rc)));
+      if (cfg->debug)
+        D(("Unable to produce authentication challenge: %s",
+           u2fs_strerror(s_rc)));
       return retval;
     }
 
@@ -309,7 +307,8 @@ int do_authentication(const cfg_t * cfg, const device_t * devices,
     i++;
 
     if (u2fh_devs_discover(devs, &max_index) != U2FH_OK) {
-      D(("Unable to discover devices"));
+      if (cfg->debug)
+        D(("Unable to discover devices"));
       return retval;
     }
 
@@ -347,24 +346,28 @@ int do_manual_authentication(const cfg_t * cfg, const device_t * devices,
   unsigned i = 0;
 
   if (u2fs_global_init(0) != U2FS_OK) {
-    D(("Unable to initialize libu2f-server"));
+    if (cfg->debug)
+      D(("Unable to initialize libu2f-server"));
     return retval;
   }
 
   for (i = 0; i < n_devs; ++i) {
 
     if (u2fs_init(ctx_arr + i) != U2FS_OK) {
-      D(("Unable to initialize libu2f-server"));
+      if (cfg->debug)
+        D(("Unable to initialize libu2f-server"));
       return retval;
     }
 
     if ((s_rc = u2fs_set_origin(ctx_arr[i], cfg->origin)) != U2FS_OK) {
-      D(("Unable to set origin: %s", u2fs_strerror(s_rc)));
+      if (cfg->debug)
+        D(("Unable to set origin: %s", u2fs_strerror(s_rc)));
       return retval;
     }
 
     if ((s_rc = u2fs_set_appid(ctx_arr[i], cfg->appid)) != U2FS_OK) {
-      D(("Unable to set appid: %s", u2fs_strerror(s_rc)));
+      if (cfg->debug)
+        D(("Unable to set appid: %s", u2fs_strerror(s_rc)));
       return retval;
     }
 
@@ -374,21 +377,24 @@ int do_manual_authentication(const cfg_t * cfg, const device_t * devices,
     if ((s_rc =
          u2fs_set_keyHandle(ctx_arr[i],
                             devices[i].keyHandle)) != U2FS_OK) {
-      D(("Unable to set keyHandle: %s", u2fs_strerror(s_rc)));
+      if (cfg->debug)
+        D(("Unable to set keyHandle: %s", u2fs_strerror(s_rc)));
       return retval;
     }
 
     if ((s_rc =
          u2fs_set_publicKey(ctx_arr[i],
                             devices[i].publicKey)) != U2FS_OK) {
-      D(("Unable to set publicKey %s", u2fs_strerror(s_rc)));
+      if (cfg->debug)
+        D(("Unable to set publicKey %s", u2fs_strerror(s_rc)));
       return retval;
     }
 
     if ((s_rc =
          u2fs_authentication_challenge(ctx_arr[i], &buf)) != U2FS_OK) {
-      D(("Unable to produce authentication challenge: %s",
-         u2fs_strerror(s_rc)));
+      if (cfg->debug)
+        D(("Unable to produce authentication challenge: %s",
+           u2fs_strerror(s_rc)));
       return retval;
     }
 
