@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
   else {
     user = getlogin();
     if (!user) {
-      perror("gethostname");
+      perror("getlogin");
       exit(EXIT_FAILURE);
     }
   }
