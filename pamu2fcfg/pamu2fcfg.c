@@ -116,13 +116,13 @@ int main(int argc, char *argv[])
 
   if (u2fh_global_init(args_info.debug_flag ? U2FS_DEBUG : 0) != U2FH_OK
       || u2fh_devs_init(&devs) != U2FH_OK) {
-    fprintf(stderr, "Unable to initialize libu2f-host");
+    fprintf(stderr, "Unable to initialize libu2f-host\n");
     exit(EXIT_FAILURE);
   }
 
   h_rc = u2fh_devs_discover(devs, &max_index);
   if (h_rc != U2FH_OK && h_rc != U2FH_NO_U2F_DEVICE) {
-    fprintf(stderr, "Unable to discover device(s), %s (%d)",
+    fprintf(stderr, "Unable to discover device(s), %s (%d)\n",
             u2fh_strerror(h_rc), h_rc);
     exit(EXIT_FAILURE);
   }
@@ -157,7 +157,7 @@ int main(int argc, char *argv[])
 
   s_rc = u2fs_registration_challenge(ctx, &p);
   if (s_rc != U2FS_OK) {
-    fprintf(stderr, "Unable to generate registration challenge, %s (%d)",
+    fprintf(stderr, "Unable to generate registration challenge, %s (%d)\n",
             u2fs_strerror(s_rc), s_rc);
     exit(EXIT_FAILURE);
   }
@@ -165,9 +165,9 @@ int main(int argc, char *argv[])
   h_rc =
       u2fh_register(devs, p, origin, &response,
                     U2FH_REQUEST_USER_PRESENCE);
-  if (s_rc != U2FS_OK) {
-    fprintf(stderr, "Unable to generate registration challenge, %s (%d)",
-            u2fs_strerror(s_rc), s_rc);
+  if (h_rc != U2FS_OK) {
+    fprintf(stderr, "Unable to generate registration challenge, %s (%d)\n",
+            u2fh_strerror(h_rc), h_rc);
     exit(EXIT_FAILURE);
   }
 
