@@ -2,7 +2,11 @@ Copyright (c) 2014-2015 Yubico AB - See COPYING
 
 pam-u2f NEWS -- History of user-visible changes.          -*- outline -*-
 
-* Version 1.0.3 (unreleased)
+* Version 1.0.4 (unreleased)
+
+* Version 1.0.3 (released 2015-11-02)
+ ** Bugfix in pamu2fcfg.
+ ** Minor improvements for verbose mode in pamu2fcfg.
 
 * Version 1.0.2 (released 2015-10-06)
  ** Changes to automake flags.
