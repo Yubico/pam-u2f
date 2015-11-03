@@ -51,6 +51,12 @@ auth sufficient pam_u2f.so debug origin=pam://$HOSTNAME appid=pam://$HOSTNAME
 
 auth required pam_u2f.so origin=http://example.com appid=http://example.com authfile=/etc/yubikey_mappings
 
+== CAVEATS
+Using pam-u2f to secure the login to a computer while
+storing the mapping file in an encrypted home directory, will result
+in the impossibility of logging into the system. The partition is
+decrypted after login and the mapping file can not be accessed.
+
 == BUGS
 Report pam-u2f bugs in the issue tracker: https://github.com/Yubico/pam-u2f/issues
 
