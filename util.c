@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <pwd.h>
 #include <errno.h>
 
 #include <string.h>
@@ -25,6 +26,9 @@ get_devices_from_authfile(const char *authfile, const char *username,
   int retval = 0;
   int fd;
   struct stat st;
+  struct passwd *pw = NULL, pw_s;
+  char buffer[BUFSIZE];
+  int gpu_ret;
   FILE *opwfile;
   unsigned i, j;
 
@@ -52,6 +56,26 @@ get_devices_from_authfile(const char *authfile, const char *username,
   if (st.st_size == 0) {
     if (verbose)
       D(("File %s is empty", authfile));
+    close(fd);
+    return retval;
+  }
+
+  gpu_ret = getpwuid_r(st.st_uid, &pw_s, buffer, sizeof(buffer), &pw);
+  if (gpu_ret != 0 || pw == NULL) {
+    D(("Unable to retrieve credentials for uid %u, (%s)", st.st_uid,
+       strerror(errno)));
+    close(fd);
+    return retval;
+  }
+
+  if (strcmp(pw->pw_name, username) != 0 &&
+      strcmp(pw->pw_name, "root") != 0) {
+    if (strcmp(username, "root") != 0) {
+      D(("The owner of the authentication file is neither %s nor root",
+         username));
+    } else {
+      D(("The owner of the authentication file is not root"));
+    }
     close(fd);
     return retval;
   }
