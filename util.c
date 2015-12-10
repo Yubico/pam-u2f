@@ -15,6 +15,12 @@
 
 #include <string.h>
 
+#ifndef HAVE_SECURE_ENV
+char *secure_getenv(const char *name) {
+  return NULL;
+}
+#endif
+
 int
 get_devices_from_authfile(const char *authfile, const char *username,
                           unsigned max_devs, int verbose,

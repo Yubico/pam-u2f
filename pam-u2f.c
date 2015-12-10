@@ -2,6 +2,15 @@
  *  Copyright (C) 2014-2015 Yubico AB - See COPYING
  */
 
+/*
+ * Define _GNU_SOURCE on linux in order to have
+ *__USE_GNU defined and not get a warning about
+ * secure_getenv during compilation
+ */
+#ifdef __linux__
+#define _GNU_SOURCE
+#endif
+
 /* Define which PAM interfaces we provide */
 #define PAM_SM_AUTH
 
@@ -16,6 +25,13 @@
 #include <errno.h>
 
 #include "util.h"
+
+/* If secure_getenv is not defined, define it here */
+#ifndef HAVE_SECURE_GETENV
+char *secure_getenv(const char *name) {
+  return NULL;
+}
+#endif
 
 static void parse_cfg(int flags, int argc, const char **argv, cfg_t * cfg)
 {
@@ -155,7 +171,7 @@ int pam_sm_authenticate(pam_handle_t * pamh, int flags, int argc,
 
   if (!cfg->auth_file) {
     buf = NULL;
-    authfile_dir = getenv(DEFAULT_AUTHFILE_DIR_VAR);
+    authfile_dir = secure_getenv(DEFAULT_AUTHFILE_DIR_VAR);
     if (!authfile_dir) {
       DBG(("Variable %s is not set. Using default value ($HOME/.config/)",
            DEFAULT_AUTHFILE_DIR_VAR));

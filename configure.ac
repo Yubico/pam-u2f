@@ -37,6 +37,15 @@ AC_ARG_WITH(pam-dir,
             esac])
 AC_MSG_NOTICE([PAM installation path $PAMDIR])
 
+# Check for secure_getenv
+am_save_CFLAGS="$CFLAGS"
+am_save_LIBS="$LIBS"
+CFLAGS="$CFLAGS"
+LIBS="$LIBS"
+AC_CHECK_FUNCS([secure_getenv])
+CFLAGS=$am_save_CFLAGS
+LIBS=$am_save_LIBS
+
 AC_ARG_ENABLE([gcc-warnings],
   [AS_HELP_STRING([--enable-gcc-warnings],
       [turn on lots of GCC warnings (for developers)])],
