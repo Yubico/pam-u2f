@@ -1,7 +1,7 @@
 #  Copyright (C) 2014-2015 Yubico AB - See COPYING
 #
 
-AC_INIT([pam_u2f], [1.0.4], [yubico-devel@googlegroups.com])
+AC_INIT([pam_u2f], [1.0.5], [yubico-devel@googlegroups.com])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([1.11 foreign -Wall -Werror])

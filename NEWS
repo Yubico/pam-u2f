@@ -2,6 +2,8 @@ Copyright (c) 2014-2015 Yubico AB - See COPYING
 
 pam-u2f NEWS -- History of user-visible changes.          -*- outline -*-
 
+* Version 1.0.5 (unreleased)
+
 * Version 1.0.4 (released 2016-01-07)
  ** Fixed possible permission escalation when using XDG_CONFIG_HOME.
 
