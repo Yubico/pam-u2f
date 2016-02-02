@@ -31,9 +31,9 @@ closed interval.
 Building
 --------
 
-This project uses 'autoconf', 'automake' and 'libtool' to achieve
-portability and ease of use.  If you downloaded a tarball, build it as
-follows.
+This project uses 'autoconf', 'automake', 'pkg-config' and 'libtool'
+to achieve portability and ease of use. If you downloaded a tarball,
+build it as follows.
 
 -----------
   $ ./configure
