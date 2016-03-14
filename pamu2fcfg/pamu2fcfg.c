@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
   if (args_info.help_given) {
     cmdline_parser_print_help();
     printf
-        ("\nReport bugs at <https://github.com/Yubico/libu2f-server>.\n");
+        ("\nReport bugs at <https://github.com/Yubico/pam-u2f>.\n");
     exit(EXIT_SUCCESS);
   }
 
