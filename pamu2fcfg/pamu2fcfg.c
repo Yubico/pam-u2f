@@ -66,8 +66,10 @@ int main(int argc, char *argv[])
   if (args_info.origin_given)
     origin = args_info.origin_arg;
   else {
-    if (!strcpy(buf, PAM_PREFIX))
+    if (!strcpy(buf, PAM_PREFIX)) {
       fprintf(stderr, "strcpy failed\n");
+      exit(EXIT_FAILURE);
+    }
     if (gethostname(buf + strlen(PAM_PREFIX), BUFSIZE - strlen(PAM_PREFIX))
         == -1) {
       perror("gethostname");
