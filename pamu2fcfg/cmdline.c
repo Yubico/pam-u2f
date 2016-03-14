@@ -39,6 +39,7 @@ const char *gengetopt_args_info_help[] = {
   "  -o, --origin=STRING    Origin URL to use during registration. Defaults to\n                           pam://hostname",
   "  -i, --appid=STRING     Application ID to use during registration. Defaults to\n                           pam://hostname",
   "  -d, --debug            Print debug information (highly verbose)\n                           (default=off)",
+  "  -v, --verbose          Print information about chosen origin and appid\n                           (default=off)",
   "\n Group: user",
   "  -u, --username=STRING  The name of the user registering the device. Defaults\n                           to the current user name",
   "  -n, --nouser           Print only registration information (keyHandle and\n                           public key). Useful for appending",
@@ -71,6 +72,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->origin_given = 0 ;
   args_info->appid_given = 0 ;
   args_info->debug_given = 0 ;
+  args_info->verbose_given = 0 ;
   args_info->username_given = 0 ;
   args_info->nouser_given = 0 ;
   args_info->user_group_counter = 0 ;
@@ -85,6 +87,7 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->appid_arg = NULL;
   args_info->appid_orig = NULL;
   args_info->debug_flag = 0;
+  args_info->verbose_flag = 0;
   args_info->username_arg = NULL;
   args_info->username_orig = NULL;
   
@@ -100,8 +103,9 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->origin_help = gengetopt_args_info_help[2] ;
   args_info->appid_help = gengetopt_args_info_help[3] ;
   args_info->debug_help = gengetopt_args_info_help[4] ;
-  args_info->username_help = gengetopt_args_info_help[6] ;
-  args_info->nouser_help = gengetopt_args_info_help[7] ;
+  args_info->verbose_help = gengetopt_args_info_help[5] ;
+  args_info->username_help = gengetopt_args_info_help[7] ;
+  args_info->nouser_help = gengetopt_args_info_help[8] ;
   
 }
 
@@ -231,6 +235,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "appid", args_info->appid_orig, 0);
   if (args_info->debug_given)
     write_into_file(outfile, "debug", 0, 0 );
+  if (args_info->verbose_given)
+    write_into_file(outfile, "verbose", 0, 0 );
   if (args_info->username_given)
     write_into_file(outfile, "username", args_info->username_orig, 0);
   if (args_info->nouser_given)
@@ -494,12 +500,13 @@ cmdline_parser_internal (
         { "origin",	1, NULL, 'o' },
         { "appid",	1, NULL, 'i' },
         { "debug",	0, NULL, 'd' },
+        { "verbose",	0, NULL, 'v' },
         { "username",	1, NULL, 'u' },
         { "nouser",	0, NULL, 'n' },
         { 0,  0, 0, 0 }
       };
 
-      c = getopt_long (argc, argv, "hVo:i:du:n", long_options, &option_index);
+      c = getopt_long (argc, argv, "hVo:i:dvu:n", long_options, &option_index);
 
       if (c == -1) break;	/* Exit from `while (1)' loop.  */
 
@@ -554,6 +561,16 @@ cmdline_parser_internal (
           if (update_arg((void *)&(args_info->debug_flag), 0, &(args_info->debug_given),
               &(local_args_info.debug_given), optarg, 0, 0, ARG_FLAG,
               check_ambiguity, override, 1, 0, "debug", 'd',
+              additional_error))
+            goto failure;
+        
+          break;
+        case 'v':	/* Print information about chosen origin and appid.  */
+        
+        
+          if (update_arg((void *)&(args_info->verbose_flag), 0, &(args_info->verbose_given),
+              &(local_args_info.verbose_given), optarg, 0, 0, ARG_FLAG,
+              check_ambiguity, override, 1, 0, "verbose", 'v',
               additional_error))
             goto failure;
         

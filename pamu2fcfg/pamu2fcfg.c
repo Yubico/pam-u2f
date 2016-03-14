@@ -76,6 +76,9 @@ int main(int argc, char *argv[])
     origin = buf;
   }
 
+  if (args_info.verbose_given)
+      fprintf(stderr, "Setting origin to %s\n", origin);
+
   s_rc = u2fs_set_origin(ctx, origin);
   if (s_rc != U2FS_OK) {
     printf("error: u2fs_set_origin (%d): %s\n", s_rc, u2fs_strerror(s_rc));
@@ -96,6 +99,9 @@ int main(int argc, char *argv[])
     }
     appid = buf;
   }
+
+  if (args_info.verbose_given)
+    fprintf(stderr, "Setting appid to %s\n", appid);
 
   s_rc = u2fs_set_appid(ctx, appid);
   if (s_rc != U2FS_OK) {

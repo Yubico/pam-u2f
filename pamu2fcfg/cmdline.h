@@ -51,6 +51,8 @@ struct gengetopt_args_info
   const char *appid_help; /**< @brief Application ID to use during registration. Defaults to pam://hostname help description.  */
   int debug_flag;	/**< @brief Print debug information (highly verbose) (default=off).  */
   const char *debug_help; /**< @brief Print debug information (highly verbose) help description.  */
+  int verbose_flag;	/**< @brief Print information about chosen origin and appid (default=off).  */
+  const char *verbose_help; /**< @brief Print information about chosen origin and appid help description.  */
   char * username_arg;	/**< @brief The name of the user registering the device. Defaults to the current user name.  */
   char * username_orig;	/**< @brief The name of the user registering the device. Defaults to the current user name original value given at command line.  */
   const char *username_help; /**< @brief The name of the user registering the device. Defaults to the current user name help description.  */
@@ -61,6 +63,7 @@ struct gengetopt_args_info
   unsigned int origin_given ;	/**< @brief Whether origin was given.  */
   unsigned int appid_given ;	/**< @brief Whether appid was given.  */
   unsigned int debug_given ;	/**< @brief Whether debug was given.  */
+  unsigned int verbose_given ;	/**< @brief Whether verbose was given.  */
   unsigned int username_given ;	/**< @brief Whether username was given.  */
   unsigned int nouser_given ;	/**< @brief Whether nouser was given.  */
 
