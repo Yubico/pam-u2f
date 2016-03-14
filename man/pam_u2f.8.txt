@@ -27,7 +27,7 @@ Set the application ID for the U2F authentication procedure. If no value is spec
 Set the location of the file that holds the mappings of user names to keyHandles and user keys. The format is username:keyHandle1,public_key1:keyHandle2,public_key2:... the default location of the file is $XDG_CONFIG_HOME/Yubico/u2f_keys. If the environment variable is not set, $HOME/.config/Yubico/u2f_keys is used.
 
 *nouserok*::
-Set to enable authentication attempts to succeed even if the user trying to authenticate is not found inside authfile.
+Set to enable authentication attempts to succeed even if the user trying to authenticate is not found inside authfile or if authfile is missing/malformed.
 
 *alwaysok*::
 Set to enable all authentication attempts to succeed (aka presentation mode).

@@ -114,7 +114,7 @@ is not set, $HOME/.config/Yubico/u2f_keys is used.
 
 nouserok::
 Set to enable authentication attempts to succeed even if the user trying to
-authenticate is not found inside authfile.
+authenticate is not found inside authfile or if authfile is missing/malformed.
 
 alwaysok::
 Set to enable all authentication attempts to succeed (aka presentation mode).
