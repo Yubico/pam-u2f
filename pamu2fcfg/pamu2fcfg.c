@@ -90,16 +90,7 @@ int main(int argc, char *argv[])
   if (args_info.appid_given)
     appid = args_info.appid_arg;
   else {
-    if (args_info.origin_given) {
-      if (!strcpy(buf, PAM_PREFIX))
-        fprintf(stderr, "strcpy failed\n");
-      if (gethostname
-          (buf + strlen(PAM_PREFIX), BUFSIZE - strlen(PAM_PREFIX)) == -1) {
-        perror("gethostname");
-        exit(EXIT_FAILURE);
-      }
-    }
-    appid = buf;
+    appid = origin;
   }
 
   if (args_info.verbose_given)
