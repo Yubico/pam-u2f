@@ -7,7 +7,7 @@
  *__USE_GNU defined and not get a warning about
  * secure_getenv during compilation
  */
-#ifdef __linux__
+#ifdef HAVE_SECURE_GETENV
 #define _GNU_SOURCE
 #endif
 
