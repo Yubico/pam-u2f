@@ -15,6 +15,8 @@
 #include <string.h>
 #include <getopt.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <pwd.h>
 
 #include "cmdline.h"
 
@@ -32,6 +34,7 @@ int main(int argc, char *argv[])
   char *origin = NULL;
   char *appid = NULL;
   char *user = NULL;
+  struct passwd *passwd;
   const char *kh = NULL;
   const char *pk = NULL;
   u2fh_devs *devs = NULL;
@@ -106,11 +109,12 @@ int main(int argc, char *argv[])
   if (args_info.username_given)
     user = args_info.username_arg;
   else {
-    user = getlogin();
-    if (!user) {
-      perror("getlogin");
+    passwd = getpwuid(getuid());
+    if (passwd == NULL) {
+      perror("getpwuid");
       exit(EXIT_FAILURE);
     }
+    user = passwd->pw_name;
   }
 
   if (u2fh_global_init(args_info.debug_flag ? U2FS_DEBUG : 0) != U2FH_OK
