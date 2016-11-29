@@ -24,4 +24,4 @@ EXTRA_DIST = $(MANSOURCES)
 SUFFIXES = .1.txt .1
 
 .1.txt.1:
-	$(A2X) --format=manpage -a revdate="Version $(VERSION)" $<
+	$(A2X) --format=manpage -L -a revdate="Version $(VERSION)" $<
