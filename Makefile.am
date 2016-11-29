@@ -29,7 +29,7 @@ EXTRA_DIST = $(MANSOURCES)
 SUFFIXES = .8.txt .8
 
 .8.txt.8:
-	$(A2X) --format=manpage -a revdate="Version $(VERSION)" $<
+	$(A2X) --format=manpage -L -a revdate="Version $(VERSION)" $<
 
 # Release
 
