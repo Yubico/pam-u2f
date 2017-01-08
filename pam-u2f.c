@@ -49,6 +49,8 @@ static void parse_cfg(int flags, int argc, const char **argv, cfg_t * cfg)
       cfg->origin = argv[i] + 7;
     if (strncmp(argv[i], "appid=", 6) == 0)
       cfg->appid = argv[i] + 6;
+    if (strncmp(argv[i], "prompt=", 7) == 0)
+      cfg->prompt = argv[i] + 7;
   }
 
   if (cfg->debug) {
@@ -66,6 +68,7 @@ static void parse_cfg(int flags, int argc, const char **argv, cfg_t * cfg)
     D(("authfile=%s", cfg->auth_file ? cfg->auth_file : "(null)"));
     D(("origin=%s", cfg->origin ? cfg->origin : "(null)"));
     D(("appid=%s", cfg->appid ? cfg->appid : "(null)"));
+    D(("prompt=%s", cfg->prompt ? cfg->prompt : "(null)"));
   }
 }
 
@@ -87,7 +90,9 @@ int pam_sm_authenticate(pam_handle_t * pamh, int flags, int argc,
   char buffer[BUFSIZE];
   char *buf = NULL;
   char *authfile_dir;
+  char *prompt = NULL;
   int authfile_dir_len;
+  int prompt_len;
   int pgu_ret, gpn_ret;
   int retval = PAM_IGNORE;
   device_t *devices = NULL;
@@ -241,8 +246,37 @@ int pam_sm_authenticate(pam_handle_t * pamh, int flags, int argc,
 
   if (cfg->manual == 0) {
     if (cfg->interactive) {
+      if (!cfg->prompt) {
+        buf = NULL;
+        prompt_len =
+            strlen(DEFAULT_PROMPT) + strlen("\n") + 1;
+        buf = malloc(sizeof(char) * (prompt_len));
+
+        if (!buf) {
+          DBG(("Unable to allocate memory"));
+          retval = PAM_IGNORE;
+          goto done;
+        }
+
+        strcpy(buf, DEFAULT_PROMPT);
+        strcat(buf, "\n");
+
+        DBG(("Using default prompt %s", buf));
+
+        cfg->prompt = strdup(buf);
+        if (!cfg->prompt) {
+          DBG(("Unable to allocate memory"));
+          retval = PAM_IGNORE;
+          goto done;
+        }
+
+      }
+
+      free(buf);
+      buf = NULL;
+
       converse(pamh, PAM_PROMPT_ECHO_ON,
-               "Insert your U2F device, then press ENTER.\n");
+               cfg->prompt);
     }
 
     retval = do_authentication(cfg, devices, n_devices, pamh);

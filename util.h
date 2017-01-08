@@ -16,6 +16,7 @@
 #define DEVSIZE (((PK_LEN)+(KH_LEN)+(RD_LEN)))
 #define DEFAULT_AUTHFILE_DIR_VAR "XDG_CONFIG_HOME"
 #define DEFAULT_AUTHFILE "/Yubico/u2f_keys"
+#define DEFAULT_PROMPT "Insert your U2F device, then press ENTER."
 #define DEFAULT_ORIGIN_PREFIX "pam://"
 
 #if defined(DEBUG_PAM)
@@ -45,6 +46,7 @@ typedef struct {
   const char *auth_file;
   const char *origin;
   const char *appid;
+  const char *prompt;
 } cfg_t;
 
 typedef struct {
