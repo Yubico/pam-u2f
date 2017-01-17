@@ -47,8 +47,7 @@ int main(int argc, char *argv[])
 
   if (args_info.help_given) {
     cmdline_parser_print_help();
-    printf
-        ("\nReport bugs at <https://github.com/Yubico/pam-u2f>.\n");
+    printf("\nReport bugs at <https://github.com/Yubico/pam-u2f>.\n");
     exit(EXIT_SUCCESS);
   }
 
@@ -86,7 +85,8 @@ int main(int argc, char *argv[])
 
   s_rc = u2fs_set_origin(ctx, origin);
   if (s_rc != U2FS_OK) {
-    printf("error: u2fs_set_origin (%d): %s\n", s_rc, u2fs_strerror(s_rc));
+    fprintf(stderr, "error: u2fs_set_origin (%d): %s\n", s_rc,
+            u2fs_strerror(s_rc));
     exit(EXIT_FAILURE);
   }
 
@@ -117,7 +117,7 @@ int main(int argc, char *argv[])
     user = passwd->pw_name;
   }
 
-  if (u2fh_global_init(args_info.debug_flag ? U2FS_DEBUG : 0) != U2FH_OK
+  if (u2fh_global_init(args_info.debug_flag ? U2FH_DEBUG : 0) != U2FH_OK
       || u2fh_devs_init(&devs) != U2FH_OK) {
     fprintf(stderr, "Unable to initialize libu2f-host\n");
     exit(EXIT_FAILURE);

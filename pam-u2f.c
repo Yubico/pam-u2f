@@ -2,15 +2,6 @@
  *  Copyright (C) 2014-2015 Yubico AB - See COPYING
  */
 
-/*
- * Define _GNU_SOURCE on linux in order to have
- *__USE_GNU defined and not get a warning about
- * secure_getenv during compilation
- */
-#ifdef HAVE_SECURE_GETENV
-#define _GNU_SOURCE
-#endif
-
 /* Define which PAM interfaces we provide */
 #define PAM_SM_AUTH
 
