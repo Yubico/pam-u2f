@@ -59,7 +59,7 @@ AC_ARG_ENABLE([gcc-warnings],
 
 if test "$gl_gcc_warnings" = yes; then
   nw="$nw -Wsystem-headers"         # Don't let system headers trigger warnings
-  nw="$nw -Wpadded"                 # Struct's arenot padded
+  nw="$nw -Wpadded"                 # Struct's are not padded
   nw="$nw -Wc++-compat"             # We don't care strongly about C++ compilers
   nw="$nw -Wtraditional"            # Warns on #elif which we use often
   nw="$nw -Wtraditional-conversion" # Too many warnings for now
