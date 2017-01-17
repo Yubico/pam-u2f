@@ -117,7 +117,7 @@ int main(int argc, char *argv[])
     user = passwd->pw_name;
   }
 
-  if (u2fh_global_init(args_info.debug_flag ? U2FS_DEBUG : 0) != U2FH_OK
+  if (u2fh_global_init(args_info.debug_flag ? U2FH_DEBUG : 0) != U2FH_OK
       || u2fh_devs_init(&devs) != U2FH_OK) {
     fprintf(stderr, "Unable to initialize libu2f-host\n");
     exit(EXIT_FAILURE);
