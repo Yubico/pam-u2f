@@ -170,7 +170,7 @@ get_devices_from_authfile(const char *authfile, const char *username,
         devices[i].key_len = strlen(s_token) / 2;
 
         if (verbose)
-          D(("Length of key number %d is %d", i + 1, devices[i].key_len));
+          D(("Length of key number %d is %zu", i + 1, devices[i].key_len));
 
         devices[i].publicKey =
             malloc((sizeof(unsigned char) * devices[i].key_len));
