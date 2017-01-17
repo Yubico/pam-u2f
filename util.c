@@ -12,6 +12,7 @@
 #include <sys/stat.h>
 #include <pwd.h>
 #include <errno.h>
+#include <unistd.h>
 
 #include <string.h>
 
