@@ -167,6 +167,10 @@ looks like:
 
  auth sufficient pam_u2f.so authfile=/etc/u2f_mappings
 
+IMPORTANT: On dynamics networks (e.g. where hostnames are set by DHCP),
+users should not rely on the default origin and appid ("pam://$HOSTNAME")
+but set those parameters explicitly to the same value.
+
 == Individual authorization mapping by user
 Each user creates a `~/.config/Yubico/u2f_keys` file inside of their home
 directory and places the mapping in that file, the file must have only one
