@@ -242,9 +242,15 @@ int do_authentication(const cfg_t * cfg, const device_t * devices,
   unsigned max_index = 0;
   unsigned max_index_prev = 0;
 
-  if (u2fh_global_init(0) != U2FH_OK || u2fh_devs_init(&devs) != U2FH_OK) {
-    if (cfg->debug)
-      D(("Unable to initialize libu2f-host"));
+  h_rc = u2fh_global_init(cfg->debug ? U2FH_DEBUG : 0);
+  if (h_rc != U2FH_OK) {
+    D(("Unable to initialize libu2f-host: %s", u2fh_strerror(h_rc)));
+    return retval;
+  }
+  h_rc = u2fh_devs_init(&devs);
+  if (h_rc != U2FH_OK) {
+    D(("Unable to initialize libu2f-host device handles: %s",
+      u2fh_strerror(h_rc)));
     return retval;
   }
 
@@ -262,9 +268,14 @@ int do_authentication(const cfg_t * cfg, const device_t * devices,
   if (cfg->debug)
     D(("Device max index is %u", max_index));
 
-  if (u2fs_global_init(0) != U2FS_OK || u2fs_init(&ctx) != U2FS_OK) {
-    if (cfg->debug)
-      D(("Unable to initialize libu2f-server"));
+  s_rc = u2fs_global_init(cfg->debug ? U2FS_DEBUG : 0);
+  if (s_rc != U2FS_OK) {
+    D(("Unable to initialize libu2f-server: %s", u2fs_strerror(s_rc)));
+    return retval;
+  }
+  s_rc = u2fs_init(&ctx);
+  if (s_rc != U2FS_OK) {
+    D(("Unable to initialize libu2f-server context: %s", u2fs_strerror(s_rc)));
     return retval;
   }
 
