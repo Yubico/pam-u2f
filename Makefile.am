@@ -20,6 +20,7 @@ pam_u2f_la_LDFLAGS = -module -avoid-version
 
 DEFS = -DDEBUG_PAM -DPAM_DEBUG @DEFS@
 
+if ENABLE_MAN
 dist_man8_MANS = $(top_builddir)/man/pam_u2f.8
 DISTCLEANFILES = $(dist_man8_MANS)
 
@@ -30,6 +31,7 @@ SUFFIXES = .8.txt .8
 
 .8.txt.8:
 	$(A2X) --format=manpage -L -a revdate="Version $(VERSION)" $<
+endif
 
 # Release
 
