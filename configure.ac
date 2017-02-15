@@ -9,6 +9,8 @@ AM_SILENT_RULES([yes])
 AC_USE_SYSTEM_EXTENSIONS
 AM_PROG_CC_C_O
 
+AC_CANONICAL_HOST
+
 m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
 
 AC_LIBTOOL_WIN32_DLL
@@ -36,16 +38,21 @@ AC_CHECK_LIB([pam], [pam_start])
 PKG_CHECK_MODULES([LIBU2FHOST], [u2f-host], [], [])
 PKG_CHECK_MODULES([LIBU2FSERVER], [u2f-server], [], [])
 
-AC_SUBST(PAMDIR, "/lib/x86_64-linux-gnu/security")
+# Default PAM module locations.
+case "$host" in
+     *darwin*)  PAMDIR="/usr/lib/pam";;
+     *linux*)   PAMDIR="/lib/x86_64-linux-gnu/security";;
+     *)         PAMDIR="/usr/lib"
+esac
 AC_ARG_WITH(pam-dir,
-  AC_HELP_STRING([--with-pam-dir=DIR],
-                 [Where to install PAM module [[PREFIX/lib/x86_64-linux-gnu/security]]]),
-            [case "${withval}" in
-            /*) PAMDIR="${withval}";;
-            ./*|../*) AC_MSG_ERROR(Bad value for --with-pam-dir);;
-            *)  PAMDIR="\$(exec_prefix)/lib/${withval}";;
-            esac])
-AC_MSG_NOTICE([PAM installation path $PAMDIR])
+  AC_HELP_STRING([--with-pam-dir=DIR], [Where to install the PAM module]), [
+    case "${withval}" in
+      /*) PAMDIR="${withval}";;
+      ./*|../*) AC_MSG_ERROR(Bad value for --with-pam-dir);;
+      *);;
+  esac
+])
+AC_SUBST(PAMDIR, "$PAMDIR")
 
 # Check for secure_getenv
 am_save_CFLAGS="$CFLAGS"
