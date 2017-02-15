@@ -90,9 +90,7 @@ int pam_sm_authenticate(pam_handle_t * pamh, int flags, int argc,
   char buffer[BUFSIZE];
   char *buf = NULL;
   char *authfile_dir;
-  char *prompt = NULL;
   int authfile_dir_len;
-  int prompt_len;
   int pgu_ret, gpn_ret;
   int retval = PAM_IGNORE;
   device_t *devices = NULL;
@@ -246,37 +244,8 @@ int pam_sm_authenticate(pam_handle_t * pamh, int flags, int argc,
 
   if (cfg->manual == 0) {
     if (cfg->interactive) {
-      if (!cfg->prompt) {
-        buf = NULL;
-        prompt_len =
-            strlen(DEFAULT_PROMPT) + strlen("\n") + 1;
-        buf = malloc(sizeof(char) * (prompt_len));
-
-        if (!buf) {
-          DBG(("Unable to allocate memory"));
-          retval = PAM_IGNORE;
-          goto done;
-        }
-
-        strcpy(buf, DEFAULT_PROMPT);
-        strcat(buf, "\n");
-
-        DBG(("Using default prompt %s", buf));
-
-        cfg->prompt = strdup(buf);
-        if (!cfg->prompt) {
-          DBG(("Unable to allocate memory"));
-          retval = PAM_IGNORE;
-          goto done;
-        }
-
-      }
-
-      free(buf);
-      buf = NULL;
-
       converse(pamh, PAM_PROMPT_ECHO_ON,
-               cfg->prompt);
+          cfg->prompt != NULL ? cfg->prompt : DEFAULT_PROMPT);
     }
 
     retval = do_authentication(cfg, devices, n_devices, pamh);
