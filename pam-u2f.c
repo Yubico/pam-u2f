@@ -49,6 +49,8 @@ static void parse_cfg(int flags, int argc, const char **argv, cfg_t * cfg)
       cfg->origin = argv[i] + 7;
     if (strncmp(argv[i], "appid=", 6) == 0)
       cfg->appid = argv[i] + 6;
+    if (strncmp(argv[i], "prompt=", 7) == 0)
+      cfg->prompt = argv[i] + 7;
   }
 
   if (cfg->debug) {
@@ -66,6 +68,7 @@ static void parse_cfg(int flags, int argc, const char **argv, cfg_t * cfg)
     D(("authfile=%s", cfg->auth_file ? cfg->auth_file : "(null)"));
     D(("origin=%s", cfg->origin ? cfg->origin : "(null)"));
     D(("appid=%s", cfg->appid ? cfg->appid : "(null)"));
+    D(("prompt=%s", cfg->prompt ? cfg->prompt : "(null)"));
   }
 }
 
@@ -242,7 +245,7 @@ int pam_sm_authenticate(pam_handle_t * pamh, int flags, int argc,
   if (cfg->manual == 0) {
     if (cfg->interactive) {
       converse(pamh, PAM_PROMPT_ECHO_ON,
-               "Insert your U2F device, then press ENTER.\n");
+          cfg->prompt != NULL ? cfg->prompt : DEFAULT_PROMPT);
     }
 
     retval = do_authentication(cfg, devices, n_devices, pamh);
