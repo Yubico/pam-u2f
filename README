@@ -21,9 +21,8 @@ build it as follows.
   $ make check
 -----------
 
-Both the Yubico U2F host and server libaries are needed
-https://developers.yubico.com/libu2f-host[libu2f-host],
-https://developers.yubico.com/libu2f-server[libu2f-server]
+Both the Yubico U2F https://developers.yubico.com/libu2f-host[host] and
+https://developers.yubico.com/libu2f-server[server] libaries are needed.
 
 Building from Git
 -----------------
