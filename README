@@ -19,14 +19,6 @@ details check the <<devices, Multiple Devices>> section.
 For more information visit the project page
 https://developers.yubico.com/pam-u2f/[pam-u2f project].
 
-License
--------
-
-The project is licensed under a BSD license. See the file COPYING for
-exact wording. For any copyright year range specified as YYYY-ZZZZ in
-this package note that the range specifies every single year in that
-closed interval.
-
 [[building]]
 Building
 --------
@@ -212,9 +204,3 @@ authentication against them is attempted sequentially as they are defined
 in the configuration file of the module. If during an authentication
 attempt a connected device is removed or a new device is plugged in,
 the authentication restarts from the top of the list.
-
-Portability
------------
-
-The main development platforms are Debian GNU/Linux and Ubuntu and they
-should be well supported.
