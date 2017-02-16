@@ -124,7 +124,10 @@ Set to prompt a message to remind to touch the device.
 [[files]]
 Authorization Mapping Files
 ---------------------------
-A mapping must be made between the YubiKey token and the user name.
+A mapping must be made between the YubiKey token and the user name,
+see <<registration, here>> for details on how to perform the registration
+using the bundled tool.
+
 There are two ways to do this, either centrally in one file, or
 individually, where users can create the mapping in their home directories.
 If the central authorization mapping file is being used, user home directory
@@ -165,6 +168,7 @@ line:
 
 This is much the same concept as the SSH authorized_keys file.
 
+[[registration]]
 Obtaining key-handles and public keys
 -------------------------------------
 
