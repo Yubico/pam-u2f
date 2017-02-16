@@ -16,11 +16,9 @@
 
 #include <string.h>
 
-int
-get_devices_from_authfile(const char *authfile, const char *username,
-                          unsigned max_devs, int verbose,
-                          device_t * devices, unsigned *n_devs)
-{
+int get_devices_from_authfile(const char *authfile, const char *username,
+                              unsigned max_devs, int verbose, device_t *devices,
+                              unsigned *n_devs) {
 
   char *buf;
   char *s_user, *s_token;
@@ -69,8 +67,7 @@ get_devices_from_authfile(const char *authfile, const char *username,
     return retval;
   }
 
-  if (strcmp(pw->pw_name, username) != 0 &&
-      strcmp(pw->pw_name, "root") != 0) {
+  if (strcmp(pw->pw_name, username) != 0 && strcmp(pw->pw_name, "root") != 0) {
     if (strcmp(username, "root") != 0) {
       D(("The owner of the authentication file is neither %s nor root",
          username));
@@ -99,7 +96,7 @@ get_devices_from_authfile(const char *authfile, const char *username,
   }
 
   retval = -2;
-  while (fgets(buf, (int) (DEVSIZE * (max_devs - 1)), opwfile)) {
+  while (fgets(buf, (int)(DEVSIZE * (max_devs - 1)), opwfile)) {
     char *saveptr = NULL;
     if (buf[strlen(buf) - 1] == '\n')
       buf[strlen(buf) - 1] = '\0';
@@ -112,7 +109,7 @@ get_devices_from_authfile(const char *authfile, const char *username,
       if (verbose)
         D(("Matched user: %s", s_user));
 
-      retval = -1;              //We found at least one line for the user
+      retval = -1; // We found at least one line for the user
 
       *n_devs = 0;
 
@@ -173,7 +170,7 @@ get_devices_from_authfile(const char *authfile, const char *username,
           D(("Length of key number %d is %zu", i + 1, devices[i].key_len));
 
         devices[i].publicKey =
-            malloc((sizeof(unsigned char) * devices[i].key_len));
+          malloc((sizeof(unsigned char) * devices[i].key_len));
 
         if (!devices[i].publicKey) {
           if (verbose)
@@ -188,7 +185,7 @@ get_devices_from_authfile(const char *authfile, const char *username,
 
         for (j = 0; j < devices[i].key_len; j++) {
           sscanf(&s_token[2 * j], "%2x",
-                 (unsigned int *) &(devices[i].publicKey[j]));
+                 (unsigned int *)&(devices[i].publicKey[j]));
         }
 
         i++;
@@ -207,8 +204,7 @@ get_devices_from_authfile(const char *authfile, const char *username,
   return retval;
 }
 
-void free_devices(device_t * devices, const unsigned n_devs)
-{
+void free_devices(device_t *devices, const unsigned n_devs) {
   unsigned i;
 
   if (!devices)
@@ -224,12 +220,10 @@ void free_devices(device_t * devices, const unsigned n_devs)
 
   free(devices);
   devices = NULL;
-
 }
 
-int do_authentication(const cfg_t * cfg, const device_t * devices,
-                      const unsigned n_devs, pam_handle_t * pamh)
-{
+int do_authentication(const cfg_t *cfg, const device_t *devices,
+                      const unsigned n_devs, pam_handle_t *pamh) {
   u2fs_ctx_t *ctx;
   u2fs_auth_res_t *auth_result;
   u2fs_rc s_rc;
@@ -250,7 +244,7 @@ int do_authentication(const cfg_t * cfg, const device_t * devices,
   h_rc = u2fh_devs_init(&devs);
   if (h_rc != U2FH_OK) {
     D(("Unable to initialize libu2f-host device handles: %s",
-      u2fh_strerror(h_rc)));
+       u2fh_strerror(h_rc)));
     return retval;
   }
 
@@ -321,23 +315,20 @@ int do_authentication(const cfg_t * cfg, const device_t * devices,
     if (cfg->debug)
       D(("Challenge: %s", buf));
 
-    if ((h_rc =
-         u2fh_authenticate(devs, buf, cfg->origin, &response,
-                           1)) == U2FH_OK) {
+    if ((h_rc = u2fh_authenticate(devs, buf, cfg->origin, &response, 1)) ==
+        U2FH_OK) {
       if (cfg->debug)
         D(("Response: %s", response));
 
       retval = -1;
 
-      if (u2fs_authentication_verify(ctx, response, &auth_result) ==
-          U2FS_OK) {
+      if (u2fs_authentication_verify(ctx, response, &auth_result) == U2FS_OK) {
         retval = 1;
         break;
       }
     } else {
       if (cfg->debug)
-        D(("Unable to communicate to the device, %s",
-           u2fh_strerror(h_rc)));
+        D(("Unable to communicate to the device, %s", u2fh_strerror(h_rc)));
     }
 
     i++;
@@ -364,14 +355,12 @@ int do_authentication(const cfg_t * cfg, const device_t * devices,
   u2fs_global_done();
 
   return retval;
-
 }
 
 #define MAX_PROMPT_LEN (1024)
 
-int do_manual_authentication(const cfg_t * cfg, const device_t * devices,
-                             const unsigned n_devs, pam_handle_t * pamh)
-{
+int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
+                             const unsigned n_devs, pam_handle_t *pamh) {
   u2fs_ctx_t *ctx_arr[n_devs];
   u2fs_auth_res_t *auth_result;
   u2fs_rc s_rc;
@@ -410,24 +399,21 @@ int do_manual_authentication(const cfg_t * cfg, const device_t * devices,
     if (cfg->debug)
       D(("Attempting authentication with device number %d", i + 1));
 
-    if ((s_rc =
-         u2fs_set_keyHandle(ctx_arr[i],
-                            devices[i].keyHandle)) != U2FS_OK) {
+    if ((s_rc = u2fs_set_keyHandle(ctx_arr[i], devices[i].keyHandle)) !=
+        U2FS_OK) {
       if (cfg->debug)
         D(("Unable to set keyHandle: %s", u2fs_strerror(s_rc)));
       return retval;
     }
 
-    if ((s_rc =
-         u2fs_set_publicKey(ctx_arr[i],
-                            devices[i].publicKey)) != U2FS_OK) {
+    if ((s_rc = u2fs_set_publicKey(ctx_arr[i], devices[i].publicKey)) !=
+        U2FS_OK) {
       if (cfg->debug)
         D(("Unable to set publicKey %s", u2fs_strerror(s_rc)));
       return retval;
     }
 
-    if ((s_rc =
-         u2fs_authentication_challenge(ctx_arr[i], &buf)) != U2FS_OK) {
+    if ((s_rc = u2fs_authentication_challenge(ctx_arr[i], &buf)) != U2FS_OK) {
       if (cfg->debug)
         D(("Unable to produce authentication challenge: %s",
            u2fs_strerror(s_rc)));
@@ -438,13 +424,12 @@ int do_manual_authentication(const cfg_t * cfg, const device_t * devices,
       D(("Challenge: %s", buf));
 
     if (i == 0) {
-      sprintf(prompt,
-              "Now please copy-paste the below challenge(s) to 'u2f-host -aauthenticate -o %s'",
+      sprintf(prompt, "Now please copy-paste the below challenge(s) to "
+                      "'u2f-host -aauthenticate -o %s'",
               cfg->origin);
       converse(pamh, PAM_TEXT_INFO, prompt);
     }
     converse(pamh, PAM_TEXT_INFO, buf);
-
   }
 
   converse(pamh, PAM_TEXT_INFO,
@@ -458,8 +443,8 @@ int do_manual_authentication(const cfg_t * cfg, const device_t * devices,
     converse(pamh, PAM_TEXT_INFO, response);
 
     if (retval != 1 &&
-        u2fs_authentication_verify(ctx_arr[i], response, &auth_result)
-        == U2FS_OK) {
+        u2fs_authentication_verify(ctx_arr[i], response, &auth_result) ==
+          U2FS_OK) {
       retval = 1;
     }
     free(response);
@@ -470,17 +455,15 @@ int do_manual_authentication(const cfg_t * cfg, const device_t * devices,
   u2fs_global_done();
 
   return retval;
-
 }
 
-static int _converse(pam_handle_t * pamh, int nargs,
+static int _converse(pam_handle_t *pamh, int nargs,
                      const struct pam_message **message,
-                     struct pam_response **response)
-{
+                     struct pam_response **response) {
   struct pam_conv *conv;
   int retval;
 
-  retval = pam_get_item(pamh, PAM_CONV, (void *) &conv);
+  retval = pam_get_item(pamh, PAM_CONV, (void *)&conv);
 
   if (retval != PAM_SUCCESS) {
     return retval;
@@ -489,11 +472,8 @@ static int _converse(pam_handle_t * pamh, int nargs,
   return conv->conv(nargs, message, response, conv->appdata_ptr);
 }
 
-char *converse(pam_handle_t * pamh, int echocode, const char *prompt)
-{
-  const struct pam_message msg = {.msg_style = echocode,
-    .msg = prompt
-  };
+char *converse(pam_handle_t *pamh, int echocode, const char *prompt) {
+  const struct pam_message msg = {.msg_style = echocode, .msg = prompt};
   const struct pam_message *msgs = &msg;
   struct pam_response *resp = NULL;
   int retval = _converse(pamh, 1, &msgs, &resp);
