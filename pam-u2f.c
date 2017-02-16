@@ -19,13 +19,10 @@
 
 /* If secure_getenv is not defined, define it here */
 #ifndef HAVE_SECURE_GETENV
-char *secure_getenv(const char *name) {
-  return NULL;
-}
+char *secure_getenv(const char *name) { return NULL; }
 #endif
 
-static void parse_cfg(int flags, int argc, const char **argv, cfg_t * cfg)
-{
+static void parse_cfg(int flags, int argc, const char **argv, cfg_t *cfg) {
   int i;
   memset(cfg, 0, sizeof(cfg_t));
   for (i = 0; i < argc; i++) {
@@ -75,12 +72,14 @@ static void parse_cfg(int flags, int argc, const char **argv, cfg_t * cfg)
 #ifdef DBG
 #undef DBG
 #endif
-#define DBG(x) if (cfg->debug) { D(x); }
+#define DBG(x)                                                                 \
+  if (cfg->debug) {                                                            \
+    D(x);                                                                      \
+  }
 
 /* PAM entry point for authentication verification */
-int pam_sm_authenticate(pam_handle_t * pamh, int flags, int argc,
-                        const char **argv)
-{
+int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
+                        const char **argv) {
 
   struct passwd *pw = NULL, pw_s;
   const char *user = NULL;
@@ -104,9 +103,8 @@ int pam_sm_authenticate(pam_handle_t * pamh, int flags, int argc,
       goto done;
     }
 
-    if (gethostname
-        (buffer + strlen(DEFAULT_ORIGIN_PREFIX),
-         BUFSIZE - strlen(DEFAULT_ORIGIN_PREFIX)) == -1) {
+    if (gethostname(buffer + strlen(DEFAULT_ORIGIN_PREFIX),
+                    BUFSIZE - strlen(DEFAULT_ORIGIN_PREFIX)) == -1) {
       DBG(("Unable to get host name"));
       goto done;
     }
@@ -152,8 +150,8 @@ int pam_sm_authenticate(pam_handle_t * pamh, int flags, int argc,
   DBG(("Requesting authentication for user %s", user));
 
   gpn_ret = getpwnam_r(user, &pw_s, buffer, sizeof(buffer), &pw);
-  if (gpn_ret != 0 || pw == NULL || pw->pw_dir == NULL
-      || pw->pw_dir[0] != '/') {
+  if (gpn_ret != 0 || pw == NULL || pw->pw_dir == NULL ||
+      pw->pw_dir[0] != '/') {
     DBG(("Unable to retrieve credentials for user %s, (%s)", user,
          strerror(errno)));
     retval = PAM_USER_UNKNOWN;
@@ -170,8 +168,7 @@ int pam_sm_authenticate(pam_handle_t * pamh, int flags, int argc,
       DBG(("Variable %s is not set. Using default value ($HOME/.config/)",
            DEFAULT_AUTHFILE_DIR_VAR));
       authfile_dir_len =
-          strlen(pw->pw_dir) + strlen("/.config") +
-          strlen(DEFAULT_AUTHFILE) + 1;
+        strlen(pw->pw_dir) + strlen("/.config") + strlen(DEFAULT_AUTHFILE) + 1;
       buf = malloc(sizeof(char) * (authfile_dir_len));
 
       if (!buf) {
@@ -184,10 +181,8 @@ int pam_sm_authenticate(pam_handle_t * pamh, int flags, int argc,
       strcat(buf, "/.config");
       strcat(buf, DEFAULT_AUTHFILE);
     } else {
-      DBG(("Variable %s set to %s", DEFAULT_AUTHFILE_DIR_VAR,
-           authfile_dir));
-      authfile_dir_len =
-          strlen(authfile_dir) + strlen(DEFAULT_AUTHFILE) + 1;
+      DBG(("Variable %s set to %s", DEFAULT_AUTHFILE_DIR_VAR, authfile_dir));
+      authfile_dir_len = strlen(authfile_dir) + strlen(DEFAULT_AUTHFILE) + 1;
       buf = malloc(sizeof(char) * (authfile_dir_len));
 
       if (!buf) {
@@ -214,16 +209,16 @@ int pam_sm_authenticate(pam_handle_t * pamh, int flags, int argc,
   } else {
     DBG(("Using authentication file %s", cfg->auth_file));
   }
-  retval =
-      get_devices_from_authfile(cfg->auth_file, user, cfg->max_devs,
-                                cfg->debug, devices, &n_devices);
+  retval = get_devices_from_authfile(cfg->auth_file, user, cfg->max_devs,
+                                     cfg->debug, devices, &n_devices);
   if (retval != 1) {
     if (cfg->nouserok) {
-      DBG(("Unable to get devices from file %s but nouserok specified. Skipping authentication", cfg->auth_file));
+      DBG(("Unable to get devices from file %s but nouserok specified. "
+           "Skipping authentication",
+           cfg->auth_file));
       retval = PAM_SUCCESS;
       goto done;
-    }
-    else {
+    } else {
       DBG(("Unable to get devices from file %s. Aborting", cfg->auth_file));
       retval = PAM_AUTHINFO_UNAVAIL;
       goto done;
@@ -245,7 +240,7 @@ int pam_sm_authenticate(pam_handle_t * pamh, int flags, int argc,
   if (cfg->manual == 0) {
     if (cfg->interactive) {
       converse(pamh, PAM_PROMPT_ECHO_ON,
-          cfg->prompt != NULL ? cfg->prompt : DEFAULT_PROMPT);
+               cfg->prompt != NULL ? cfg->prompt : DEFAULT_PROMPT);
     }
 
     retval = do_authentication(cfg, devices, n_devices, pamh);
@@ -276,11 +271,9 @@ done:
   DBG(("done. [%s]", pam_strerror(pamh, retval)));
 
   return retval;
-
 }
 
-PAM_EXTERN int
-pam_sm_setcred(pam_handle_t * pamh, int flags, int argc, const char **argv)
-{
+PAM_EXTERN int pam_sm_setcred(pam_handle_t *pamh, int flags, int argc,
+                              const char **argv) {
   return PAM_SUCCESS;
 }
