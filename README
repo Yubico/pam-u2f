@@ -177,8 +177,7 @@ a token should be first registered. This can be done by using the command line
 configuration tool provided with the module:
 
 ----
-$ pamu2fcfg -uusername -opam://myorigin \
--ipam://myappid
+$ pamu2fcfg -uusername -opam://myorigin -ipam://myappid
 ----
 
 the tool will register a connected token by using the specified origin and
