@@ -1,34 +1,12 @@
-#!/bin/sh
-set -e
-set -x
+#!/usr/bin/env bash
+set -evx
+env | sort
 
-HERE=$PWD
-cd /tmp
-
-export PKG_CONFIG_PATH=/tmp/hidapi/pc:$PKG_CONFIG_PATH
-git clone git://github.com/signal11/hidapi.git
-cd hidapi
-./bootstrap && ./configure && make && sudo make install
-sudo ldconfig
-
-cd ..
-
-export PKG_CONFIG_PATH=/tmp/libu2f-server/u2f-server:$PKG_CONFIG_PATH
-git clone https://github.com/yubico/libu2f-server.git
-cd libu2f-server
-autoreconf -i
-./configure --disable-h2a && make && sudo make install
-sudo ldconfig
-
-cd ..
-
-export PKG_CONFIG_PATH=/tmp/libu2f-host/u2f-host:$PKG_CONFIG_PATH
-git clone https://github.com/yubico/libu2f-host.git
-cd libu2f-host
-autoreconf -i
-./configure && make && sudo make install
-sudo ldconfig
-
-cd $HERE
-
-autoreconf -i && ./configure --disable-silent-rules && make check
+if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+  ./build-aux/travis-build-osx
+elif [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+  ./build-aux/travis-build-linux
+else
+  >&2 echo "Unknown OS: $TRAVIS_OS_NAME"
+  exit 1
+fi
