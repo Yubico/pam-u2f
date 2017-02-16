@@ -1,7 +1,0 @@
-Author: Yubico
-Basename: pam-u2f
-Homepage: https://developers.yubico.com/pam-u2f/
-License: PAM
-Name: pam-u2f
-Project: pam-u2f
-Summary: Pluggable Authentication Module (PAM) Universal 2nd Factor (U2F)
