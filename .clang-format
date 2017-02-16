@@ -1,0 +1,7 @@
+---
+BasedOnStyle:  LLVM
+ConstructorInitializerIndentWidth: 2
+ContinuationIndentWidth: 2
+IndentCaseLabels: true
+PenaltyBreakBeforeFirstCallParameter: 1000
+SortIncludes: false

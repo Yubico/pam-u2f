@@ -20,8 +20,7 @@
 
 #include "cmdline.h"
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
   int exit_code = EXIT_FAILURE;
   struct gengetopt_args_info args_info;
   char buf[BUFSIZE];
@@ -41,7 +40,6 @@ int main(int argc, char *argv[])
   unsigned i;
   unsigned max_index = 0;
 
-
   if (cmdline_parser(argc, argv, &args_info) != 0)
     exit(EXIT_FAILURE);
 
@@ -60,8 +58,7 @@ int main(int argc, char *argv[])
 
   s_rc = u2fs_init(&ctx);
   if (s_rc != U2FS_OK) {
-    fprintf(stderr, "error: u2fs_init (%d): %s\n", s_rc,
-            u2fs_strerror(s_rc));
+    fprintf(stderr, "error: u2fs_init (%d): %s\n", s_rc, u2fs_strerror(s_rc));
     exit(EXIT_FAILURE);
   }
 
@@ -72,8 +69,8 @@ int main(int argc, char *argv[])
       fprintf(stderr, "strcpy failed\n");
       exit(EXIT_FAILURE);
     }
-    if (gethostname(buf + strlen(PAM_PREFIX), BUFSIZE - strlen(PAM_PREFIX))
-        == -1) {
+    if (gethostname(buf + strlen(PAM_PREFIX), BUFSIZE - strlen(PAM_PREFIX)) ==
+        -1) {
       perror("gethostname");
       exit(EXIT_FAILURE);
     }
@@ -81,7 +78,7 @@ int main(int argc, char *argv[])
   }
 
   if (args_info.verbose_given)
-      fprintf(stderr, "Setting origin to %s\n", origin);
+    fprintf(stderr, "Setting origin to %s\n", origin);
 
   s_rc = u2fs_set_origin(ctx, origin);
   if (s_rc != U2FS_OK) {
@@ -117,8 +114,8 @@ int main(int argc, char *argv[])
     user = passwd->pw_name;
   }
 
-  if (u2fh_global_init(args_info.debug_flag ? U2FH_DEBUG : 0) != U2FH_OK
-      || u2fh_devs_init(&devs) != U2FH_OK) {
+  if (u2fh_global_init(args_info.debug_flag ? U2FH_DEBUG : 0) != U2FH_OK ||
+      u2fh_devs_init(&devs) != U2FH_OK) {
     fprintf(stderr, "Unable to initialize libu2f-host\n");
     exit(EXIT_FAILURE);
   }
@@ -132,8 +129,8 @@ int main(int argc, char *argv[])
 
   if (h_rc == U2FH_NO_U2F_DEVICE) {
     for (i = 0; i < TIMEOUT; i += FREQUENCY) {
-      fprintf(stderr,
-              "\rNo U2F device available, please insert one now, you have %2d seconds",
+      fprintf(stderr, "\rNo U2F device available, please insert one now, you "
+                      "have %2d seconds",
               TIMEOUT - i);
       fflush(stderr);
       sleep(FREQUENCY);
@@ -153,8 +150,8 @@ int main(int argc, char *argv[])
   }
 
   if (h_rc != U2FH_OK) {
-    fprintf(stderr,
-            "\rNo device found. Aborting.                                         \n");
+    fprintf(stderr, "\rNo device found. Aborting.                              "
+                    "           \n");
     exit(EXIT_FAILURE);
   }
 
@@ -165,9 +162,7 @@ int main(int argc, char *argv[])
     exit(EXIT_FAILURE);
   }
 
-  h_rc =
-      u2fh_register(devs, p, origin, &response,
-                    U2FH_REQUEST_USER_PRESENCE);
+  h_rc = u2fh_register(devs, p, origin, &response, U2FH_REQUEST_USER_PRESENCE);
   if (h_rc != U2FS_OK) {
     fprintf(stderr, "Unable to generate registration challenge, %s (%d)\n",
             u2fh_strerror(h_rc), h_rc);

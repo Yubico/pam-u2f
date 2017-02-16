@@ -39,46 +39,78 @@ extern "C" {
 #endif
 
 /** @brief Where the command line options are stored */
-struct gengetopt_args_info
-{
+struct gengetopt_args_info {
   const char *help_help; /**< @brief Print help and exit help description.  */
-  const char *version_help; /**< @brief Print version and exit help description.  */
-  char * origin_arg;	/**< @brief Origin URL to use during registration. Defaults to pam://hostname.  */
-  char * origin_orig;	/**< @brief Origin URL to use during registration. Defaults to pam://hostname original value given at command line.  */
-  const char *origin_help; /**< @brief Origin URL to use during registration. Defaults to pam://hostname help description.  */
-  char * appid_arg;	/**< @brief Application ID to use during registration. Defaults to pam://hostname.  */
-  char * appid_orig;	/**< @brief Application ID to use during registration. Defaults to pam://hostname original value given at command line.  */
-  const char *appid_help; /**< @brief Application ID to use during registration. Defaults to pam://hostname help description.  */
-  int debug_flag;	/**< @brief Print debug information (highly verbose) (default=off).  */
-  const char *debug_help; /**< @brief Print debug information (highly verbose) help description.  */
-  int verbose_flag;	/**< @brief Print information about chosen origin and appid (default=off).  */
-  const char *verbose_help; /**< @brief Print information about chosen origin and appid help description.  */
-  char * username_arg;	/**< @brief The name of the user registering the device. Defaults to the current user name.  */
-  char * username_orig;	/**< @brief The name of the user registering the device. Defaults to the current user name original value given at command line.  */
-  const char *username_help; /**< @brief The name of the user registering the device. Defaults to the current user name help description.  */
-  const char *nouser_help; /**< @brief Print only registration information (keyHandle and public key). Useful for appending help description.  */
-  
-  unsigned int help_given ;	/**< @brief Whether help was given.  */
-  unsigned int version_given ;	/**< @brief Whether version was given.  */
-  unsigned int origin_given ;	/**< @brief Whether origin was given.  */
-  unsigned int appid_given ;	/**< @brief Whether appid was given.  */
-  unsigned int debug_given ;	/**< @brief Whether debug was given.  */
-  unsigned int verbose_given ;	/**< @brief Whether verbose was given.  */
-  unsigned int username_given ;	/**< @brief Whether username was given.  */
-  unsigned int nouser_given ;	/**< @brief Whether nouser was given.  */
+  const char
+    *version_help; /**< @brief Print version and exit help description.  */
+  char *
+    origin_arg; /**< @brief Origin URL to use during registration. Defaults to
+                   pam://hostname.  */
+  char
+    *
+      origin_orig; /**< @brief Origin URL to use during registration. Defaults
+                      to pam://hostname original value given at command line. */
+  const char *origin_help; /**< @brief Origin URL to use during registration.
+                              Defaults to pam://hostname help description.  */
+  char *appid_arg;  /**< @brief Application ID to use during registration.
+                       Defaults to pam://hostname.  */
+  char *appid_orig; /**< @brief Application ID to use during registration.
+                       Defaults to pam://hostname original value given at
+                       command line.  */
+  const char
+    *
+      appid_help;         /**< @brief Application ID to use during registration.
+                             Defaults to pam://hostname help description.  */
+  int debug_flag;         /**< @brief Print debug information (highly verbose)
+                             (default=off).  */
+  const char *debug_help; /**< @brief Print debug information (highly verbose)
+                             help description.  */
+  int
+    verbose_flag; /**< @brief Print information about chosen origin and appid
+                     (default=off).  */
+  const char *verbose_help; /**< @brief Print information about chosen origin
+                               and appid help description.  */
+  char *username_arg; /**< @brief The name of the user registering the device.
+                         Defaults to the current user name.  */
+  char
+    *
+      username_orig; /**< @brief The name of the user registering the device.
+                        Defaults to the current user name original value given
+                        at command line.  */
+  const char *username_help; /**< @brief The name of the user registering the
+                                device. Defaults to the current user name help
+                                description.  */
+  const char *nouser_help;   /**< @brief Print only registration information
+                                (keyHandle and public key). Useful for appending
+                                help description.  */
+
+  unsigned int help_given;     /**< @brief Whether help was given.  */
+  unsigned int version_given;  /**< @brief Whether version was given.  */
+  unsigned int origin_given;   /**< @brief Whether origin was given.  */
+  unsigned int appid_given;    /**< @brief Whether appid was given.  */
+  unsigned int debug_given;    /**< @brief Whether debug was given.  */
+  unsigned int verbose_given;  /**< @brief Whether verbose was given.  */
+  unsigned int username_given; /**< @brief Whether username was given.  */
+  unsigned int nouser_given;   /**< @brief Whether nouser was given.  */
 
   int user_group_counter; /**< @brief Counter for group user */
-} ;
+};
 
 /** @brief The additional parameters to pass to parser functions */
-struct cmdline_parser_params
-{
-  int override; /**< @brief whether to override possibly already present options (default 0) */
-  int initialize; /**< @brief whether to initialize the option structure gengetopt_args_info (default 1) */
-  int check_required; /**< @brief whether to check that all required options were provided (default 1) */
-  int check_ambiguity; /**< @brief whether to check for options already specified in the option structure gengetopt_args_info (default 0) */
-  int print_errors; /**< @brief whether getopt_long should print an error message for a bad option (default 1) */
-} ;
+struct cmdline_parser_params {
+  int
+    override; /**< @brief whether to override possibly already present options
+                 (default 0) */
+  int initialize;      /**< @brief whether to initialize the option structure
+                          gengetopt_args_info (default 1) */
+  int check_required;  /**< @brief whether to check that all required options
+                          were provided (default 1) */
+  int check_ambiguity; /**< @brief whether to check for options already
+                          specified in the option structure gengetopt_args_info
+                          (default 0) */
+  int print_errors;    /**< @brief whether getopt_long should print an error
+                          message for a bad option (default 1) */
+};
 
 /** @brief the purpose string of the program */
 extern const char *gengetopt_args_info_purpose;
@@ -96,8 +128,8 @@ extern const char *gengetopt_args_info_help[];
  * @param args_info the structure where option information will be stored
  * @return 0 if everything went fine, NON 0 if an error took place
  */
-int cmdline_parser (int argc, char **argv,
-  struct gengetopt_args_info *args_info);
+int cmdline_parser(int argc, char **argv,
+                   struct gengetopt_args_info *args_info);
 
 /**
  * The command line parser (version with additional parameters - deprecated)
@@ -106,13 +138,14 @@ int cmdline_parser (int argc, char **argv,
  * @param args_info the structure where option information will be stored
  * @param override whether to override possibly already present options
  * @param initialize whether to initialize the option structure my_args_info
- * @param check_required whether to check that all required options were provided
+ * @param check_required whether to check that all required options were
+ * provided
  * @return 0 if everything went fine, NON 0 if an error took place
  * @deprecated use cmdline_parser_ext() instead
  */
-int cmdline_parser2 (int argc, char **argv,
-  struct gengetopt_args_info *args_info,
-  int override, int initialize, int check_required);
+int cmdline_parser2(int argc, char **argv,
+                    struct gengetopt_args_info *args_info, int override,
+                    int initialize, int check_required);
 
 /**
  * The command line parser (version with additional parameters)
@@ -122,9 +155,9 @@ int cmdline_parser2 (int argc, char **argv,
  * @param params additional parameters for the parser
  * @return 0 if everything went fine, NON 0 if an error took place
  */
-int cmdline_parser_ext (int argc, char **argv,
-  struct gengetopt_args_info *args_info,
-  struct cmdline_parser_params *params);
+int cmdline_parser_ext(int argc, char **argv,
+                       struct gengetopt_args_info *args_info,
+                       struct cmdline_parser_params *params);
 
 /**
  * Save the contents of the option struct into an already open FILE stream.
@@ -132,8 +165,7 @@ int cmdline_parser_ext (int argc, char **argv,
  * @param args_info the option struct to dump
  * @return 0 if everything went fine, NON 0 if an error took place
  */
-int cmdline_parser_dump(FILE *outfile,
-  struct gengetopt_args_info *args_info);
+int cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info);
 
 /**
  * Save the contents of the option struct into a (text) file.
@@ -143,7 +175,7 @@ int cmdline_parser_dump(FILE *outfile,
  * @return 0 if everything went fine, NON 0 if an error took place
  */
 int cmdline_parser_file_save(const char *filename,
-  struct gengetopt_args_info *args_info);
+                             struct gengetopt_args_info *args_info);
 
 /**
  * Print the help
@@ -155,7 +187,7 @@ void cmdline_parser_print_help(void);
 void cmdline_parser_print_version(void);
 
 /**
- * Initializes all the fields a cmdline_parser_params structure 
+ * Initializes all the fields a cmdline_parser_params structure
  * to their default values
  * @param params the structure to initialize
  */
@@ -173,13 +205,13 @@ struct cmdline_parser_params *cmdline_parser_params_create(void);
  * (also set default values for options that have a default)
  * @param args_info the structure to initialize
  */
-void cmdline_parser_init (struct gengetopt_args_info *args_info);
+void cmdline_parser_init(struct gengetopt_args_info *args_info);
 /**
  * Deallocates the string fields of the gengetopt_args_info structure
  * (but does not deallocate the structure itself)
  * @param args_info the structure to deallocate
  */
-void cmdline_parser_free (struct gengetopt_args_info *args_info);
+void cmdline_parser_free(struct gengetopt_args_info *args_info);
 
 /**
  * Checks that all the required options were specified
@@ -188,9 +220,8 @@ void cmdline_parser_free (struct gengetopt_args_info *args_info);
  *   possible errors
  * @return
  */
-int cmdline_parser_required (struct gengetopt_args_info *args_info,
-  const char *prog_name);
-
+int cmdline_parser_required(struct gengetopt_args_info *args_info,
+                            const char *prog_name);
 
 #ifdef __cplusplus
 }
