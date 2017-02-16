@@ -19,7 +19,11 @@
 
 /* If secure_getenv is not defined, define it here */
 #ifndef HAVE_SECURE_GETENV
-char *secure_getenv(const char *name) { return NULL; }
+char *secure_getenv(const char *);
+char *secure_getenv(const char *name) {
+  (void)name;
+  return NULL;
+}
 #endif
 
 static void parse_cfg(int flags, int argc, const char **argv, cfg_t *cfg) {
@@ -275,5 +279,10 @@ done:
 
 PAM_EXTERN int pam_sm_setcred(pam_handle_t *pamh, int flags, int argc,
                               const char **argv) {
+  (void)pamh;
+  (void)flags;
+  (void)argc;
+  (void)argv;
+
   return PAM_SUCCESS;
 }

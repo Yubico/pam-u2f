@@ -163,7 +163,7 @@ int main(int argc, char *argv[]) {
   }
 
   h_rc = u2fh_register(devs, p, origin, &response, U2FH_REQUEST_USER_PRESENCE);
-  if (h_rc != U2FS_OK) {
+  if (h_rc != U2FH_OK) {
     fprintf(stderr, "Unable to generate registration challenge, %s (%d)\n",
             u2fh_strerror(h_rc), h_rc);
     exit(EXIT_FAILURE);
