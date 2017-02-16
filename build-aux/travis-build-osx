@@ -7,5 +7,5 @@ brew update
 brew install asciidoc gengetopt hidapi libu2f-host libu2f-server pkg-config check
 
 pushd "$BUILDROOT" &>/dev/null
-  ./autogen.sh && ./configure --disable-silent-rules && make
+  ./autogen.sh && ./configure --disable-silent-rules --disable-man && make
 popd &>/dev/null
