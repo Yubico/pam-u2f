@@ -184,8 +184,9 @@ int get_devices_from_authfile(const char *authfile, const char *username,
         }
 
         for (j = 0; j < devices[i].key_len; j++) {
-          sscanf(&s_token[2 * j], "%2x",
-                 (unsigned int *)&(devices[i].publicKey[j]));
+          unsigned int x;
+          sscanf(&s_token[2 * j], "%2x", &x);
+          devices[i].publicKey[j] = (char)x;
         }
 
         i++;
