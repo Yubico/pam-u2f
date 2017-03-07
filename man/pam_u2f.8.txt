@@ -29,6 +29,9 @@ Set the location of the file that holds the mappings of user names to keyHandles
 *nouserok*::
 Set to enable authentication attempts to succeed even if the user trying to authenticate is not found inside authfile or if authfile is missing/malformed.
 
+*openasuser*::
+Setuid to the authenticating user when opening the authfile. Useful when the user's home is stored on an NFS volume mounted with the root_squash option (which maps root to nobody which will not be able to read the file).
+
 *alwaysok*::
 Set to enable all authentication attempts to succeed (aka presentation mode).
 

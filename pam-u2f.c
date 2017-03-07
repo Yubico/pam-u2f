@@ -38,6 +38,8 @@ static void parse_cfg(int flags, int argc, const char **argv, cfg_t *cfg) {
       cfg->debug = 1;
     if (strcmp(argv[i], "nouserok") == 0)
       cfg->nouserok = 1;
+    if (strcmp(argv[i], "openasuser") == 0)
+      cfg->openasuser = 1;
     if (strcmp(argv[i], "alwaysok") == 0)
       cfg->alwaysok = 1;
     if (strcmp(argv[i], "interactive") == 0)
@@ -65,6 +67,7 @@ static void parse_cfg(int flags, int argc, const char **argv, cfg_t *cfg) {
     D(("cue=%d", cfg->cue));
     D(("manual=%d", cfg->manual));
     D(("nouserok=%d", cfg->nouserok));
+    D(("openasuser=%d", cfg->openasuser));
     D(("alwaysok=%d", cfg->alwaysok));
     D(("authfile=%s", cfg->auth_file ? cfg->auth_file : "(null)"));
     D(("origin=%s", cfg->origin ? cfg->origin : "(null)"));
@@ -98,6 +101,7 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
   int retval = PAM_IGNORE;
   device_t *devices = NULL;
   unsigned n_devices = 0;
+  int openasuser;
 
   parse_cfg(flags, argc, argv, cfg);
 
@@ -213,8 +217,27 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
   } else {
     DBG(("Using authentication file %s", cfg->auth_file));
   }
+
+  openasuser = geteuid() == 0 && cfg->openasuser;
+  if (openasuser) {
+    if (seteuid(pw_s.pw_uid)) {
+      DBG(("Unable to switch user to uid %i", pw_s.pw_uid));
+      retval = PAM_IGNORE;
+      goto done;
+    }
+    DBG(("Switched to uid %i", pw_s.pw_uid));
+  }
   retval = get_devices_from_authfile(cfg->auth_file, user, cfg->max_devs,
                                      cfg->debug, devices, &n_devices);
+  if (openasuser) {
+    if (seteuid(0)) {
+      DBG(("Unable to switch back to uid 0"));
+      retval = PAM_IGNORE;
+      goto done;
+    }
+    DBG(("Switched back to uid 0"));
+  }
+
   if (retval != 1) {
     if (cfg->nouserok) {
       DBG(("Unable to get devices from file %s but nouserok specified. "
