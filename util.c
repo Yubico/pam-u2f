@@ -31,6 +31,9 @@ int get_devices_from_authfile(const char *authfile, const char *username,
   FILE *opwfile;
   unsigned i, j;
 
+  /* Ensure we never return uninitialized count. */
+  *n_devs = 0;
+
   fd = open(authfile, O_RDONLY, 0);
   if (fd < 0) {
     if (verbose)
