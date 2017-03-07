@@ -185,7 +185,15 @@ int get_devices_from_authfile(const char *authfile, const char *username,
 
         for (j = 0; j < devices[i].key_len; j++) {
           unsigned int x;
-          sscanf(&s_token[2 * j], "%2x", &x);
+          if (sscanf(&s_token[2 * j], "%2x", &x) != 1) {
+            if (verbose)
+              D(("Invalid hex number in key"));
+            *n_devs = 0;
+            fclose(opwfile);
+            free(buf);
+            buf = NULL;
+            return retval;
+          }
           devices[i].publicKey[j] = (char)x;
         }
 
