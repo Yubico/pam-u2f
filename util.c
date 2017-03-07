@@ -106,10 +106,19 @@ int get_devices_from_authfile(const char *authfile, const char *username,
 
       retval = -1; // We found at least one line for the user
 
+      // only keep last line for this user
+      for (i = 0; i < *n_devs; i++) {
+        free(devices[i].keyHandle);
+        free(devices[i].publicKey);
+        devices[i].keyHandle = NULL;
+        devices[i].publicKey = NULL;
+      }
       *n_devs = 0;
 
       i = 0;
       while ((s_token = strtok_r(NULL, ",", &saveptr))) {
+        devices[i].keyHandle = NULL;
+        devices[i].publicKey = NULL;
 
         if ((*n_devs)++ > MAX_DEVS - 1) {
           *n_devs = MAX_DEVS;
@@ -183,6 +192,13 @@ int get_devices_from_authfile(const char *authfile, const char *username,
   goto out;
 
 err:
+  for (i = 0; i < *n_devs; i++) {
+    free(devices[i].keyHandle);
+    free(devices[i].publicKey);
+    devices[i].keyHandle = NULL;
+    devices[i].publicKey = NULL;
+  }
+
   *n_devs = 0;
 
 out:
