@@ -41,6 +41,7 @@ typedef struct {
   int manual;
   int debug;
   int nouserok;
+  int openasuser;
   int alwaysok;
   int interactive;
   int cue;
