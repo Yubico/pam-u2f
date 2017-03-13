@@ -216,23 +216,19 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
   retval = get_devices_from_authfile(cfg->auth_file, user, cfg->max_devs,
                                      cfg->debug, devices, &n_devices);
   if (retval != 1) {
-    if (cfg->nouserok) {
-      DBG(("Unable to get devices from file %s but nouserok specified. "
-           "Skipping authentication",
-           cfg->auth_file));
-      retval = PAM_SUCCESS;
-      goto done;
-    } else {
-      DBG(("Unable to get devices from file %s. Aborting", cfg->auth_file));
-      retval = PAM_AUTHINFO_UNAVAIL;
-      goto done;
-    }
+    // for nouserok; make sure errors in get_devices_from_authfile don't
+    // result in valid devices
+    n_devices = 0;
   }
 
   if (n_devices == 0) {
     if (cfg->nouserok) {
       DBG(("Found no devices but nouserok specified. Skipping authentication"));
       retval = PAM_SUCCESS;
+      goto done;
+    } else if (retval != 1) {
+      DBG(("Unable to get devices from file %s", cfg->auth_file));
+      retval = PAM_AUTHINFO_UNAVAIL;
       goto done;
     } else {
       DBG(("Found no devices. Aborting."));
