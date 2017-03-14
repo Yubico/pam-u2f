@@ -139,15 +139,15 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
   devices = malloc(sizeof(device_t) * cfg->max_devs);
   if (!devices) {
     DBG(("Unable to allocate memory"));
-    return PAM_IGNORE;
+    retval = PAM_IGNORE;
+    goto done;
   }
 
   pgu_ret = pam_get_user(pamh, &user, NULL);
   if (pgu_ret != PAM_SUCCESS || user == NULL) {
     DBG(("Unable to access user %s", user));
-    free(devices);
-    devices = NULL;
-    return PAM_CONV_ERR;
+    retval = PAM_CONV_ERR;
+    goto done;
   }
 
   DBG(("Requesting authentication for user %s", user));
