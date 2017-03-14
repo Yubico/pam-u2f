@@ -445,17 +445,19 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
 
   retval = -1;
 
-  for (i = 0; (i < n_devs) && (retval != 1); ++i) {
+  for (i = 0; i < n_devs; ++i) {
     snprintf(prompt, sizeof(prompt), "[%d]: ", i);
     response = converse(pamh, PAM_PROMPT_ECHO_ON, prompt);
     converse(pamh, PAM_TEXT_INFO, response);
 
-    if (retval != 1 &&
-        u2fs_authentication_verify(ctx_arr[i], response, &auth_result) ==
+    if (u2fs_authentication_verify(ctx_arr[i], response, &auth_result) ==
           U2FS_OK) {
       retval = 1;
     }
     free(response);
+    if (retval == 1) {
+        break;
+    }
   }
 
   for (i = 0; i < n_devs; ++i)
