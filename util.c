@@ -20,51 +20,50 @@ int get_devices_from_authfile(const char *authfile, const char *username,
                               unsigned max_devs, int verbose, device_t *devices,
                               unsigned *n_devs) {
 
-  char *buf;
+  char *buf = NULL;
   char *s_user, *s_token;
   int retval = 0;
-  int fd;
+  int fd = -1;
   struct stat st;
   struct passwd *pw = NULL, pw_s;
   char buffer[BUFSIZE];
   int gpu_ret;
-  FILE *opwfile;
+  FILE *opwfile = NULL;
   unsigned i, j;
+
+  /* Ensure we never return uninitialized count. */
+  *n_devs = 0;
 
   fd = open(authfile, O_RDONLY, 0);
   if (fd < 0) {
     if (verbose)
       D(("Cannot open file: %s (%s)", authfile, strerror(errno)));
-    return retval;
+    goto err;
   }
 
   if (fstat(fd, &st) < 0) {
     if (verbose)
       D(("Cannot stat file: %s (%s)", authfile, strerror(errno)));
-    close(fd);
-    return retval;
+    goto err;
   }
 
   if (!S_ISREG(st.st_mode)) {
     if (verbose)
       D(("%s is not a regular file", authfile));
-    close(fd);
-    return retval;
+    goto err;
   }
 
   if (st.st_size == 0) {
     if (verbose)
       D(("File %s is empty", authfile));
-    close(fd);
-    return retval;
+    goto err;
   }
 
   gpu_ret = getpwuid_r(st.st_uid, &pw_s, buffer, sizeof(buffer), &pw);
   if (gpu_ret != 0 || pw == NULL) {
     D(("Unable to retrieve credentials for uid %u, (%s)", st.st_uid,
        strerror(errno)));
-    close(fd);
-    return retval;
+    goto err;
   }
 
   if (strcmp(pw->pw_name, username) != 0 && strcmp(pw->pw_name, "root") != 0) {
@@ -74,25 +73,21 @@ int get_devices_from_authfile(const char *authfile, const char *username,
     } else {
       D(("The owner of the authentication file is not root"));
     }
-    close(fd);
-    return retval;
+    goto err;
   }
 
   opwfile = fdopen(fd, "r");
   if (opwfile == NULL) {
     if (verbose)
       D(("fdopen: %s", strerror(errno)));
-    close(fd);
-    return retval;
+    goto err;
   }
 
   buf = malloc(sizeof(char) * (DEVSIZE * max_devs));
   if (!buf) {
     if (verbose)
       D(("Unable to allocate memory"));
-    fclose(opwfile);
-    close(fd);
-    return retval;
+    goto err;
   }
 
   retval = -2;
@@ -111,10 +106,19 @@ int get_devices_from_authfile(const char *authfile, const char *username,
 
       retval = -1; // We found at least one line for the user
 
+      // only keep last line for this user
+      for (i = 0; i < *n_devs; i++) {
+        free(devices[i].keyHandle);
+        free(devices[i].publicKey);
+        devices[i].keyHandle = NULL;
+        devices[i].publicKey = NULL;
+      }
       *n_devs = 0;
 
       i = 0;
       while ((s_token = strtok_r(NULL, ",", &saveptr))) {
+        devices[i].keyHandle = NULL;
+        devices[i].publicKey = NULL;
 
         if ((*n_devs)++ > MAX_DEVS - 1) {
           *n_devs = MAX_DEVS;
@@ -132,11 +136,7 @@ int get_devices_from_authfile(const char *authfile, const char *username,
         if (!devices[i].keyHandle) {
           if (verbose)
             D(("Unable to allocate memory for keyHandle number %d", i));
-          *n_devs = 0;
-          fclose(opwfile);
-          free(buf);
-          buf = NULL;
-          return retval;
+          goto err;
         }
 
         s_token = strtok_r(NULL, ":", &saveptr);
@@ -144,11 +144,7 @@ int get_devices_from_authfile(const char *authfile, const char *username,
         if (!s_token) {
           if (verbose)
             D(("Unable to retrieve publicKey number %d", i + 1));
-          *n_devs = 0;
-          fclose(opwfile);
-          free(buf);
-          buf = NULL;
-          return retval;
+          goto err;
         }
 
         if (verbose)
@@ -157,11 +153,7 @@ int get_devices_from_authfile(const char *authfile, const char *username,
         if (strlen(s_token) % 2 != 0) {
           if (verbose)
             D(("Length of key number %d not even", i + 1));
-          *n_devs = 0;
-          fclose(opwfile);
-          free(buf);
-          buf = NULL;
-          return retval;
+          goto err;
         }
 
         devices[i].key_len = strlen(s_token) / 2;
@@ -175,32 +167,47 @@ int get_devices_from_authfile(const char *authfile, const char *username,
         if (!devices[i].publicKey) {
           if (verbose)
             D(("Unable to allocate memory for publicKey number %d", i));
-
-          *n_devs = 0;
-          fclose(opwfile);
-          free(buf);
-          buf = NULL;
-          return retval;
+          goto err;
         }
 
         for (j = 0; j < devices[i].key_len; j++) {
-          sscanf(&s_token[2 * j], "%2x",
-                 (unsigned int *)&(devices[i].publicKey[j]));
+          unsigned int x;
+          if (sscanf(&s_token[2 * j], "%2x", &x) != 1) {
+            if (verbose)
+              D(("Invalid hex number in key"));
+            goto err;
+          }
+          devices[i].publicKey[j] = (char)x;
         }
 
         i++;
       }
     }
   }
-  fclose(opwfile);
 
   if (verbose)
     D(("Found %d device(s) for user %s", *n_devs, username));
 
+  retval = 1;
+  goto out;
+
+err:
+  for (i = 0; i < *n_devs; i++) {
+    free(devices[i].keyHandle);
+    free(devices[i].publicKey);
+    devices[i].keyHandle = NULL;
+    devices[i].publicKey = NULL;
+  }
+
+  *n_devs = 0;
+
+out:
   free(buf);
   buf = NULL;
-
-  retval = 1;
+  if (opwfile)
+    fclose(opwfile);
+  else if (fd >= 0)
+    close(fd);
   return retval;
 }
 
