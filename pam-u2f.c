@@ -115,22 +115,20 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
     }
     DBG(("Origin not specified, using \"%s\"", buffer));
     cfg->origin = strdup(buffer);
-  }
-
-  if (!cfg->origin) {
-    DBG(("Unable to allocate memory"));
-    goto done;
+    if (!cfg->origin) {
+      DBG(("Unable to allocate memory"));
+      goto done;
+    }
   }
 
   if (!cfg->appid) {
     DBG(("Appid not specified, using the same value of origin (%s)",
          cfg->origin));
     cfg->appid = strdup(cfg->origin);
-  }
-
-  if (!cfg->appid) {
-    DBG(("Unable to allocate memory"));
-    goto done;
+    if (!cfg->appid) {
+      DBG(("Unable to allocate memory"));
+      goto done;
+    }
   }
 
   if (cfg->max_devs == 0) {
