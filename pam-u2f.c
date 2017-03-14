@@ -96,7 +96,7 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
   char buffer[BUFSIZE];
   char *buf = NULL;
   char *authfile_dir;
-  int authfile_dir_len;
+  size_t authfile_dir_len;
   int pgu_ret, gpn_ret;
   int retval = PAM_IGNORE;
   device_t *devices = NULL;
