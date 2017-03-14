@@ -199,14 +199,7 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
 
     DBG(("Using default authentication file %s", buf));
 
-    cfg->auth_file = strdup(buf);
-    if (!cfg->auth_file) {
-      DBG(("Unable to allocate memory"));
-      retval = PAM_IGNORE;
-      goto done;
-    }
-
-    free(buf);
+    cfg->auth_file = buf; /* cfg takes ownership */
     buf = NULL;
   } else {
     DBG(("Using authentication file %s", cfg->auth_file));
