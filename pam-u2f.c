@@ -180,9 +180,8 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
         goto done;
       }
 
-      strcpy(buf, pw->pw_dir);
-      strcat(buf, "/.config");
-      strcat(buf, DEFAULT_AUTHFILE);
+      snprintf(buf, authfile_dir_len,
+               "%s/.config%s", pw->pw_dir, DEFAULT_AUTHFILE);
     } else {
       DBG(("Variable %s set to %s", DEFAULT_AUTHFILE_DIR_VAR, authfile_dir));
       authfile_dir_len = strlen(authfile_dir) + strlen(DEFAULT_AUTHFILE) + 1;
@@ -194,8 +193,8 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
         goto done;
       }
 
-      strcpy(buf, authfile_dir);
-      strcat(buf, DEFAULT_AUTHFILE);
+      snprintf(buf, authfile_dir_len,
+               "%s%s", authfile_dir, DEFAULT_AUTHFILE);
     }
 
     DBG(("Using default authentication file %s", buf));

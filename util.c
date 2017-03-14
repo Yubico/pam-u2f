@@ -431,7 +431,8 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
       D(("Challenge: %s", buf));
 
     if (i == 0) {
-      sprintf(prompt, "Now please copy-paste the below challenge(s) to "
+      snprintf(prompt, sizeof(prompt),
+                      "Now please copy-paste the below challenge(s) to "
                       "'u2f-host -aauthenticate -o %s'",
               cfg->origin);
       converse(pamh, PAM_TEXT_INFO, prompt);
@@ -445,7 +446,7 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
   retval = -1;
 
   for (i = 0; (i < n_devs) && (retval != 1); ++i) {
-    sprintf(prompt, "[%d]: ", i);
+    snprintf(prompt, sizeof(prompt), "[%d]: ", i);
     response = converse(pamh, PAM_PROMPT_ECHO_ON, prompt);
     converse(pamh, PAM_TEXT_INFO, response);
 
