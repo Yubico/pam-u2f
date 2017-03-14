@@ -177,7 +177,7 @@ int get_devices_from_authfile(const char *authfile, const char *username,
               D(("Invalid hex number in key"));
             goto err;
           }
-          devices[i].publicKey[j] = (char)x;
+          devices[i].publicKey[j] = (unsigned char)x;
         }
 
         i++;
