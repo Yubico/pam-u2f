@@ -96,7 +96,7 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
   char buffer[BUFSIZE];
   char *buf = NULL;
   char *authfile_dir;
-  int authfile_dir_len;
+  size_t authfile_dir_len;
   int pgu_ret, gpn_ret;
   int retval = PAM_IGNORE;
   device_t *devices = NULL;
@@ -106,10 +106,7 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
   parse_cfg(flags, argc, argv, cfg);
 
   if (!cfg->origin) {
-    if (!strcpy(buffer, DEFAULT_ORIGIN_PREFIX)) {
-      DBG(("Unable to create origin string"));
-      goto done;
-    }
+    strcpy(buffer, DEFAULT_ORIGIN_PREFIX);
 
     if (gethostname(buffer + strlen(DEFAULT_ORIGIN_PREFIX),
                     BUFSIZE - strlen(DEFAULT_ORIGIN_PREFIX)) == -1) {
@@ -118,22 +115,20 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
     }
     DBG(("Origin not specified, using \"%s\"", buffer));
     cfg->origin = strdup(buffer);
-  }
-
-  if (!cfg->origin) {
-    DBG(("Unable to allocate memory"));
-    goto done;
+    if (!cfg->origin) {
+      DBG(("Unable to allocate memory"));
+      goto done;
+    }
   }
 
   if (!cfg->appid) {
     DBG(("Appid not specified, using the same value of origin (%s)",
          cfg->origin));
     cfg->appid = strdup(cfg->origin);
-  }
-
-  if (!cfg->appid) {
-    DBG(("Unable to allocate memory"));
-    goto done;
+    if (!cfg->appid) {
+      DBG(("Unable to allocate memory"));
+      goto done;
+    }
   }
 
   if (cfg->max_devs == 0) {
@@ -144,15 +139,15 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
   devices = malloc(sizeof(device_t) * cfg->max_devs);
   if (!devices) {
     DBG(("Unable to allocate memory"));
-    return PAM_IGNORE;
+    retval = PAM_IGNORE;
+    goto done;
   }
 
   pgu_ret = pam_get_user(pamh, &user, NULL);
   if (pgu_ret != PAM_SUCCESS || user == NULL) {
     DBG(("Unable to access user %s", user));
-    free(devices);
-    devices = NULL;
-    return PAM_CONV_ERR;
+    retval = PAM_CONV_ERR;
+    goto done;
   }
 
   DBG(("Requesting authentication for user %s", user));
@@ -185,9 +180,8 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
         goto done;
       }
 
-      strcpy(buf, pw->pw_dir);
-      strcat(buf, "/.config");
-      strcat(buf, DEFAULT_AUTHFILE);
+      snprintf(buf, authfile_dir_len,
+               "%s/.config%s", pw->pw_dir, DEFAULT_AUTHFILE);
     } else {
       DBG(("Variable %s set to %s", DEFAULT_AUTHFILE_DIR_VAR, authfile_dir));
       authfile_dir_len = strlen(authfile_dir) + strlen(DEFAULT_AUTHFILE) + 1;
@@ -199,20 +193,13 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
         goto done;
       }
 
-      strcpy(buf, authfile_dir);
-      strcat(buf, DEFAULT_AUTHFILE);
+      snprintf(buf, authfile_dir_len,
+               "%s%s", authfile_dir, DEFAULT_AUTHFILE);
     }
 
     DBG(("Using default authentication file %s", buf));
 
-    cfg->auth_file = strdup(buf);
-    if (!cfg->auth_file) {
-      DBG(("Unable to allocate memory"));
-      retval = PAM_IGNORE;
-      goto done;
-    }
-
-    free(buf);
+    cfg->auth_file = buf; /* cfg takes ownership */
     buf = NULL;
   } else {
     DBG(("Using authentication file %s", cfg->auth_file));
