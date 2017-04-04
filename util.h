@@ -20,19 +20,14 @@
 #define DEFAULT_ORIGIN_PREFIX "pam://"
 
 #if defined(DEBUG_PAM)
-#if defined(HAVE_SECURITY__PAM_MACROS_H)
-#define DEBUG
-#include <security/_pam_macros.h>
-#else
-#define D(x)                                                                   \
-  do {                                                                         \
-    printf("debug: %s:%d (%s): ", __FILE__, __LINE__, __FUNCTION__);           \
-    printf x;                                                                  \
-    printf("\n");                                                              \
+#define D(file, ...)                                                        \
+  do {                                                                      \
+    fprintf(file, "debug: %s:%d (%s): ", __FILE__, __LINE__, __func__); \
+    fprintf(file, __VA_ARGS__);                                             \
+    fprintf(file, "\n");                                                    \
   } while (0)
-#endif /* HAVE_SECURITY__PAM_MACROS_H */
 #else
-#define D(x)
+#define D(file, ...)
 #endif /* DEBUG_PAM */
 
 typedef struct {
@@ -49,6 +44,7 @@ typedef struct {
   const char *origin;
   const char *appid;
   const char *prompt;
+  FILE *debug_file;
 } cfg_t;
 
 typedef struct {
@@ -58,8 +54,8 @@ typedef struct {
 } device_t;
 
 int get_devices_from_authfile(const char *authfile, const char *username,
-                              unsigned max_devs, int verbose, device_t *devices,
-                              unsigned *n_devs);
+                              unsigned max_devs, int verbose, FILE *debug_file,
+                              device_t *devices, unsigned *n_devs);
 void free_devices(device_t *devices, const unsigned n_devs);
 
 int do_authentication(const cfg_t *cfg, const device_t *devices,

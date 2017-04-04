@@ -17,8 +17,8 @@
 #include <string.h>
 
 int get_devices_from_authfile(const char *authfile, const char *username,
-                              unsigned max_devs, int verbose, device_t *devices,
-                              unsigned *n_devs) {
+                              unsigned max_devs, int verbose, FILE *debug_file,
+                              device_t *devices, unsigned *n_devs) {
 
   char *buf = NULL;
   char *s_user, *s_token;
@@ -37,41 +37,41 @@ int get_devices_from_authfile(const char *authfile, const char *username,
   fd = open(authfile, O_RDONLY, 0);
   if (fd < 0) {
     if (verbose)
-      D(("Cannot open file: %s (%s)", authfile, strerror(errno)));
+      D(debug_file, "Cannot open file: %s (%s)", authfile, strerror(errno));
     goto err;
   }
 
   if (fstat(fd, &st) < 0) {
     if (verbose)
-      D(("Cannot stat file: %s (%s)", authfile, strerror(errno)));
+      D(debug_file, "Cannot stat file: %s (%s)", authfile, strerror(errno));
     goto err;
   }
 
   if (!S_ISREG(st.st_mode)) {
     if (verbose)
-      D(("%s is not a regular file", authfile));
+      D(debug_file, "%s is not a regular file", authfile);
     goto err;
   }
 
   if (st.st_size == 0) {
     if (verbose)
-      D(("File %s is empty", authfile));
+      D(debug_file, "File %s is empty", authfile);
     goto err;
   }
 
   gpu_ret = getpwuid_r(st.st_uid, &pw_s, buffer, sizeof(buffer), &pw);
   if (gpu_ret != 0 || pw == NULL) {
-    D(("Unable to retrieve credentials for uid %u, (%s)", st.st_uid,
-       strerror(errno)));
+    D(debug_file, "Unable to retrieve credentials for uid %u, (%s)", st.st_uid,
+       strerror(errno));
     goto err;
   }
 
   if (strcmp(pw->pw_name, username) != 0 && strcmp(pw->pw_name, "root") != 0) {
     if (strcmp(username, "root") != 0) {
-      D(("The owner of the authentication file is neither %s nor root",
-         username));
+      D(debug_file, "The owner of the authentication file is neither %s nor root",
+         username);
     } else {
-      D(("The owner of the authentication file is not root"));
+      D(debug_file, "The owner of the authentication file is not root");
     }
     goto err;
   }
@@ -79,14 +79,14 @@ int get_devices_from_authfile(const char *authfile, const char *username,
   opwfile = fdopen(fd, "r");
   if (opwfile == NULL) {
     if (verbose)
-      D(("fdopen: %s", strerror(errno)));
+      D(debug_file, "fdopen: %s", strerror(errno));
     goto err;
   }
 
   buf = malloc(sizeof(char) * (DEVSIZE * max_devs));
   if (!buf) {
     if (verbose)
-      D(("Unable to allocate memory"));
+      D(debug_file, "Unable to allocate memory");
     goto err;
   }
 
@@ -97,12 +97,12 @@ int get_devices_from_authfile(const char *authfile, const char *username,
       buf[strlen(buf) - 1] = '\0';
 
     if (verbose)
-      D(("Authorization line: %s", buf));
+      D(debug_file, "Authorization line: %s", buf);
 
     s_user = strtok_r(buf, ":", &saveptr);
     if (s_user && strcmp(username, s_user) == 0) {
       if (verbose)
-        D(("Matched user: %s", s_user));
+        D(debug_file, "Matched user: %s", s_user);
 
       retval = -1; // We found at least one line for the user
 
@@ -123,19 +123,19 @@ int get_devices_from_authfile(const char *authfile, const char *username,
         if ((*n_devs)++ > MAX_DEVS - 1) {
           *n_devs = MAX_DEVS;
           if (verbose)
-            D(("Found more than %d devices, ignoring the remaining ones",
-               MAX_DEVS));
+            D(debug_file, "Found more than %d devices, ignoring the remaining ones",
+               MAX_DEVS);
           break;
         }
 
         if (verbose)
-          D(("KeyHandle for device number %d: %s", i + 1, s_token));
+          D(debug_file, "KeyHandle for device number %d: %s", i + 1, s_token);
 
         devices[i].keyHandle = strdup(s_token);
 
         if (!devices[i].keyHandle) {
           if (verbose)
-            D(("Unable to allocate memory for keyHandle number %d", i));
+            D(debug_file, "Unable to allocate memory for keyHandle number %d", i);
           goto err;
         }
 
@@ -143,30 +143,30 @@ int get_devices_from_authfile(const char *authfile, const char *username,
 
         if (!s_token) {
           if (verbose)
-            D(("Unable to retrieve publicKey number %d", i + 1));
+            D(debug_file, "Unable to retrieve publicKey number %d", i + 1);
           goto err;
         }
 
         if (verbose)
-          D(("publicKey for device number %d: %s", i + 1, s_token));
+          D(debug_file, "publicKey for device number %d: %s", i + 1, s_token);
 
         if (strlen(s_token) % 2 != 0) {
           if (verbose)
-            D(("Length of key number %d not even", i + 1));
+            D(debug_file, "Length of key number %d not even", i + 1);
           goto err;
         }
 
         devices[i].key_len = strlen(s_token) / 2;
 
         if (verbose)
-          D(("Length of key number %d is %zu", i + 1, devices[i].key_len));
+          D(debug_file, "Length of key number %d is %zu", i + 1, devices[i].key_len);
 
         devices[i].publicKey =
           malloc((sizeof(unsigned char) * devices[i].key_len));
 
         if (!devices[i].publicKey) {
           if (verbose)
-            D(("Unable to allocate memory for publicKey number %d", i));
+            D(debug_file, "Unable to allocate memory for publicKey number %d", i);
           goto err;
         }
 
@@ -174,7 +174,7 @@ int get_devices_from_authfile(const char *authfile, const char *username,
           unsigned int x;
           if (sscanf(&s_token[2 * j], "%2x", &x) != 1) {
             if (verbose)
-              D(("Invalid hex number in key"));
+              D(debug_file, "Invalid hex number in key");
             goto err;
           }
           devices[i].publicKey[j] = (unsigned char)x;
@@ -186,7 +186,7 @@ int get_devices_from_authfile(const char *authfile, const char *username,
   }
 
   if (verbose)
-    D(("Found %d device(s) for user %s", *n_devs, username));
+    D(debug_file, "Found %d device(s) for user %s", *n_devs, username);
 
   retval = 1;
   goto out;
@@ -245,19 +245,19 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
 
   h_rc = u2fh_global_init(cfg->debug ? U2FH_DEBUG : 0);
   if (h_rc != U2FH_OK) {
-    D(("Unable to initialize libu2f-host: %s", u2fh_strerror(h_rc)));
+    D(cfg->debug_file, "Unable to initialize libu2f-host: %s", u2fh_strerror(h_rc));
     return retval;
   }
   h_rc = u2fh_devs_init(&devs);
   if (h_rc != U2FH_OK) {
-    D(("Unable to initialize libu2f-host device handles: %s",
-       u2fh_strerror(h_rc)));
+    D(cfg->debug_file, "Unable to initialize libu2f-host device handles: %s",
+       u2fh_strerror(h_rc));
     return retval;
   }
 
   if ((h_rc = u2fh_devs_discover(devs, &max_index)) != U2FH_OK) {
     if (cfg->debug)
-      D(("Unable to discover device(s), %s", u2fh_strerror(h_rc)));
+      D(cfg->debug_file, "Unable to discover device(s), %s", u2fh_strerror(h_rc));
     return retval;
   } else if (cfg->manual == 0) {
     if (cfg->cue) {
@@ -267,28 +267,28 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
   max_index_prev = max_index;
 
   if (cfg->debug)
-    D(("Device max index is %u", max_index));
+    D(cfg->debug_file, "Device max index is %u", max_index);
 
   s_rc = u2fs_global_init(cfg->debug ? U2FS_DEBUG : 0);
   if (s_rc != U2FS_OK) {
-    D(("Unable to initialize libu2f-server: %s", u2fs_strerror(s_rc)));
+    D(cfg->debug_file, "Unable to initialize libu2f-server: %s", u2fs_strerror(s_rc));
     return retval;
   }
   s_rc = u2fs_init(&ctx);
   if (s_rc != U2FS_OK) {
-    D(("Unable to initialize libu2f-server context: %s", u2fs_strerror(s_rc)));
+    D(cfg->debug_file, "Unable to initialize libu2f-server context: %s", u2fs_strerror(s_rc));
     return retval;
   }
 
   if ((s_rc = u2fs_set_origin(ctx, cfg->origin)) != U2FS_OK) {
     if (cfg->debug)
-      D(("Unable to set origin: %s", u2fs_strerror(s_rc)));
+      D(cfg->debug_file, "Unable to set origin: %s", u2fs_strerror(s_rc));
     return retval;
   }
 
   if ((s_rc = u2fs_set_appid(ctx, cfg->appid)) != U2FS_OK) {
     if (cfg->debug)
-      D(("Unable to set appid: %s", u2fs_strerror(s_rc)));
+      D(cfg->debug_file, "Unable to set appid: %s", u2fs_strerror(s_rc));
     return retval;
   }
 
@@ -298,34 +298,34 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
     retval = -2;
 
     if (cfg->debug)
-      D(("Attempting authentication with device number %d", i + 1));
+      D(cfg->debug_file, "Attempting authentication with device number %d", i + 1);
 
     if ((s_rc = u2fs_set_keyHandle(ctx, devices[i].keyHandle)) != U2FS_OK) {
       if (cfg->debug)
-        D(("Unable to set keyHandle: %s", u2fs_strerror(s_rc)));
+        D(cfg->debug_file, "Unable to set keyHandle: %s", u2fs_strerror(s_rc));
       return retval;
     }
 
     if ((s_rc = u2fs_set_publicKey(ctx, devices[i].publicKey)) != U2FS_OK) {
       if (cfg->debug)
-        D(("Unable to set publicKey %s", u2fs_strerror(s_rc)));
+        D(cfg->debug_file, "Unable to set publicKey %s", u2fs_strerror(s_rc));
       return retval;
     }
 
     if ((s_rc = u2fs_authentication_challenge(ctx, &buf)) != U2FS_OK) {
       if (cfg->debug)
-        D(("Unable to produce authentication challenge: %s",
-           u2fs_strerror(s_rc)));
+        D(cfg->debug_file, "Unable to produce authentication challenge: %s",
+           u2fs_strerror(s_rc));
       return retval;
     }
 
     if (cfg->debug)
-      D(("Challenge: %s", buf));
+      D(cfg->debug_file, "Challenge: %s", buf);
 
     if ((h_rc = u2fh_authenticate(devs, buf, cfg->origin, &response, 1)) ==
         U2FH_OK) {
       if (cfg->debug)
-        D(("Response: %s", response));
+        D(cfg->debug_file, "Response: %s", response);
 
       retval = -1;
 
@@ -335,21 +335,21 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
       }
     } else {
       if (cfg->debug)
-        D(("Unable to communicate to the device, %s", u2fh_strerror(h_rc)));
+        D(cfg->debug_file, "Unable to communicate to the device, %s", u2fh_strerror(h_rc));
     }
 
     i++;
 
     if (u2fh_devs_discover(devs, &max_index) != U2FH_OK) {
       if (cfg->debug)
-        D(("Unable to discover devices"));
+        D(cfg->debug_file, "Unable to discover devices");
       return retval;
     }
 
     if (max_index > max_index_prev) {
       if (cfg->debug)
-        D(("Devices max_index has changed: %u (was %u). Starting over",
-           max_index, max_index_prev));
+        D(cfg->debug_file, "Devices max_index has changed: %u (was %u). Starting over",
+           max_index, max_index_prev);
       max_index_prev = max_index;
       i = 0;
     }
@@ -379,7 +379,7 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
 
   if (u2fs_global_init(0) != U2FS_OK) {
     if (cfg->debug)
-      D(("Unable to initialize libu2f-server"));
+      D(cfg->debug_file, "Unable to initialize libu2f-server");
     return retval;
   }
 
@@ -387,48 +387,48 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
 
     if (u2fs_init(ctx_arr + i) != U2FS_OK) {
       if (cfg->debug)
-        D(("Unable to initialize libu2f-server"));
+        D(cfg->debug_file, "Unable to initialize libu2f-server");
       return retval;
     }
 
     if ((s_rc = u2fs_set_origin(ctx_arr[i], cfg->origin)) != U2FS_OK) {
       if (cfg->debug)
-        D(("Unable to set origin: %s", u2fs_strerror(s_rc)));
+        D(cfg->debug_file, "Unable to set origin: %s", u2fs_strerror(s_rc));
       return retval;
     }
 
     if ((s_rc = u2fs_set_appid(ctx_arr[i], cfg->appid)) != U2FS_OK) {
       if (cfg->debug)
-        D(("Unable to set appid: %s", u2fs_strerror(s_rc)));
+        D(cfg->debug_file, "Unable to set appid: %s", u2fs_strerror(s_rc));
       return retval;
     }
 
     if (cfg->debug)
-      D(("Attempting authentication with device number %d", i + 1));
+      D(cfg->debug_file, "Attempting authentication with device number %d", i + 1);
 
     if ((s_rc = u2fs_set_keyHandle(ctx_arr[i], devices[i].keyHandle)) !=
         U2FS_OK) {
       if (cfg->debug)
-        D(("Unable to set keyHandle: %s", u2fs_strerror(s_rc)));
+        D(cfg->debug_file, "Unable to set keyHandle: %s", u2fs_strerror(s_rc));
       return retval;
     }
 
     if ((s_rc = u2fs_set_publicKey(ctx_arr[i], devices[i].publicKey)) !=
         U2FS_OK) {
       if (cfg->debug)
-        D(("Unable to set publicKey %s", u2fs_strerror(s_rc)));
+        D(cfg->debug_file, "Unable to set publicKey %s", u2fs_strerror(s_rc));
       return retval;
     }
 
     if ((s_rc = u2fs_authentication_challenge(ctx_arr[i], &buf)) != U2FS_OK) {
       if (cfg->debug)
-        D(("Unable to produce authentication challenge: %s",
-           u2fs_strerror(s_rc)));
+        D(cfg->debug_file, "Unable to produce authentication challenge: %s",
+           u2fs_strerror(s_rc));
       return retval;
     }
 
     if (cfg->debug)
-      D(("Challenge: %s", buf));
+      D(cfg->debug_file, "Challenge: %s", buf);
 
     if (i == 0) {
       snprintf(prompt, sizeof(prompt),
