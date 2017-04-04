@@ -4,6 +4,7 @@ set -ex
 readonly BUILDROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/.."
 
 brew update
+brew unlink pkg-config
 brew install asciidoc gengetopt hidapi libu2f-host libu2f-server pkg-config check
 
 pushd "$BUILDROOT" &>/dev/null
