@@ -1,6 +1,6 @@
 #  Copyright (C) 2014-2015 Yubico AB - See COPYING
 
-SUBDIRS = . pamu2fcfg tests
+SUBDIRS = po . pamu2fcfg tests
 
 ACLOCAL_AMFLAGS = -I m4
 
@@ -25,7 +25,7 @@ dist_man8_MANS = $(top_builddir)/man/pam_u2f.8
 DISTCLEANFILES = $(dist_man8_MANS)
 
 MANSOURCES = $(top_builddir)/man/pam_u2f.8.txt
-EXTRA_DIST = $(MANSOURCES)
+EXTRA_DIST = build-aux/config.rpath  $(MANSOURCES)
 
 SUFFIXES = .8.txt .8
 

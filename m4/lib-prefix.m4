@@ -1,5 +1,5 @@
-# lib-prefix.m4 serial 6 (gettext-0.18)
-dnl Copyright (C) 2001-2005, 2008 Free Software Foundation, Inc.
+# lib-prefix.m4 serial 7 (gettext-0.18)
+dnl Copyright (C) 2001-2005, 2008-2016 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
@@ -206,6 +206,9 @@ sixtyfour bits
           if test -d "$searchdir"; then
             case "$searchdir" in
               */lib64/ | */lib64 ) acl_libdirstem=lib64 ;;
+              */../ | */.. )
+                # Better ignore directories of this form. They are misleading.
+                ;;
               *) searchdir=`cd "$searchdir" && pwd`
                  case "$searchdir" in
                    */lib64 ) acl_libdirstem=lib64 ;;

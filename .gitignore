@@ -36,6 +36,9 @@ tests/Makefile
 tests/Makefile.in
 tests/basic
 pam_u2f.la
+man/pamu2fcfg.1
 man/pam_u2f.8
 pamu2fcfg/pamu2fcfg
-man/pamu2fcfg.1
+po/POTFILES
+po/stamp-po
+po/*.gmo

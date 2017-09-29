@@ -16,6 +16,10 @@
 
 #include <string.h>
 
+#include <libintl.h>
+#include <locale.h>
+#define _(STRING) gettext(STRING)
+
 int get_devices_from_authfile(const char *authfile, const char *username,
                               unsigned max_devs, int verbose, FILE *debug_file,
                               device_t *devices, unsigned *n_devs) {
@@ -483,7 +487,7 @@ static int _converse(pam_handle_t *pamh, int nargs,
 }
 
 char *converse(pam_handle_t *pamh, int echocode, const char *prompt) {
-  const struct pam_message msg = {.msg_style = echocode, .msg = (char *)prompt};
+  const struct pam_message msg = {.msg_style = echocode, .msg = _((char *)prompt)};
   const struct pam_message *msgs = &msg;
   struct pam_response *resp = NULL;
   int retval = _converse(pamh, 1, &msgs, &resp);
