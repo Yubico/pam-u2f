@@ -53,10 +53,10 @@ AC_ARG_WITH(pam-dir,
 ])
 AC_SUBST(PAMDIR, "$PAMDIR")
 
-
 PKG_CHECK_MODULES([LIBU2FHOST], [u2f-host], [], [])
 PKG_CHECK_MODULES([LIBU2FSERVER], [u2f-server], [], [])
 
+CFLAGS="-DLOCALEDIR=\"\\\"${prefix}/share/locale\\\"\" $CFLAGS"
 
 # Check for secure_getenv
 am_save_CFLAGS="$CFLAGS"
@@ -90,8 +90,6 @@ AC_CONFIG_FILES([ po/Makefile.in
   tests/Makefile
 ])
 AC_OUTPUT
-
-CFLAGS="$CFLAGS -DLOCALEDIR=${prefix}/share/locale"
 
 AC_MSG_NOTICE([Summary of build options:
 

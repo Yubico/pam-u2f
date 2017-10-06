@@ -115,10 +115,6 @@ static void parse_cfg(int flags, int argc, const char **argv, cfg_t *cfg) {
     D(cfg->debug_file, __VA_ARGS__);                                                           \
   }
 
-#ifndef LOCALEDIR
-#define LOCALEDIR "/usr/local/share/locale"
-#endif
-
 /* PAM entry point for authentication verification */
 int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
                         const char **argv) {

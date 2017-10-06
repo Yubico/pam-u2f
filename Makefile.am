@@ -4,7 +4,7 @@ SUBDIRS = po . pamu2fcfg tests
 
 ACLOCAL_AMFLAGS = -I m4
 
-AM_CFLAGS = $(CWFLAGS)
+AM_CFLAGS = $(CWFLAGS) $(CFLAGS)
 AM_CPPFLAGS = -I$(srcdir)/.. -I$(builddir)/.. $(LIBU2FHOST_CFLAGS) $(LIBU2FSERVER_CFLAGS)
 
 libdir = $(PAMDIR)
