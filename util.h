@@ -6,9 +6,6 @@
 #define UTIL_H
 
 #include <stdio.h>
-#include <sys/types.h>
-#include <syslog.h>
-#include <stdarg.h>
 #include <security/pam_appl.h>
 
 #define BUFSIZE 1024
@@ -44,7 +41,6 @@ typedef struct {
   const char *appid;
   const char *prompt;
   FILE *debug_file;
-  int debug_syslog;
 } cfg_t;
 
 typedef struct {

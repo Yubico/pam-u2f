@@ -10,6 +10,8 @@
 #include <stdlib.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <stdarg.h>
+#include <syslog.h>
 #include <pwd.h>
 #include <errno.h>
 #include <unistd.h>
