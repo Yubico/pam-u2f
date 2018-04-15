@@ -18,7 +18,7 @@ The module provides U2F authentication against Yubikeys and other compliant auth
 Enables debug output
 
 *debug_file*::
-Filename to write debug to, file must exist and be a regular file. STDERR is default
+Filename to write debug to, file must exist and be a regular file, or one of "stdout", "stderr", or "syslog". STDERR is the default.
 
 *origin*=_origin_::
 Set the origin for the U2F authentication procedure. If no value is specified, the origin "pam://$HOSTNAME" is used.

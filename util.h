@@ -6,6 +6,9 @@
 #define UTIL_H
 
 #include <stdio.h>
+#include <sys/types.h>
+#include <syslog.h>
+#include <stdarg.h>
 #include <security/pam_appl.h>
 
 #define BUFSIZE 1024
@@ -18,14 +21,10 @@
 #define DEFAULT_AUTHFILE "/Yubico/u2f_keys"
 #define DEFAULT_PROMPT "Insert your U2F device, then press ENTER."
 #define DEFAULT_ORIGIN_PREFIX "pam://"
+#define DEBUG_STR "debug: %s:%d (%s): "
 
 #if defined(DEBUG_PAM)
-#define D(file, ...)                                                        \
-  do {                                                                      \
-    fprintf(file, "debug: %s:%d (%s): ", __FILE__, __LINE__, __func__); \
-    fprintf(file, __VA_ARGS__);                                             \
-    fprintf(file, "\n");                                                    \
-  } while (0)
+#define D(file, ...)  _debug(file, __FILE__, __LINE__, __func__, __VA_ARGS__)
 #else
 #define D(file, ...)
 #endif /* DEBUG_PAM */
@@ -45,6 +44,7 @@ typedef struct {
   const char *appid;
   const char *prompt;
   FILE *debug_file;
+  int debug_syslog;
 } cfg_t;
 
 typedef struct {
@@ -63,4 +63,5 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
 int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
                              const unsigned n_devs, pam_handle_t *pamh);
 char *converse(pam_handle_t *pamh, int echocode, const char *prompt);
+void _debug(FILE *, const char *, int, const char *, const char *, ...);
 #endif /* UTIL_H */

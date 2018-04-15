@@ -66,6 +66,10 @@ static void parse_cfg(int flags, int argc, const char **argv, cfg_t *cfg) {
       else if(strncmp (filename, "stderr", 6) == 0) {
         cfg->debug_file = stderr;
       }
+      else if( strncmp (filename, "syslog", 6) == 0) {
+        openlog("pam_u2f.so", LOG_NDELAY|LOG_PID, LOG_AUTHPRIV);
+        cfg->debug_file = (FILE *)-1;
+      }
       else {
         struct stat st;
         FILE *file;
