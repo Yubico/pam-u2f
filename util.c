@@ -518,7 +518,7 @@ void _debug( FILE *debug_file, const char *file, int line, const char *func, con
   va_list ap;
 #ifdef __linux__
   unsigned int size;
-  char buffer[1024];
+  char buffer[BUFSIZE];
   char *out;
 
   size = (unsigned int)snprintf(NULL, 0, DEBUG_STR, file, line, func);
@@ -526,7 +526,7 @@ void _debug( FILE *debug_file, const char *file, int line, const char *func, con
   size += (unsigned int)vsnprintf(NULL, 0, fmt, ap);
   va_end(ap);
   va_start(ap, fmt);
-  if( size < 1023 )
+  if( size < (BUFSIZE - 1) )
           out = buffer;
   else
           out = malloc(size);
@@ -540,7 +540,7 @@ void _debug( FILE *debug_file, const char *file, int line, const char *func, con
   else
     fprintf(debug_file, "%s\n", out);
 
-  if( size >= 1023 )
+  if( size >= (BUFSIZE - 1) )
           free(out);
 #else /* Windows, MAC */
   va_start(ap, fmt);
