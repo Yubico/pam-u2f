@@ -77,7 +77,7 @@ debug::
 Enables debug output
 
 debug_file::
-Filename to write debug to, file must exist and be a regular file, or may be one of "stderr", "stdout", or "syslog". STDERR is default
+Filename to write debug to, file must exist and be a regular file, or may be one of "stderr", "stdout", or "syslog". STDERR is the default.
 
 origin=origin::
 Set the origin for the U2F authentication procedure.
