@@ -18,7 +18,7 @@
 #define DEFAULT_AUTHFILE "/Yubico/u2f_keys"
 #define DEFAULT_PROMPT "Insert your U2F device, then press ENTER."
 #define DEFAULT_ORIGIN_PREFIX "pam://"
-#define DEBUG_STR "debug: %s:%d (%s): "
+#define DEBUG_STR "debug(pam_u2f): %s:%d (%s): "
 
 #if defined(DEBUG_PAM)
 #define D(file, ...)  _debug(file, __FILE__, __LINE__, __func__, __VA_ARGS__)
