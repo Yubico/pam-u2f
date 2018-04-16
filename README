@@ -8,8 +8,6 @@ This module implements PAM over U2F, providing an easy way to integrate the
 YubiKey (or other U2F compliant authenticators) into your existing
 infrastructure.
 
-IMPORTANT: This project is being rewritten and will only receive security updates.
-
 [[building]]
 Building
 --------
