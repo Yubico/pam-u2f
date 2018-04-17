@@ -543,7 +543,7 @@ void _debug( FILE *debug_file, const char *file, int line, const char *func, con
     fprintf(debug_file, "%s\n", out);
   }
 
-  if (size >= (BUFSIZE - 1)) {
+  if ( out != buffer ) {
     free(out);
   }
 #else /* Windows, MAC */
