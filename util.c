@@ -521,7 +521,7 @@ char *converse(pam_handle_t *pamh, int echocode, const char *prompt) {
 }
 
 #if defined(PAM_DEBUG)
-void _debug( FILE *debug_file, const char *file, int line, const char *func, const char *fmt, ... ) {
+void _debug(FILE *debug_file, const char *file, int line, const char *func, const char *fmt, ...) {
   va_list ap;
 #ifdef __linux__
   unsigned int size;
@@ -545,19 +545,19 @@ void _debug( FILE *debug_file, const char *file, int line, const char *func, con
   va_end(ap);
 
   if (debug_file == (FILE *)-1) {
-    syslog(LOG_AUTHPRIV|LOG_DEBUG, "%s", out);
+    syslog(LOG_AUTHPRIV | LOG_DEBUG, "%s", out);
   }
   else {
     fprintf(debug_file, "%s\n", out);
   }
 
-  if ( out != buffer ) {
+  if (out != buffer) {
     free(out);
   }
 #else /* Windows, MAC */
   va_start(ap, fmt);
-  fprintf( debug_file, DEBUG_STR, file, line, func );
-  vfprintf( debug_file, fmt, ap);
+  fprintf(debug_file, DEBUG_STR, file, line, func );
+  vfprintf(debug_file, fmt, ap);
   fprintf(debug_file, "\n");
   va_end(ap);
 #endif /* __linux__ */
