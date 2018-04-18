@@ -545,13 +545,13 @@ void _debug( FILE *debug_file, const char *file, int line, const char *func, con
   va_end(ap);
 
   if (debug_file == (FILE *)-1) {
-    syslog(LOG_DEBUG, "%s", out);
+    syslog(LOG_AUTHPRIV|LOG_DEBUG, "%s", out);
   }
   else {
     fprintf(debug_file, "%s\n", out);
   }
 
-  if (size >= (BUFSIZE - 1)) {
+  if ( out != buffer ) {
     free(out);
   }
 #else /* Windows, MAC */
