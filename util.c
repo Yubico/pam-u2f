@@ -241,6 +241,7 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
   char *response = NULL;
   char *buf;
   int retval = -2;
+  int cued = 0;
   unsigned i = 0;
   unsigned max_index = 0;
   unsigned max_index_prev = 0;
@@ -261,10 +262,6 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
     if (cfg->debug)
       D(cfg->debug_file, "Unable to discover device(s), %s", u2fh_strerror(h_rc));
     return retval;
-  } else if (cfg->manual == 0) {
-    if (cfg->cue) {
-      converse(pamh, PAM_TEXT_INFO, "Please touch the device.");
-    }
   }
   max_index_prev = max_index;
 
@@ -324,20 +321,31 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
     if (cfg->debug)
       D(cfg->debug_file, "Challenge: %s", buf);
 
-    if ((h_rc = u2fh_authenticate(devs, buf, cfg->origin, &response, 1)) ==
-        U2FH_OK) {
-      if (cfg->debug)
-        D(cfg->debug_file, "Response: %s", response);
+    if ((h_rc = u2fh_authenticate(devs, buf, cfg->origin, &response, 0)) == U2FH_OK ) {
+
+      if (cfg->manual == 0 && cfg->cue && !cued) {
+        cued = 1;
+        converse(pamh, PAM_TEXT_INFO, DEFAULT_CUE);
+      }
 
       retval = -1;
 
-      if (u2fs_authentication_verify(ctx, response, &auth_result) == U2FS_OK) {
-        retval = 1;
-        break;
+      if ((h_rc = u2fh_authenticate(devs, buf, cfg->origin, &response, U2FH_REQUEST_USER_PRESENCE)) ==
+          U2FH_OK) {
+        if (cfg->debug)
+          D(cfg->debug_file, "Response: %s", response);
+
+        if (u2fs_authentication_verify(ctx, response, &auth_result) == U2FS_OK) {
+          retval = 1;
+          break;
+        }
+      } else {
+        if (cfg->debug)
+          D(cfg->debug_file, "Unable to communicate to the device, %s", u2fh_strerror(h_rc));
       }
     } else {
-      if (cfg->debug)
-        D(cfg->debug_file, "Unable to communicate to the device, %s", u2fh_strerror(h_rc));
+        if (cfg->debug)
+          D(cfg->debug_file, "Device for this keyhandle is not present.");
     }
 
     i++;

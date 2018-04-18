@@ -17,6 +17,7 @@
 #define DEFAULT_AUTHFILE_DIR_VAR "XDG_CONFIG_HOME"
 #define DEFAULT_AUTHFILE "/Yubico/u2f_keys"
 #define DEFAULT_PROMPT "Insert your U2F device, then press ENTER."
+#define DEFAULT_CUE "Please touch the device."
 #define DEFAULT_ORIGIN_PREFIX "pam://"
 #define DEBUG_STR "debug: %s:%d (%s): "
 
