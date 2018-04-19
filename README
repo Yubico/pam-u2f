@@ -95,6 +95,14 @@ file is $XDG_CONFIG_HOME/Yubico/u2f_keys. If the environment variable
 is not set, $HOME/.config/Yubico/u2f_keys is used.
 (more on <<files,Authorization Mapping Files>>).
 
+authpending_file=file::
+Set the location of the file that is used for touch request notifications.
+This file will be opened when pam-u2f starts waiting for a user to touch the device,
+and will be closed when it no longer waits for a touch.
+Use inotify to listen on these events, or a more high-level tool like https://github.com/maximbaz/yubikey-touch-detector[yubikey-touch-detector].
+Set an empty value in order to disable this functionality, like so: `authpending_file=`.
+Default value: /var/run/user/$UID/pam-u2f-authpending
+
 nouserok::
 Set to enable authentication attempts to succeed even if the user trying to
 authenticate is not found inside authfile or if authfile is missing/malformed.
