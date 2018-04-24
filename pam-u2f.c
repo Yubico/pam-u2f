@@ -349,7 +349,7 @@ done:
   }
 
   if (should_free_authpending_file) {
-    free(cfg->authpending_file);
+    free((char *) cfg->authpending_file);
     cfg->authpending_file = NULL;
   }
 

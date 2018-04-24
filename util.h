@@ -39,7 +39,7 @@ typedef struct {
   int interactive;
   int cue;
   const char *auth_file;
-  char *authpending_file;
+  const char *authpending_file;
   const char *origin;
   const char *appid;
   const char *prompt;
