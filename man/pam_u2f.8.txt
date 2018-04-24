@@ -29,6 +29,9 @@ Set the application ID for the U2F authentication procedure. If no value is spec
 *authfile*=_file_::
 Set the location of the file that holds the mappings of user names to keyHandles and user keys. The format is username:keyHandle1,public_key1:keyHandle2,public_key2:... the default location of the file is $XDG_CONFIG_HOME/Yubico/u2f_keys. If the environment variable is not set, $HOME/.config/Yubico/u2f_keys is used.
 
+*authpending_file*=_file_::
+Set the location of the file that is used for touch request notifications. This file will be opened when pam-u2f starts waiting for a user to touch the device, and will be closed when it no longer waits for a touch. Use inotify to listen on these events, or a more high-level tool like yubikey-touch-detector. Default value: /var/run/user/$UID/pam-u2f-authpending. Set an empty value in order to disable this functionality, like so: lockfile=
+
 *nouserok*::
 Set to enable authentication attempts to succeed even if the user trying to authenticate is not found inside authfile or if authfile is missing/malformed.
 
