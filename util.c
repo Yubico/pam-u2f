@@ -318,6 +318,8 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
       if (cfg->debug)
         D(cfg->debug_file, "Unable to produce authentication challenge: %s",
            u2fs_strerror(s_rc));
+      free(buf);
+      buf = NULL;
       return retval;
     }
 
@@ -338,8 +340,15 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
         if (cfg->debug)
           D(cfg->debug_file, "Response: %s", response);
 
-        if (u2fs_authentication_verify(ctx, response, &auth_result) == U2FS_OK) {
+        s_rc = u2fs_authentication_verify(ctx, response, &auth_result);
+        u2fs_free_auth_res(auth_result);
+        free(response);
+        response = NULL;
+        if (s_rc == U2FS_OK) {
           retval = 1;
+
+          free(buf);
+          buf = NULL;
           break;
         }
       } else {
@@ -347,9 +356,11 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
           D(cfg->debug_file, "Unable to communicate to the device, %s", u2fh_strerror(h_rc));
       }
     } else {
-        if (cfg->debug)
-          D(cfg->debug_file, "Device for this keyhandle is not present.");
+      if (cfg->debug)
+        D(cfg->debug_file, "Device for this keyhandle is not present.");
     }
+    free(buf);
+    buf = NULL;
 
     i++;
 
@@ -451,6 +462,8 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
       converse(pamh, PAM_TEXT_INFO, prompt);
     }
     converse(pamh, PAM_TEXT_INFO, buf);
+    free(buf);
+    buf = NULL;
   }
 
   converse(pamh, PAM_TEXT_INFO,
@@ -463,8 +476,9 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
     response = converse(pamh, PAM_PROMPT_ECHO_ON, prompt);
     converse(pamh, PAM_TEXT_INFO, response);
 
-    if (u2fs_authentication_verify(ctx_arr[i], response, &auth_result) ==
-          U2FS_OK) {
+    s_rc = u2fs_authentication_verify(ctx_arr[i], response, &auth_result);
+    u2fs_free_auth_res(auth_result);
+    if (s_rc == U2FS_OK) {
       retval = 1;
     }
     free(response);
