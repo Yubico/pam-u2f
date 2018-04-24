@@ -1,4 +1,4 @@
-#  Copyright (C) 2014-2015 Yubico AB - See COPYING
+#  Copyright (C) 2014-2018 Yubico AB - See COPYING
 #
 
 purpose "Perform a U2F registration operation and print a configuration line that can be used with the pam_u2f module."

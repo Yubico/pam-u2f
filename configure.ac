@@ -1,4 +1,4 @@
-#  Copyright (C) 2014-2017 Yubico AB
+#  Copyright (C) 2014-2018 Yubico AB
 AC_PREREQ([2.65])
 AC_INIT([pam_u2f], [1.0.7], [https://github.com/Yubico/pam-u2f/issues],
   [pam_u2f], [https://developers.yubico.com/pam-u2f/])

@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2014-2015 Yubico AB - See COPYING
+ *  Copyright (C) 2014-2018 Yubico AB - See COPYING
  */
 
 /* Define which PAM interfaces we provide */

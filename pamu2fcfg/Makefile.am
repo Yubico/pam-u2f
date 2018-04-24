@@ -1,4 +1,4 @@
-#  Copyright (C) 2014-2015 Yubico AB - See COPYING
+#  Copyright (C) 2014-2018 Yubico AB - See COPYING
 
 AM_CFLAGS = $(WARN_CFLAGS)
 AM_CPPFLAGS=-I$(srcdir)/.. -I$(builddir)/.. $(LIBU2FHOST_CFLAGS) $(LIBU2FSERVER_CFLAGS)
