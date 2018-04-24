@@ -136,6 +136,9 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
   device_t *devices = NULL;
   unsigned n_devices = 0;
   int openasuser;
+  int should_free_origin = 0;
+  int should_free_appid = 0;
+  int should_free_auth_file = 0;
   int should_free_authpending_file = 0;
 
   parse_cfg(flags, argc, argv, cfg);
@@ -153,6 +156,8 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
     if (!cfg->origin) {
       DBG("Unable to allocate memory");
       goto done;
+    } else {
+      should_free_origin = 1;
     }
   }
 
@@ -163,6 +168,8 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
     if (!cfg->appid) {
       DBG("Unable to allocate memory")
       goto done;
+    } else {
+      should_free_appid = 1;
     }
   }
 
@@ -235,6 +242,7 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
     DBG("Using default authentication file %s", buf);
 
     cfg->auth_file = buf; /* cfg takes ownership */
+    should_free_auth_file = 1;
     buf = NULL;
   } else {
     DBG("Using authentication file %s", cfg->auth_file);
@@ -346,6 +354,21 @@ done:
   if (buf) {
     free(buf);
     buf = NULL;
+  }
+
+  if (should_free_origin) {
+    free((char *) cfg->origin);
+    cfg->origin = NULL;
+  }
+
+  if (should_free_appid) {
+    free((char *) cfg->appid);
+    cfg->appid = NULL;
+  }
+
+  if (should_free_auth_file) {
+    free((char *) cfg->auth_file);
+    cfg->auth_file = NULL;
   }
 
   if (should_free_authpending_file) {

@@ -204,8 +204,11 @@ err:
   *n_devs = 0;
 
 out:
-  free(buf);
-  buf = NULL;
+  if (buf) {
+    free(buf);
+    buf = NULL;
+  }
+
   if (opwfile)
     fclose(opwfile);
   else if (fd >= 0)
