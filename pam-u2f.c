@@ -136,7 +136,7 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
   device_t *devices = NULL;
   unsigned n_devices = 0;
   int openasuser;
-  int should_free_authpending_file = 1;
+  int should_free_authpending_file = 0;
 
   parse_cfg(flags, argc, argv, cfg);
 
@@ -291,10 +291,10 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
     }
     if (!cfg->authpending_file) {
       DBG("Unable to allocate memory for the authpending_file, touch request notifications will not be emitted");
-      should_free_authpending_file = 0;
+    } else {
+      should_free_authpending_file = 1;
     }
   } else {
-    should_free_authpending_file = 0;
     if (strlen(cfg->authpending_file) == 0) {
       DBG("authpending_file is set to an empty value, touch request notifications will be disabled");
       cfg->authpending_file = NULL;
