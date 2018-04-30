@@ -38,6 +38,7 @@ typedef struct {
   int alwaysok;
   int interactive;
   int cue;
+  int nodetect;
   const char *auth_file;
   const char *authpending_file;
   const char *origin;
