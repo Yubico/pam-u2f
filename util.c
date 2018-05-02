@@ -326,7 +326,10 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
     if (cfg->debug)
       D(cfg->debug_file, "Challenge: %s", buf);
 
-    if ((h_rc = u2fh_authenticate(devs, buf, cfg->origin, &response, 0)) == U2FH_OK ) {
+    if (cfg->nodetect || (h_rc = u2fh_authenticate(devs, buf, cfg->origin, &response, 0)) == U2FH_OK ) {
+
+      if (cfg->nodetect)
+        D(cfg->debug_file, "nodetect option specified, suitable key detection skipped");
 
       if (cfg->manual == 0 && cfg->cue && !cued) {
         cued = 1;

@@ -136,6 +136,17 @@ If enabled, interactive mode becomes redundant and has no effect.
 cue::
 Set to prompt a message to remind to touch the device.
 
+nodetect::
+Set to skip detecting if a suitable U2F token is inserted before performing
+the full tactile authentication. This detection was created to avoid
+emitting the "cue" message if no suitable token exists, because doing so
+leaks information about the authentication stack if a token is inserted but
+not configured for the authenticating user. However, it was found that
+versions of libu2f-user 1.1.5 or less has buggy iteration/sleep behavior
+which causes a 1-second delay to occur for this initial detection. For this
+reason, as well as the possibility of hypothetical tokens that do not
+tolerate this double authentication, the "nodetect" option was added.
+
 [[files]]
 Authorization Mapping Files
 ---------------------------
