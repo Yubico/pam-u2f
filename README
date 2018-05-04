@@ -13,16 +13,19 @@ Building
 --------
 
 This project uses 'autoconf', 'automake', 'pkg-config' and 'libtool'
-to achieve portability and ease of use. If you downloaded a tarball,
-build it as follows.
+to achieve portability and ease of use. 
+
+In addition, both the Yubico U2F https://developers.yubico.com/libu2f-host['libu2f-host-dev'] and
+https://developers.yubico.com/libu2f-server['libu2f-server-dev'] libaries are needed.
+
+  Debian:   apt-get install autoconf automake libtool pkg-config libu2f-host-dev libu2f-server-dev --no-install-recommends
+
+If you downloaded a tarball, build it as follows.
 
 -----------
   $ ./configure
   $ make
 -----------
-
-Both the Yubico U2F https://developers.yubico.com/libu2f-host[host] and
-https://developers.yubico.com/libu2f-server[server] libaries are needed.
 
 Building from Git
 -----------------
@@ -39,7 +42,7 @@ This will create a directory 'pam-u2f'. Enter the directory:
   $ cd pam-u2f
 -----------
 
-Autoconf, automake, libtool, and libpam must be installed. AsciiDoc and xsltproc are used to
+'Autoconf', 'automake', 'libtool', and 'libpam' must be installed. 'AsciiDoc' and 'xsltproc' are used to
 generate the manpages.
 
   Debian:   apt-get install autoconf automake libtool libpam-dev asciidoc xsltproc libxml2-utils docbook-xml --no-install-recommends
