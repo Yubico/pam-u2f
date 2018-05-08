@@ -3,6 +3,7 @@
  */
 
 #include <fido.h>
+#include <fido/es256.h>
 
 #include <stdlib.h>
 #include <fcntl.h>
@@ -216,64 +217,131 @@ void free_devices(device_t *devices, const unsigned n_devs) {
   devices = NULL;
 }
 
-int do_authentication(const cfg_t *cfg, const device_t *devices,
-                      const unsigned n_devs, pam_handle_t *pamh) {
-  u2fs_ctx_t *ctx;
-  u2fs_auth_res_t *auth_result;
-  u2fs_rc s_rc;
-  u2fh_rc h_rc;
-  u2fh_devs *devs = NULL;
-  char *response = NULL;
-  char *buf;
-  int retval = -2;
-  int cued = 0;
-  unsigned i = 0;
-  unsigned max_index = 0;
-  unsigned max_index_prev = 0;
-
-  h_rc = u2fh_global_init(cfg->debug ? U2FH_DEBUG : 0);
-  if (h_rc != U2FH_OK) {
-    D(cfg->debug_file, "Unable to initialize libu2f-host: %s", u2fh_strerror(h_rc));
-    return retval;
-  }
-  h_rc = u2fh_devs_init(&devs);
-  if (h_rc != U2FH_OK) {
-    D(cfg->debug_file, "Unable to initialize libu2f-host device handles: %s",
-       u2fh_strerror(h_rc));
-    return retval;
-  }
-
-  if ((h_rc = u2fh_devs_discover(devs, &max_index)) != U2FH_OK) {
-    if (cfg->debug)
-      D(cfg->debug_file, "Unable to discover device(s), %s", u2fh_strerror(h_rc));
-    return retval;
-  }
-  max_index_prev = max_index;
+static int find_authenticator(const cfg_t *cfg, fido_dev_t *dev,
+                              const fido_dev_info_t *devlist,
+                              size_t devlist_len, fido_assert_t *assert) {
+  const fido_dev_info_t *di = NULL;
+  int r;
+  size_t i;
 
   if (cfg->debug)
-    D(cfg->debug_file, "Device max index is %u", max_index);
+    D(cfg->debug_file, "Working with %zu authenticator(s)", devlist_len);
 
-  s_rc = u2fs_global_init(cfg->debug ? U2FS_DEBUG : 0);
-  if (s_rc != U2FS_OK) {
-    D(cfg->debug_file, "Unable to initialize libu2f-server: %s", u2fs_strerror(s_rc));
-    return retval;
-  }
-  s_rc = u2fs_init(&ctx);
-  if (s_rc != U2FS_OK) {
-    D(cfg->debug_file, "Unable to initialize libu2f-server context: %s", u2fs_strerror(s_rc));
-    return retval;
-  }
-
-  if ((s_rc = u2fs_set_origin(ctx, cfg->origin)) != U2FS_OK) {
+  for (i = 0; i < devlist_len; i++) {
     if (cfg->debug)
-      D(cfg->debug_file, "Unable to set origin: %s", u2fs_strerror(s_rc));
-    return retval;
+      D(cfg->debug_file, "Checking whether key exists in authenticator %zu", i);
+
+    di = fido_dev_info_ptr(devlist, i);
+    if (!di) {
+      if (cfg->debug)
+        D(cfg->debug_file, "Unable to get device pointer");
+      continue;
+    }
+
+    if (cfg->debug)
+      D(cfg->debug_file, "Authenticator path: %s", fido_dev_info_path(di));
+
+    r = fido_dev_open(dev, fido_dev_info_path(di));
+    if (r != FIDO_OK) {
+      if (cfg->debug)
+        D(cfg->debug_file, "Failed to open authenticator: %s (%d)",
+          fido_strerr(r), r);
+      continue;
+    }
+
+    r = fido_dev_get_assert(dev, assert, NULL);
+    if ((!fido_dev_is_fido2(dev) && r == FIDO_ERR_USER_PRESENCE_REQUIRED) ||
+         (fido_dev_is_fido2(dev) && r == FIDO_OK)) {
+      if (cfg->debug)
+        D(cfg->debug_file, "Found key in authenticator %zu", i);
+      return (1);
+    }
+
+    if (cfg->debug)
+      D(cfg->debug_file, "Key not found in authenticator %zu", i);
+
+    fido_dev_close(dev);
   }
 
-  if ((s_rc = u2fs_set_appid(ctx, cfg->appid)) != U2FS_OK) {
+  if (cfg->debug)
+    D(cfg->debug_file, "Key not found");
+
+  return (0);
+}
+
+int do_authentication(const cfg_t *cfg, const device_t *devices,
+                      const unsigned n_devs, pam_handle_t *pamh) {
+  es256_pk_t *es256_pk = NULL;
+  fido_assert_t *assert = NULL;
+  fido_dev_info_t *devlist = NULL;
+  fido_dev_t *dev = NULL;
+  int cued = 0;
+  int r;
+  int retval = -2;
+  size_t kh_len;
+  size_t ndevs = 0;
+  size_t ndevs_prev = 0;
+  size_t pk_len;
+  unsigned char challenge[32];
+  unsigned char *kh = NULL;
+  unsigned char *pk = NULL;
+  unsigned i = 0;
+
+  fido_init(cfg->debug ? FIDO_DEBUG : 0);
+
+  devlist = fido_dev_info_new(64);
+  if (!devlist) {
     if (cfg->debug)
-      D(cfg->debug_file, "Unable to set appid: %s", u2fs_strerror(s_rc));
-    return retval;
+      D(cfg->debug_file, "Unable to allocate devlist");
+   goto out;
+  }
+
+  r = fido_dev_info_manifest(devlist, 64, &ndevs);
+  if (r != FIDO_OK) {
+    if (cfg->debug)
+      D(cfg->debug_file, "Unable to discover device(s), %s (%d)",
+        fido_strerr(r), r);
+    goto out;
+  }
+
+  ndevs_prev = ndevs;
+
+  if (cfg->debug)
+    D(cfg->debug_file, "Device max index is %u", ndevs);
+
+  es256_pk = es256_pk_new();
+  if (!es256_pk) {
+    if (cfg->debug)
+      D(cfg->debug_file, "Unable to allocate public key");
+    goto out;
+  }
+
+  dev = fido_dev_new();
+  if (!dev) {
+    if (cfg->debug)
+      D(cfg->debug_file, "Unable to allocate device");
+    goto out;
+  }
+
+  assert = fido_assert_new();
+  if (!assert) {
+    if (cfg->debug)
+      D(cfg->debug_file, "Unable to allocate assertion");
+    goto out;
+  }
+
+  r = fido_assert_set_rp(assert, cfg->origin);
+  if (r != FIDO_OK) {
+    if (cfg->debug)
+      D(cfg->debug_file, "Unable to set origin: %s (%d)", fido_strerr(r), r);
+    goto out;
+  }
+
+  r = fido_assert_set_options(assert, false, false);
+  if (r != FIDO_OK) {
+    if (cfg->debug)
+      D(cfg->debug_file, "Unable to set options: %s (%d)", fido_strerr(r), r);
+    goto out;
   }
 
   if (cfg->nodetect && cfg->debug)
@@ -281,94 +349,135 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
 
   i = 0;
   while (i < n_devs) {
-
     retval = -2;
 
     if (cfg->debug)
       D(cfg->debug_file, "Attempting authentication with device number %d", i + 1);
 
-    if ((s_rc = u2fs_set_keyHandle(ctx, devices[i].keyHandle)) != U2FS_OK) {
+    if (!b64_decode(devices[i].keyHandle, (void **)&kh, &kh_len)) {
       if (cfg->debug)
-        D(cfg->debug_file, "Unable to set keyHandle: %s", u2fs_strerror(s_rc));
-      return retval;
+        D(cfg->debug_file, "Failed to decode key handle");
+      goto out;
     }
 
-    if ((s_rc = u2fs_set_publicKey(ctx, devices[i].publicKey)) != U2FS_OK) {
+    r = fido_assert_allow_cred(assert, kh, kh_len);
+    if (r != FIDO_OK) {
       if (cfg->debug)
-        D(cfg->debug_file, "Unable to set publicKey %s", u2fs_strerror(s_rc));
-      return retval;
+        D(cfg->debug_file, "Unable to set keyHandle: %s (%d)", fido_strerr(r), r);
+      goto out;
     }
 
-    if ((s_rc = u2fs_authentication_challenge(ctx, &buf)) != U2FS_OK) {
+    if (!b64_decode(devices[i].publicKey, (void **)&pk, &pk_len)) {
       if (cfg->debug)
-        D(cfg->debug_file, "Unable to produce authentication challenge: %s",
-           u2fs_strerror(s_rc));
-      free(buf);
-      buf = NULL;
-      return retval;
+        D(cfg->debug_file, "Failed to decode public key");
+      goto out;
     }
 
-    if (cfg->debug)
-      D(cfg->debug_file, "Challenge: %s", buf);
+    if (!random_bytes(challenge, sizeof(challenge))) {
+      if (cfg->debug)
+        D(cfg->debug_file, "Failed to generate challenge");
+      goto out;
+    }
 
-    if (cfg->nodetect || (h_rc = u2fh_authenticate(devs, buf, cfg->origin, &response, 0)) == U2FH_OK ) {
-
-      if (cfg->manual == 0 && cfg->cue && !cued) {
-        cued = 1;
-        converse(pamh, PAM_TEXT_INFO, DEFAULT_CUE);
-      }
-
-      retval = -1;
-
-      if ((h_rc = u2fh_authenticate(devs, buf, cfg->origin, &response, U2FH_REQUEST_USER_PRESENCE)) ==
-          U2FH_OK) {
-        if (cfg->debug)
-          D(cfg->debug_file, "Response: %s", response);
-
-        s_rc = u2fs_authentication_verify(ctx, response, &auth_result);
-        u2fs_free_auth_res(auth_result);
-        free(response);
-        response = NULL;
-        if (s_rc == U2FS_OK) {
-          retval = 1;
-
-          free(buf);
-          buf = NULL;
-          break;
-        }
+    if (cfg->debug) {
+      char *b64_challenge;
+      if (!b64_encode(challenge, sizeof(challenge), &b64_challenge)) {
+        D(cfg->debug_file, "Failed to encode challenge");
       } else {
-        if (cfg->debug)
-          D(cfg->debug_file, "Unable to communicate to the device, %s", u2fh_strerror(h_rc));
+        D(cfg->debug_file, "Challenge: %s", b64_challenge);
+        free(b64_challenge);
+      }
+    }
+
+    r = fido_assert_set_clientdata_hash(assert, challenge, sizeof(challenge));
+    if (r != FIDO_OK) {
+      if (cfg->debug)
+        D(cfg->debug_file, "Unable to set challenge: %s( %d)", fido_strerr(r),
+          r);
+      goto out;
+    }
+
+    if (find_authenticator(cfg, dev, devlist, ndevs, assert)) {
+      r = fido_dev_get_assert(dev, assert, NULL);
+      if ((!fido_dev_is_fido2(dev) && r == FIDO_ERR_USER_PRESENCE_REQUIRED) ||
+          r == FIDO_OK) {
+
+        if (cfg->manual == 0 && cfg->cue && !cued) {
+          cued = 1;
+          converse(pamh, PAM_TEXT_INFO, DEFAULT_CUE);
+        }
+
+        retval = -1;
+
+        fido_assert_set_options(assert, true, false);
+
+        if ((r = fido_dev_get_assert(dev, assert, NULL)) == FIDO_OK) {
+          if (es256_pk_from_ptr(es256_pk, pk, pk_len) == FIDO_OK) {
+            r = fido_assert_verify(assert, 0, COSE_ES256, es256_pk);
+            if (r == FIDO_OK) {
+              retval = 1;
+              break;
+            }
+          }
+        } else {
+          if (cfg->debug)
+            D(cfg->debug_file, "Unable to communicate with the device, %s (%d)",
+              fido_strerr(r), r);
+        }
       }
     } else {
       if (cfg->debug)
         D(cfg->debug_file, "Device for this keyhandle is not present.");
     }
-    free(buf);
-    buf = NULL;
 
     i++;
 
-    if (u2fh_devs_discover(devs, &max_index) != U2FH_OK) {
+    fido_dev_info_free(&devlist, ndevs);
+
+    devlist = fido_dev_info_new(64);
+    if (!devlist) {
       if (cfg->debug)
-        D(cfg->debug_file, "Unable to discover devices");
-      return retval;
+        D(cfg->debug_file, "Unable to allocate devlist");
+      goto out;
     }
 
-    if (max_index > max_index_prev) {
+    r = fido_dev_info_manifest(devlist, 64, &ndevs);
+    if (r != FIDO_OK) {
       if (cfg->debug)
-        D(cfg->debug_file, "Devices max_index has changed: %u (was %u). Starting over",
-           max_index, max_index_prev);
-      max_index_prev = max_index;
+        D(cfg->debug_file, "Unable to discover device(s), %s (%d)",
+          fido_strerr(r), r);
+      goto out;
+    }
+
+    if (ndevs > ndevs_prev) {
+      if (cfg->debug)
+        D(cfg->debug_file, "Devices max_index has changed: %zu (was %zu). Starting over",
+          ndevs, ndevs_prev);
+      ndevs_prev = ndevs;
       i = 0;
     }
+
+    free(kh);
+    free(pk);
+
+    kh = NULL;
+    pk = NULL;
+
+    fido_dev_close(dev);
   }
 
-  u2fh_devs_done(devs);
-  u2fh_global_done();
+out:
+  es256_pk_free(&es256_pk);
+  fido_assert_free(&assert);
+  fido_dev_info_free(&devlist, ndevs);
 
-  u2fs_done(ctx);
-  u2fs_global_done();
+  if (dev)
+    fido_dev_close(dev);
+
+  fido_dev_free(&dev);
+
+  free(kh);
+  free(pk);
 
   return retval;
 }
