@@ -486,78 +486,127 @@ out:
 
 int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
                              const unsigned n_devs, pam_handle_t *pamh) {
-  u2fs_ctx_t *ctx_arr[n_devs];
-  u2fs_auth_res_t *auth_result;
-  u2fs_rc s_rc;
-  char *response = NULL;
+  fido_assert_t *assert[n_devs];
+  es256_pk_t *es256_pk[n_devs];
+  unsigned char challenge[32];
+  unsigned char *kh = NULL;
+  unsigned char *pk = NULL;
+  unsigned char *resp = NULL;
+  char *b64_resp = NULL;
+  char *b64_challenge = NULL;
   char prompt[MAX_PROMPT_LEN];
-  char *buf;
+  char buf[MAX_PROMPT_LEN];
+  size_t kh_len;
+  size_t pk_len;
+  size_t resp_len;
   int retval = -2;
+  int n;
+  int r;
   unsigned i = 0;
 
-  if (u2fs_global_init(0) != U2FS_OK) {
-    if (cfg->debug)
-      D(cfg->debug_file, "Unable to initialize libu2f-server");
-    return retval;
-  }
+  memset(assert, 0, sizeof(assert));
+  memset(es256_pk, 0, sizeof(es256_pk));
+
+  fido_init(cfg->debug ? FIDO_DEBUG : 0);
 
   for (i = 0; i < n_devs; ++i) {
 
-    if (u2fs_init(ctx_arr + i) != U2FS_OK) {
+    assert[i] = fido_assert_new();
+    if (!assert[i]) {
       if (cfg->debug)
-        D(cfg->debug_file, "Unable to initialize libu2f-server");
-      return retval;
+        D(cfg->debug_file, "Unable to allocate assertion %u", i);
+      goto out;
     }
 
-    if ((s_rc = u2fs_set_origin(ctx_arr[i], cfg->origin)) != U2FS_OK) {
+    r = fido_assert_set_rp(assert[i], cfg->origin);
+    if (r != FIDO_OK) {
       if (cfg->debug)
-        D(cfg->debug_file, "Unable to set origin: %s", u2fs_strerror(s_rc));
-      return retval;
-    }
-
-    if ((s_rc = u2fs_set_appid(ctx_arr[i], cfg->appid)) != U2FS_OK) {
-      if (cfg->debug)
-        D(cfg->debug_file, "Unable to set appid: %s", u2fs_strerror(s_rc));
-      return retval;
+        D(cfg->debug_file, "Unable to set origin: %s (%d)", fido_strerr(r), r);
+      goto out;
     }
 
     if (cfg->debug)
       D(cfg->debug_file, "Attempting authentication with device number %d", i + 1);
 
-    if ((s_rc = u2fs_set_keyHandle(ctx_arr[i], devices[i].keyHandle)) !=
-        U2FS_OK) {
+    if (!b64_decode(devices[i].keyHandle, (void **)&kh, &kh_len)) {
       if (cfg->debug)
-        D(cfg->debug_file, "Unable to set keyHandle: %s", u2fs_strerror(s_rc));
-      return retval;
+        D(cfg->debug_file, "Failed to decode key handle");
+      goto out;
     }
 
-    if ((s_rc = u2fs_set_publicKey(ctx_arr[i], devices[i].publicKey)) !=
-        U2FS_OK) {
+    r = fido_assert_allow_cred(assert[i], kh, kh_len);
+    if (r != FIDO_OK) {
       if (cfg->debug)
-        D(cfg->debug_file, "Unable to set publicKey %s", u2fs_strerror(s_rc));
-      return retval;
+        D(cfg->debug_file, "Unable to set keyHandle: %s (%d)", fido_strerr(r), r);
+      goto out;
     }
 
-    if ((s_rc = u2fs_authentication_challenge(ctx_arr[i], &buf)) != U2FS_OK) {
+    free(kh);
+    kh = NULL;
+
+    es256_pk[i] = es256_pk_new();
+    if (!es256_pk[i]) {
       if (cfg->debug)
-        D(cfg->debug_file, "Unable to produce authentication challenge: %s",
-           u2fs_strerror(s_rc));
-      return retval;
+        D(cfg->debug_file, "Unable to allocate key %u", i);
+      goto out;
+    }
+
+    if (!b64_decode(devices[i].publicKey, (void **)&pk, &pk_len)) {
+      if (cfg->debug)
+        D(cfg->debug_file, "Failed to decode public key");
+      goto out;
+    }
+
+    if (es256_pk_from_ptr(es256_pk[i], pk, pk_len) != FIDO_OK) {
+      if (cfg->debug)
+        D(cfg->debug_file, "Failed to convert public key");
+      goto out;
+    }
+
+    free(pk);
+    pk = NULL;
+
+    if (!random_bytes(challenge, sizeof(challenge))) {
+      if (cfg->debug)
+        D(cfg->debug_file, "Failed to generate challenge");
+      goto out;
+    }
+
+    r = fido_assert_set_clientdata_hash(assert[i], challenge, sizeof(challenge));
+    if (r != FIDO_OK) {
+      if (cfg->debug)
+        D(cfg->debug_file, "Failed to set challenge");
+      goto out;
+    }
+
+    if (!b64_encode(challenge, sizeof(challenge), &b64_challenge)) {
+      if (cfg->debug)
+        D(cfg->debug_file, "Failed to encode challenge");
+      goto out;
     }
 
     if (cfg->debug)
-      D(cfg->debug_file, "Challenge: %s", buf);
+      D(cfg->debug_file, "Challenge: %s", b64_challenge);
 
     if (i == 0) {
       snprintf(prompt, sizeof(prompt),
                       "Now please copy-paste the below challenge(s) to "
-                      "'u2f-host -aauthenticate -o %s'",
-              cfg->origin);
+                      "fido2-host");
       converse(pamh, PAM_TEXT_INFO, prompt);
     }
+
+    n = snprintf(buf, sizeof(buf), "%s,%s,%s", cfg->origin,
+                 devices[i].keyHandle, b64_challenge);
+    if (n <= 0 || (size_t)n >= sizeof(buf)) {
+      if (cfg->debug)
+        D(cfg->debug_file, "Failed to print fido2-host input string");
+      goto out;
+    }
+
     converse(pamh, PAM_TEXT_INFO, buf);
-    free(buf);
-    buf = NULL;
+
+    free(b64_challenge);
+    b64_challenge = NULL;
   }
 
   converse(pamh, PAM_TEXT_INFO,
@@ -567,23 +616,52 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
 
   for (i = 0; i < n_devs; ++i) {
     snprintf(prompt, sizeof(prompt), "[%d]: ", i);
-    response = converse(pamh, PAM_PROMPT_ECHO_ON, prompt);
-    converse(pamh, PAM_TEXT_INFO, response);
+    b64_resp = converse(pamh, PAM_PROMPT_ECHO_ON, prompt);
+    converse(pamh, PAM_TEXT_INFO, b64_resp);
 
-    s_rc = u2fs_authentication_verify(ctx_arr[i], response, &auth_result);
-    u2fs_free_auth_res(auth_result);
-    if (s_rc == U2FS_OK) {
-      retval = 1;
+    if (!b64_decode(b64_resp, (void **)&resp, &resp_len)) {
+      if (cfg->debug)
+        D(cfg->debug_file, "Failed to decode response");
+      goto out;
     }
-    free(response);
-    if (retval == 1) {
-        break;
+
+    free(b64_resp);
+    b64_resp = NULL;
+
+    r = fido_assert_set_count(assert[i], 1);
+    if (r != FIDO_OK) {
+      if (cfg->debug)
+        D(cfg->debug_file, "Failed to set signature of assertion %u", i);
+    }
+
+    r = fido_assert_set_sig(assert[i], 0, resp, resp_len);
+    if (r != FIDO_OK) {
+      if (cfg->debug)
+        D(cfg->debug_file, "Failed to set signature of assertion %u", i);
+      goto out;
+    }
+
+    free(resp);
+    resp = NULL;
+
+    r = fido_assert_verify(assert[i], 0, COSE_ES256, es256_pk[i]);
+    if (r != FIDO_OK) {
+      retval = 1;
+      break;
     }
   }
 
-  for (i = 0; i < n_devs; ++i)
-    u2fs_done(ctx_arr[i]);
-  u2fs_global_done();
+out:
+  for (i = 0; i < n_devs; i++) {
+    fido_assert_free(&assert[i]);
+    es256_pk_free(&es256_pk[i]);
+  }
+
+  free(kh);
+  free(pk);
+  free(b64_resp);
+  free(b64_challenge);
+  free(resp);
 
   return retval;
 }
