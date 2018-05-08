@@ -17,7 +17,7 @@ AM_PROG_AR
 AC_LIBTOOL_WIN32_DLL
 AC_DISABLE_STATIC
 AC_PROG_LIBTOOL
-
+AC_PROG_CC_STDC
 
 AC_ARG_ENABLE([man],
   [AS_HELP_STRING([--disable-man], [Disable man page generation])],
