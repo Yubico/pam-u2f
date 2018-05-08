@@ -1,13 +1,14 @@
 #  Copyright (C) 2014-2018 Yubico AB - See COPYING
 
 AM_CFLAGS = $(WARN_CFLAGS)
-AM_CPPFLAGS=-I$(srcdir)/.. -I$(builddir)/.. $(LIBU2FHOST_CFLAGS) $(LIBU2FSERVER_CFLAGS)
+AM_CPPFLAGS=-I$(srcdir)/.. -I$(builddir)/.. $(LIBFIDO2_CFLAGS)
 
 bin_PROGRAMS = pamu2fcfg
 
 pamu2fcfg_SOURCES = pamu2fcfg.c
 pamu2fcfg_SOURCES += cmdline.ggo cmdline.c cmdline.h
-pamu2fcfg_LDADD = $(LIBU2FHOST_LIBS) $(LIBU2FSERVER_LIBS)
+pamu2fcfg_SOURCES += ../util.c ../b64.c
+pamu2fcfg_LDADD = $(LIBFIDO2_LIBS)
 
 cmdline.c cmdline.h: cmdline.ggo Makefile.am
 	gengetopt --no-handle-help --input $^
