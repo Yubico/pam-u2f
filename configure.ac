@@ -7,7 +7,8 @@ AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CANONICAL_HOST
 
-AM_INIT_AUTOMAKE([1.11 foreign])
+AM_INIT_AUTOMAKE([1.11 foreign subdir-objects])
+
 AM_SILENT_RULES([yes])
 AM_MAINTAINER_MODE
 
@@ -55,8 +56,8 @@ AC_ARG_WITH(pam-dir,
 AC_SUBST(PAMDIR, "$PAMDIR")
 
 
-PKG_CHECK_MODULES([LIBU2FHOST], [u2f-host], [], [])
-PKG_CHECK_MODULES([LIBU2FSERVER], [u2f-server], [], [])
+PKG_CHECK_MODULES([LIBCRYPTO], [libcrypto], [], [])
+PKG_CHECK_MODULES([LIBFIDO2], [libfido2], [], [])
 
 
 # Check for secure_getenv
@@ -105,9 +106,9 @@ AC_MSG_NOTICE([Summary of build options:
   CWFLAGS:             ${CWFLAGS}
   CSFLAGS:             ${CSFLAGS}
   Library types:       Shared=${enable_shared}, Static=${enable_static}
-  LIBU2FHOST CFLAGS:   $LIBU2FHOST_CFLAGS
-  LIBU2FHOST LIBS:     $LIBU2FHOST_LIBS
-  LIBU2FSERVER CFLAGS: $LIBU2FSERVER_CFLAGS
-  LIBU2FSERVER LIBS:   $LIBU2FSERVER_LIBS
+  LIBFIDO2 CFLAGS:     $LIBFIDO2_CFLAGS
+  LIBFIDO2 LIBS:       $LIBFIDO2_LIBS
+  LIBCRYPTO CFLAGS:    $LIBCRYPTO_CFLAGS
+  LIBCRYPTO LIBS:      $LIBCRYPTO_LIBS
   PAMDIR:              $PAMDIR
 ])
