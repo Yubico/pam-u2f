@@ -594,3 +594,23 @@ void _debug(FILE *debug_file, const char *file, int line, const char *func, cons
 #endif /* __linux__ */
 }
 #endif /* PAM_DEBUG */
+
+#ifndef RANDOM_DEV
+#define RANDOM_DEV "/dev/urandom"
+#endif
+
+int random_bytes(void *buf, size_t cnt) {
+  int fd;
+  ssize_t n;
+
+  fd = open(RANDOM_DEV, O_RDONLY);
+  if (fd < 0)
+    return (0);
+
+  n = read(fd, buf, cnt);
+  close(fd);
+  if (n < 0 || (size_t)n != cnt)
+    return (0);
+
+  return (1);
+}

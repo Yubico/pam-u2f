@@ -65,4 +65,6 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
                              const unsigned n_devs, pam_handle_t *pamh);
 char *converse(pam_handle_t *pamh, int echocode, const char *prompt);
 void _debug(FILE *, const char *, int, const char *, const char *, ...);
+int random_bytes(void *, size_t);
+
 #endif /* UTIL_H */
