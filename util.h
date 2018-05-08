@@ -49,9 +49,8 @@ typedef struct {
 } cfg_t;
 
 typedef struct {
-  unsigned char *publicKey;
+  char *publicKey;
   char *keyHandle;
-  size_t key_len;
 } device_t;
 
 int get_devices_from_authfile(const char *authfile, const char *username,

@@ -2,10 +2,7 @@
  * Copyright (C) 2014-2019 Yubico AB - See COPYING
  */
 
-#include "util.h"
-
-#include <u2f-server.h>
-#include <u2f-host.h>
+#include <fido.h>
 
 #include <stdlib.h>
 #include <fcntl.h>
@@ -15,8 +12,10 @@
 #include <pwd.h>
 #include <errno.h>
 #include <unistd.h>
-
 #include <string.h>
+
+#include "b64.h"
+#include "util.h"
 
 int get_devices_from_authfile(const char *authfile, const char *username,
                               unsigned max_devs, int verbose, FILE *debug_file,
@@ -31,7 +30,7 @@ int get_devices_from_authfile(const char *authfile, const char *username,
   char buffer[BUFSIZE];
   int gpu_ret;
   FILE *opwfile = NULL;
-  unsigned i, j;
+  unsigned i;
 
   /* Ensure we never return uninitialized count. */
   *n_devs = 0;
@@ -155,34 +154,12 @@ int get_devices_from_authfile(const char *authfile, const char *username,
         if (verbose)
           D(debug_file, "publicKey for device number %d: %s", i + 1, s_token);
 
-        if (strlen(s_token) % 2 != 0) {
-          if (verbose)
-            D(debug_file, "Length of key number %d not even", i + 1);
-          goto err;
-        }
-
-        devices[i].key_len = strlen(s_token) / 2;
-
-        if (verbose)
-          D(debug_file, "Length of key number %d is %zu", i + 1, devices[i].key_len);
-
-        devices[i].publicKey =
-          malloc((sizeof(unsigned char) * devices[i].key_len));
+        devices[i].publicKey = strdup(s_token);
 
         if (!devices[i].publicKey) {
           if (verbose)
             D(debug_file, "Unable to allocate memory for publicKey number %d", i);
           goto err;
-        }
-
-        for (j = 0; j < devices[i].key_len; j++) {
-          unsigned int x;
-          if (sscanf(&s_token[2 * j], "%2x", &x) != 1) {
-            if (verbose)
-              D(debug_file, "Invalid hex number in key");
-            goto err;
-          }
-          devices[i].publicKey[j] = (unsigned char)x;
         }
 
         i++;
