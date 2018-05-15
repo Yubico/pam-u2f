@@ -32,6 +32,9 @@ int main(int argc, char *argv[]) {
   fido_dev_t *dev = NULL;
   const fido_dev_info_t *di = NULL;
   size_t ndevs;
+  int cose_type;
+  int resident_key;
+  int user_presence;
   int r;
   char *origin = NULL;
   char *appid = NULL;
@@ -70,7 +73,19 @@ int main(int argc, char *argv[]) {
     exit(EXIT_FAILURE);
   }
 
-  r = fido_cred_set_type(cred, COSE_ES256);
+  if (args_info.type_given) {
+    if (!strcasecmp(args_info.type_arg, "es256"))
+      cose_type = COSE_ES256;
+    else if (!strcasecmp(args_info.type_arg, "rs256"))
+      cose_type = COSE_RS256;
+    else {
+      fprintf(stderr, "Unknown COSE type '%s'.\n", args_info.type_arg);
+      exit(EXIT_FAILURE);
+    }
+  } else
+    cose_type = COSE_ES256;
+
+  r = fido_cred_set_type(cred, cose_type);
   if (r != FIDO_OK) {
     fprintf(stderr, "error: fido_cred_set_type (%d): %s\n", r, fido_strerr(r));
     exit(EXIT_FAILURE);
@@ -146,7 +161,17 @@ int main(int argc, char *argv[]) {
     exit(EXIT_FAILURE);
   }
 
-  r = fido_cred_set_options(cred, false, false);
+  if (args_info.resident_given)
+    resident_key = 1;
+  else
+    resident_key = 0;
+
+  if (args_info.no_user_presence_given)
+    user_presence = 0;
+  else
+    user_presence = 1;
+
+  r = fido_cred_set_options(cred, resident_key, false);
   if (r != FIDO_OK) {
     fprintf(stderr, "error: fido_cred_set_options (%d) %s\n", r,
             fido_strerr(r));
@@ -197,7 +222,7 @@ int main(int argc, char *argv[]) {
   /* XXX loop over every device? */
   dev = fido_dev_new();
   if (!dev) {
-    fprintf(stderr, "fido_cred_new failed\n");
+    fprintf(stderr, "fido_dev_new failed\n");
     exit(EXIT_FAILURE);
   }
 
@@ -262,7 +287,9 @@ int main(int argc, char *argv[]) {
   if (!args_info.nouser_given)
     printf("%s", user);
 
-  printf(":%s,%s", b64_kh, b64_pk);
+  printf(":%s,%s,%s,%s", resident_key ? "*" : b64_kh, b64_pk,
+         cose_type == COSE_ES256 ? "es256" : "rs256",
+         user_presence ? "+" : "-");
 
   exit_code = EXIT_SUCCESS;
 
