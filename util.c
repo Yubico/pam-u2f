@@ -4,6 +4,7 @@
 
 #include <fido.h>
 #include <fido/es256.h>
+#include <fido/rs256.h>
 
 #include <stdlib.h>
 #include <fcntl.h>
@@ -274,17 +275,19 @@ void free_devices(device_t *devices, const unsigned n_devs) {
   devices = NULL;
 }
 
-static int find_authenticator(const cfg_t *cfg, fido_dev_t *dev,
-                              const fido_dev_info_t *devlist,
-                              size_t devlist_len, fido_assert_t *assert) {
+static int get_authenticators(const cfg_t *cfg, const fido_dev_info_t *devlist,
+                              size_t devlist_len, fido_assert_t *assert,
+                              const void *kh, fido_dev_t **authlist) {
   const fido_dev_info_t *di = NULL;
+  fido_dev_t *dev = NULL;
   int r;
   size_t i;
+  size_t j;
 
   if (cfg->debug)
     D(cfg->debug_file, "Working with %zu authenticator(s)", devlist_len);
 
-  for (i = 0; i < devlist_len; i++) {
+  for (i = 0, j = 0; i < devlist_len; i++) {
     if (cfg->debug)
       D(cfg->debug_file, "Checking whether key exists in authenticator %zu", i);
 
@@ -298,43 +301,63 @@ static int find_authenticator(const cfg_t *cfg, fido_dev_t *dev,
     if (cfg->debug)
       D(cfg->debug_file, "Authenticator path: %s", fido_dev_info_path(di));
 
+    dev = fido_dev_new();
+    if (!dev) {
+      if (cfg->debug)
+        D(cfg->debug_file, "Unable to allocate device type");
+      continue;
+    }
+
     r = fido_dev_open(dev, fido_dev_info_path(di));
     if (r != FIDO_OK) {
       if (cfg->debug)
         D(cfg->debug_file, "Failed to open authenticator: %s (%d)",
           fido_strerr(r), r);
+      fido_dev_free(&dev);
       continue;
     }
 
-    r = fido_dev_get_assert(dev, assert, NULL);
-    if ((!fido_dev_is_fido2(dev) && r == FIDO_ERR_USER_PRESENCE_REQUIRED) ||
-         (fido_dev_is_fido2(dev) && r == FIDO_OK)) {
+    if (kh == NULL || cfg->nodetect) {
+      /* resident credential or nodetect: try all authenticators */
+      authlist[j++] = dev;
+    } else {
+      r = fido_dev_get_assert(dev, assert, NULL);
+      if ((!fido_dev_is_fido2(dev) && r == FIDO_ERR_USER_PRESENCE_REQUIRED) ||
+           (fido_dev_is_fido2(dev) && r == FIDO_OK)) {
+        authlist[j++] = dev;
+        if (cfg->debug)
+          D(cfg->debug_file, "Found key in authenticator %zu", i);
+        return (1);
+      }
       if (cfg->debug)
-        D(cfg->debug_file, "Found key in authenticator %zu", i);
-      return (1);
+        D(cfg->debug_file, "Key not found in authenticator %zu", i);
+
+      fido_dev_close(dev);
+      fido_dev_free(&dev);
     }
-
-    if (cfg->debug)
-      D(cfg->debug_file, "Key not found in authenticator %zu", i);
-
-    fido_dev_close(dev);
   }
 
-  if (cfg->debug)
-    D(cfg->debug_file, "Key not found");
-
-  return (0);
+  if (kh == NULL && j != 0)
+    return (1);
+  else {
+    if (cfg->debug)
+      D(cfg->debug_file, "Key not found");
+    return (0);
+  }
 }
 
 int do_authentication(const cfg_t *cfg, const device_t *devices,
                       const unsigned n_devs, pam_handle_t *pamh) {
   es256_pk_t *es256_pk = NULL;
+  rs256_pk_t *rs256_pk = NULL;
   fido_assert_t *assert = NULL;
   fido_dev_info_t *devlist = NULL;
-  fido_dev_t *dev = NULL;
+  fido_dev_t **authlist = NULL;
   int cued = 0;
   int r;
   int retval = -2;
+  int cose_type;
+  int user_presence;
   size_t kh_len;
   size_t ndevs = 0;
   size_t ndevs_prev = 0;
@@ -369,35 +392,21 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
   es256_pk = es256_pk_new();
   if (!es256_pk) {
     if (cfg->debug)
-      D(cfg->debug_file, "Unable to allocate public key");
+      D(cfg->debug_file, "Unable to allocate ES256 public key");
     goto out;
   }
 
-  dev = fido_dev_new();
-  if (!dev) {
+  rs256_pk = rs256_pk_new();
+  if (!rs256_pk) {
     if (cfg->debug)
-      D(cfg->debug_file, "Unable to allocate device");
+      D(cfg->debug_file, "Unable to allocate RS256 public key");
     goto out;
   }
 
-  assert = fido_assert_new();
-  if (!assert) {
+  authlist = calloc(64 + 1, sizeof(fido_dev_t *));
+  if (!authlist) {
     if (cfg->debug)
-      D(cfg->debug_file, "Unable to allocate assertion");
-    goto out;
-  }
-
-  r = fido_assert_set_rp(assert, cfg->origin);
-  if (r != FIDO_OK) {
-    if (cfg->debug)
-      D(cfg->debug_file, "Unable to set origin: %s (%d)", fido_strerr(r), r);
-    goto out;
-  }
-
-  r = fido_assert_set_options(assert, false, false);
-  if (r != FIDO_OK) {
-    if (cfg->debug)
-      D(cfg->debug_file, "Unable to set options: %s (%d)", fido_strerr(r), r);
+      D(cfg->debug_file, "Unable to allocate authenticator list");
     goto out;
   }
 
@@ -411,17 +420,38 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
     if (cfg->debug)
       D(cfg->debug_file, "Attempting authentication with device number %d", i + 1);
 
-    if (!b64_decode(devices[i].keyHandle, (void **)&kh, &kh_len)) {
+    assert = fido_assert_new();
+    if (!assert) {
       if (cfg->debug)
-        D(cfg->debug_file, "Failed to decode key handle");
+        D(cfg->debug_file, "Unable to allocate assertion");
       goto out;
     }
 
-    r = fido_assert_allow_cred(assert, kh, kh_len);
+    r = fido_assert_set_rp(assert, cfg->origin);
     if (r != FIDO_OK) {
       if (cfg->debug)
-        D(cfg->debug_file, "Unable to set keyHandle: %s (%d)", fido_strerr(r), r);
+        D(cfg->debug_file, "Unable to set origin: %s (%d)", fido_strerr(r), r);
       goto out;
+    }
+
+    if (!strcmp(devices[i].keyHandle, "*")) {
+      if (cfg->debug)
+        D(cfg->debug_file, "Credential is resident");
+    } else {
+      if (cfg->debug)
+        D(cfg->debug_file, "Key handle: %s", devices[i].keyHandle);
+      if (!b64_decode(devices[i].keyHandle, (void **)&kh, &kh_len)) {
+        if (cfg->debug)
+          D(cfg->debug_file, "Failed to decode key handle");
+        goto out;
+      }
+
+      r = fido_assert_allow_cred(assert, kh, kh_len);
+      if (r != FIDO_OK) {
+        if (cfg->debug)
+          D(cfg->debug_file, "Unable to set keyHandle: %s (%d)", fido_strerr(r), r);
+        goto out;
+      }
     }
 
     if (!b64_decode(devices[i].publicKey, (void **)&pk, &pk_len)) {
@@ -429,6 +459,33 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
         D(cfg->debug_file, "Failed to decode public key");
       goto out;
     }
+
+    if (!strcmp(devices[i].coseType, "es256")) {
+      r = es256_pk_from_ptr(es256_pk, pk, pk_len);
+      if (r != FIDO_OK) {
+        if (cfg->debug)
+          D(cfg->debug_file, "Failed to convert ES256 public key");
+      }
+      cose_type = COSE_ES256;
+    } else if (!strcmp(devices[i].coseType, "rs256")) {
+      r = rs256_pk_from_ptr(rs256_pk, pk, pk_len);
+      if (r != FIDO_OK) {
+        if (cfg->debug)
+          D(cfg->debug_file, "Failed to convert RS256 public key");
+      }
+      cose_type = COSE_RS256;
+    } else {
+      if (cfg->debug)
+        D(cfg->debug_file, "Unknown COSE type '%s'", devices[i].coseType);
+      goto out;
+    }
+
+    if (strchr(devices[i].attributes, '+'))
+      user_presence = 1;
+    else
+      user_presence = 0;
+
+    fido_assert_set_options(assert, false, false);
 
     if (!random_bytes(challenge, sizeof(challenge))) {
       if (cfg->debug)
@@ -454,32 +511,30 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
       goto out;
     }
 
-    if (find_authenticator(cfg, dev, devlist, ndevs, assert)) {
-      r = fido_dev_get_assert(dev, assert, NULL);
-      if ((!fido_dev_is_fido2(dev) && r == FIDO_ERR_USER_PRESENCE_REQUIRED) ||
-          r == FIDO_OK) {
-
-        if (cfg->manual == 0 && cfg->cue && !cued) {
-          cued = 1;
-          converse(pamh, PAM_TEXT_INFO, DEFAULT_CUE);
-        }
-
-        retval = -1;
-
-        fido_assert_set_options(assert, true, false);
-
-        if ((r = fido_dev_get_assert(dev, assert, NULL)) == FIDO_OK) {
-          if (es256_pk_from_ptr(es256_pk, pk, pk_len) == FIDO_OK) {
-            r = fido_assert_verify(assert, 0, COSE_ES256, es256_pk);
-            if (r == FIDO_OK) {
-              retval = 1;
-              break;
+    if (get_authenticators(cfg, devlist, ndevs, assert, kh, authlist)) {
+      for (size_t j = 0; authlist[j] != NULL; j++) {
+        fido_assert_set_options(assert, false, false);
+        r = fido_dev_get_assert(authlist[j], assert, NULL);
+        if (user_presence) {
+          if ((!fido_dev_is_fido2(authlist[j]) &&
+              r == FIDO_ERR_USER_PRESENCE_REQUIRED) || r == FIDO_OK) {
+            if (cfg->manual == 0 && cfg->cue && !cued) {
+              cued = 1;
+              converse(pamh, PAM_TEXT_INFO, DEFAULT_CUE);
             }
+            retval = -1;
+            fido_assert_set_options(assert, true, false);
+            r = fido_dev_get_assert(authlist[j], assert, NULL);
+          } else
+            continue;
+        }
+        if (r == FIDO_OK) {
+          r = fido_assert_verify(assert, 0, cose_type, cose_type == COSE_ES256 ?
+                                (const void *)es256_pk : (const void *)rs256_pk);
+          if (r == FIDO_OK) {
+            retval = 1;
+            goto out;
           }
-        } else {
-          if (cfg->debug)
-            D(cfg->debug_file, "Unable to communicate with the device, %s (%d)",
-              fido_strerr(r), r);
         }
       }
     } else {
@@ -520,18 +575,27 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
     kh = NULL;
     pk = NULL;
 
-    fido_dev_close(dev);
+    for (size_t j = 0; authlist[j] != NULL; j++) {
+      fido_dev_close(authlist[j]);
+      fido_dev_free(&authlist[j]);
+    }
+
+    fido_assert_free(&assert);
   }
 
 out:
   es256_pk_free(&es256_pk);
+  rs256_pk_free(&rs256_pk);
   fido_assert_free(&assert);
   fido_dev_info_free(&devlist, ndevs);
 
-  if (dev)
-    fido_dev_close(dev);
-
-  fido_dev_free(&dev);
+  if (authlist) {
+    for (size_t j = 0; authlist[j] != NULL; j++) {
+      fido_dev_close(authlist[j]);
+      fido_dev_free(&authlist[j]);
+    }
+    free(authlist);
+  }
 
   free(kh);
   free(pk);
