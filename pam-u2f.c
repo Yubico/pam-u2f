@@ -193,7 +193,7 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
     cfg->max_devs = MAX_DEVS;
   }
 
-  devices = malloc(sizeof(device_t) * cfg->max_devs);
+  devices = calloc(cfg->max_devs, sizeof(device_t));
   if (!devices) {
     DBG("Unable to allocate memory");
     retval = PAM_IGNORE;
