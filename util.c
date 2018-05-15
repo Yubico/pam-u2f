@@ -115,8 +115,12 @@ int get_devices_from_authfile(const char *authfile, const char *username,
       for (i = 0; i < *n_devs; i++) {
         free(devices[i].keyHandle);
         free(devices[i].publicKey);
+        free(devices[i].coseType);
+        free(devices[i].attributes);
         devices[i].keyHandle = NULL;
         devices[i].publicKey = NULL;
+        devices[i].coseType = NULL;
+        devices[i].attributes = NULL;
       }
       *n_devs = 0;
 
@@ -132,6 +136,8 @@ int get_devices_from_authfile(const char *authfile, const char *username,
 
         devices[i].keyHandle = NULL;
         devices[i].publicKey = NULL;
+        devices[i].coseType = NULL;
+        devices[i].attributes = NULL;
 
         if (verbose)
           D(debug_file, "KeyHandle for device number %d: %s", i + 1, s_token);
@@ -144,7 +150,10 @@ int get_devices_from_authfile(const char *authfile, const char *username,
           goto err;
         }
 
-        s_token = strtok_r(NULL, ":", &saveptr);
+        if (!strcmp(devices[i].keyHandle, "*") && verbose)
+          D(debug_file, "Credential is resident");
+
+        s_token = strtok_r(NULL, ",", &saveptr);
 
         if (!s_token) {
           if (verbose)
@@ -163,6 +172,44 @@ int get_devices_from_authfile(const char *authfile, const char *username,
           goto err;
         }
 
+        s_token = strtok_r(NULL, ",", &saveptr);
+
+        if (!s_token) {
+          if (verbose)
+            D(debug_file, "Unable to retrieve COSE type %d", i + 1);
+          goto err;
+        }
+
+        if (verbose)
+          D(debug_file, "COSE type for device number %d: %s", i + 1, s_token);
+
+        devices[i].coseType = strdup(s_token);
+
+        if (!devices[i].coseType) {
+          if (verbose)
+            D(debug_file, "Unable to allocate memory for COSE type number %d", i);
+          goto err;
+        }
+
+        s_token = strtok_r(NULL, ":", &saveptr);
+
+        if (!s_token) {
+          if (verbose)
+            D(debug_file, "Unable to retrieve attributes %d", i + 1);
+          goto err;
+        }
+
+        if (verbose)
+          D(debug_file, "Attributes for device number %d: %s", i + 1, s_token);
+
+        devices[i].attributes = strdup(s_token);
+
+        if (!devices[i].attributes) {
+          if (verbose)
+            D(debug_file, "Unable to allocate memory for attributes number %d", i);
+          goto err;
+        }
+
         i++;
       }
     }
@@ -178,8 +225,12 @@ err:
   for (i = 0; i < *n_devs; i++) {
     free(devices[i].keyHandle);
     free(devices[i].publicKey);
+    free(devices[i].coseType);
+    free(devices[i].attributes);
     devices[i].keyHandle = NULL;
     devices[i].publicKey = NULL;
+    devices[i].coseType = NULL;
+    devices[i].attributes = NULL;
   }
 
   *n_devs = 0;
@@ -211,6 +262,12 @@ void free_devices(device_t *devices, const unsigned n_devs) {
 
     free(devices[i].publicKey);
     devices[i].publicKey = NULL;
+
+    free(devices[i].coseType);
+    devices[i].coseType = NULL;
+
+    free(devices[i].attributes);
+    devices[i].attributes = NULL;
   }
 
   free(devices);
