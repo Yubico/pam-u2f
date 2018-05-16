@@ -6,6 +6,9 @@
 #include <fido/es256.h>
 #include <fido/rs256.h>
 
+#include <openssl/ec.h>
+#include <openssl/obj_mac.h>
+
 #include <stdlib.h>
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -18,6 +21,112 @@
 
 #include "b64.h"
 #include "util.h"
+
+static int hex_decode(const char *ascii_hex, unsigned char **blob,
+                      size_t *blob_len) {
+  *blob = NULL;
+  *blob_len = 0;
+
+  if (ascii_hex == NULL || (strlen(ascii_hex) % 2) != 0)
+    return (0);
+
+  *blob_len = strlen(ascii_hex) / 2;
+  *blob = calloc(1, *blob_len);
+  if (*blob == NULL)
+    return (0);
+
+  for (size_t i = 0; i < *blob_len; i++) {
+    unsigned int c;
+    int n = -1;
+    int r = sscanf(ascii_hex, "%02x%n", &c, &n);
+    if (r != 1 || n != 2 || c > UCHAR_MAX) {
+      free(*blob);
+      *blob = NULL;
+      *blob_len = 0;
+      return (0);
+    }
+    (*blob)[i] = (unsigned char)c;
+    ascii_hex += n;
+  }
+
+  return (1);
+}
+
+static char *normal_b64(const char *websafe_b64)
+{
+  char *b64;
+  char *p;
+  size_t n;
+
+  n = strlen(websafe_b64);
+  if (n > SIZE_MAX - 3)
+    return (NULL);
+
+  b64 = calloc(1, n + 3);
+  if (b64 == NULL)
+    return (NULL);
+
+  memcpy(b64, websafe_b64, n);
+  p = b64;
+
+  while ((p = strpbrk(p, "-_")) != NULL) {
+    switch (*p) {
+    case '-':
+      *p++ = '+';
+      break;
+    case '_':
+      *p++ = '/';
+      break;
+    }
+	}
+
+  switch (n % 4) {
+  case 1:
+    b64[n] = '=';
+    break;
+  case 2:
+  case 3:
+    b64[n] = '=';
+    b64[n + 1] = '=';
+    break;
+  }
+
+  return (b64);
+}
+
+static es256_pk_t *translate_old_format_pubkey(const unsigned char *pk,
+                                               size_t pk_len)
+{
+  es256_pk_t *es256_pk = NULL;
+  EC_KEY *ec = NULL;
+  EC_POINT *q = NULL;
+  const EC_GROUP *g = NULL;
+  int ok = 0;
+
+  if ((ec = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1)) == NULL ||
+      (g = EC_KEY_get0_group(ec)) == NULL)
+    goto fail;
+
+  if ((q = EC_POINT_new(g)) == NULL ||
+      !EC_POINT_oct2point(g, q, pk, pk_len, NULL) ||
+      !EC_KEY_set_public_key(ec, q))
+    goto fail;
+
+  es256_pk = es256_pk_new();
+  if (es256_pk == NULL || es256_pk_from_EC_KEY(ec, es256_pk) < 0)
+    goto fail;
+
+  ok = 1;
+fail:
+  if (ec != NULL)
+    EC_KEY_free(ec);
+  if (q != NULL)
+    EC_POINT_free(q);
+  if (!ok)
+    es256_pk_free(&es256_pk);
+
+  return (es256_pk);
+}
 
 int get_devices_from_authfile(const char *authfile, const char *username,
                               unsigned max_devs, int verbose, FILE *debug_file,
@@ -122,6 +231,7 @@ int get_devices_from_authfile(const char *authfile, const char *username,
         devices[i].publicKey = NULL;
         devices[i].coseType = NULL;
         devices[i].attributes = NULL;
+        devices[i].old_format = 0;
       }
       *n_devs = 0;
 
@@ -139,6 +249,7 @@ int get_devices_from_authfile(const char *authfile, const char *username,
         devices[i].publicKey = NULL;
         devices[i].coseType = NULL;
         devices[i].attributes = NULL;
+        devices[i].old_format = 0;
 
         if (verbose)
           D(debug_file, "KeyHandle for device number %d: %s", i + 1, s_token);
@@ -175,16 +286,20 @@ int get_devices_from_authfile(const char *authfile, const char *username,
 
         s_token = strtok_r(NULL, ",", &saveptr);
 
+        devices[i].old_format = 0;
+
         if (!s_token) {
-          if (verbose)
+          if (verbose) {
             D(debug_file, "Unable to retrieve COSE type %d", i + 1);
-          goto err;
+            D(debug_file, "Assuming ES256 (backwards compatibility)");
+          }
+          devices[i].old_format = 1;
+          devices[i].coseType = strdup("es256");
+        } else {
+          if (verbose)
+            D(debug_file, "COSE type for device number %d: %s", i + 1, s_token);
+          devices[i].coseType = strdup(s_token);
         }
-
-        if (verbose)
-          D(debug_file, "COSE type for device number %d: %s", i + 1, s_token);
-
-        devices[i].coseType = strdup(s_token);
 
         if (!devices[i].coseType) {
           if (verbose)
@@ -195,20 +310,32 @@ int get_devices_from_authfile(const char *authfile, const char *username,
         s_token = strtok_r(NULL, ":", &saveptr);
 
         if (!s_token) {
-          if (verbose)
+          if (verbose) {
             D(debug_file, "Unable to retrieve attributes %d", i + 1);
-          goto err;
+            D(debug_file, "Assuming '+' (backwards compatibility)");
+          }
+          devices[i].attributes = strdup("+");
+        } else {
+          if (verbose)
+            D(debug_file, "Attributes for device number %d: %s", i + 1, s_token);
+          devices[i].attributes = strdup(s_token);
         }
-
-        if (verbose)
-          D(debug_file, "Attributes for device number %d: %s", i + 1, s_token);
-
-        devices[i].attributes = strdup(s_token);
 
         if (!devices[i].attributes) {
           if (verbose)
             D(debug_file, "Unable to allocate memory for attributes number %d", i);
           goto err;
+        }
+
+        if (devices[i].old_format) {
+          char *websafe_b64 = devices[i].keyHandle;
+          devices[i].keyHandle = normal_b64(websafe_b64);
+          free(websafe_b64);
+          if (!devices[i].keyHandle) {
+            if (verbose)
+              D(debug_file, "Unable to allocate memory for keyHandle number %d", i);
+            goto err;
+          }
         }
 
         i++;
@@ -454,17 +581,33 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
       }
     }
 
-    if (!b64_decode(devices[i].publicKey, (void **)&pk, &pk_len)) {
-      if (cfg->debug)
-        D(cfg->debug_file, "Failed to decode public key");
-      goto out;
+    if (devices[i].old_format) {
+      if (!hex_decode(devices[i].publicKey, &pk, &pk_len)) {
+        if (cfg->debug)
+          D(cfg->debug_file, "Failed to decode public key");
+        goto out;
+      }
+    } else {
+      if (!b64_decode(devices[i].publicKey, (void **)&pk, &pk_len)) {
+        if (cfg->debug)
+          D(cfg->debug_file, "Failed to decode public key");
+        goto out;
+      }
     }
 
     if (!strcmp(devices[i].coseType, "es256")) {
-      r = es256_pk_from_ptr(es256_pk, pk, pk_len);
-      if (r != FIDO_OK) {
-        if (cfg->debug)
-          D(cfg->debug_file, "Failed to convert ES256 public key");
+      if (devices[i].old_format) {
+        es256_pk = translate_old_format_pubkey(pk, pk_len);
+        if (es256_pk == NULL) {
+          if (cfg->debug)
+            D(cfg->debug_file, "Failed to convert ES256 public key");
+        }
+      } else {
+        r = es256_pk_from_ptr(es256_pk, pk, pk_len);
+        if (r != FIDO_OK) {
+          if (cfg->debug)
+            D(cfg->debug_file, "Failed to convert ES256 public key");
+        }
       }
       cose_type = COSE_ES256;
     } else if (!strcmp(devices[i].coseType, "rs256")) {
@@ -678,10 +821,18 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
       kh = NULL;
     }
 
-    if (!b64_decode(devices[i].publicKey, (void **)&pk, &pk_len)) {
-      if (cfg->debug)
-        D(cfg->debug_file, "Failed to decode public key");
-      goto out;
+    if (devices[i].old_format) {
+      if (!hex_decode(devices[i].publicKey, &pk, &pk_len)) {
+        if (cfg->debug)
+          D(cfg->debug_file, "Failed to decode public key");
+        goto out;
+      }
+    } else {
+      if (!b64_decode(devices[i].publicKey, (void **)&pk, &pk_len)) {
+        if (cfg->debug)
+          D(cfg->debug_file, "Failed to decode public key");
+        goto out;
+      }
     }
 
     if (!strcmp(devices[i].coseType, "es256")) {

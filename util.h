@@ -53,6 +53,7 @@ typedef struct {
   char *keyHandle;
   char *coseType;
   char *attributes;
+  int old_format;
 } device_t;
 
 int get_devices_from_authfile(const char *authfile, const char *username,
