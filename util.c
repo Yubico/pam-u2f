@@ -113,7 +113,7 @@ static es256_pk_t *translate_old_format_pubkey(const unsigned char *pk,
     goto fail;
 
   es256_pk = es256_pk_new();
-  if (es256_pk == NULL || es256_pk_from_EC_KEY(ec, es256_pk) < 0)
+  if (es256_pk == NULL || es256_pk_from_EC_KEY(es256_pk, ec) < 0)
     goto fail;
 
   ok = 1;
