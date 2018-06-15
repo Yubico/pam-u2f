@@ -756,14 +756,19 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
   unsigned char challenge[32];
   unsigned char *kh = NULL;
   unsigned char *pk = NULL;
-  unsigned char *resp = NULL;
-  char *b64_resp = NULL;
+  unsigned char *authdata = NULL;
+  unsigned char *sig = NULL;
   char *b64_challenge = NULL;
+  char *b64_cdh = NULL;
+  char *b64_rpid = NULL;
+  char *b64_authdata = NULL;
+  char *b64_sig = NULL;
   char prompt[MAX_PROMPT_LEN];
   char buf[MAX_PROMPT_LEN];
   size_t kh_len;
   size_t pk_len;
-  size_t resp_len;
+  size_t authdata_len;
+  size_t sig_len;
   int cose_type[n_devs];
   int retval = -2;
   int n;
@@ -892,19 +897,20 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
     if (cfg->debug)
       D(cfg->debug_file, "Challenge: %s", b64_challenge);
 
-    if (i == 0) {
-      snprintf(prompt, sizeof(prompt),
-                      "Now please copy-paste the below challenge(s) to "
-                      "fido2-host");
-      converse(pamh, PAM_TEXT_INFO, prompt);
+    n = snprintf(prompt, sizeof(prompt), "Challenge #%d:", i +1);
+    if (n <= 0 || (size_t)n >= sizeof(prompt)) {
+      if (cfg->debug)
+        D(cfg->debug_file, "Failed to print challenge prompt");
+      goto out;
     }
 
-    n = snprintf(buf, sizeof(buf), "%s,%s,%s,%s,%s", cfg->origin,
-                 devices[i].keyHandle, b64_challenge, devices[i].coseType,
-                 devices[i].attributes);
+    converse(pamh, PAM_TEXT_INFO, prompt);
+
+    n = snprintf(buf, sizeof(buf), "%s\n%s\n%s", b64_challenge, cfg->origin,
+                 devices[i].keyHandle);
     if (n <= 0 || (size_t)n >= sizeof(buf)) {
       if (cfg->debug)
-        D(cfg->debug_file, "Failed to print fido2-host input string");
+        D(cfg->debug_file, "Failed to print fido2-assert input string");
       goto out;
     }
 
@@ -915,46 +921,79 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
   }
 
   converse(pamh, PAM_TEXT_INFO,
-           "Now, please enter the response(s) below, one per line.");
+             "Please pass the challenge(s) above to fido2-assert, and "
+             "paste the results in the prompt below.");
 
   retval = -1;
 
   for (i = 0; i < n_devs; ++i) {
-    snprintf(prompt, sizeof(prompt), "[%d]: ", i);
-    b64_resp = converse(pamh, PAM_PROMPT_ECHO_ON, prompt);
-    converse(pamh, PAM_TEXT_INFO, b64_resp);
-
-    if (!b64_decode(b64_resp, (void **)&resp, &resp_len)) {
+    n = snprintf(prompt, sizeof(prompt), "Response #%d: ", i + 1);
+    if (n <= 0 || (size_t)n >= sizeof(prompt)) {
       if (cfg->debug)
-        D(cfg->debug_file, "Failed to decode response");
+        D(cfg->debug_file, "Failed to print response prompt");
       goto out;
     }
 
-    free(b64_resp);
-    b64_resp = NULL;
+    b64_cdh = converse(pamh, PAM_PROMPT_ECHO_ON, prompt);
+    b64_rpid = converse(pamh, PAM_PROMPT_ECHO_ON, prompt);
+    b64_authdata = converse(pamh, PAM_PROMPT_ECHO_ON, prompt);
+    b64_sig = converse(pamh, PAM_PROMPT_ECHO_ON, prompt);
+
+    if (!b64_decode(b64_authdata, (void **)&authdata, &authdata_len)) {
+      if (cfg->debug)
+        D(cfg->debug_file, "Failed to decode authenticator data");
+      goto out;
+    }
+
+    if (!b64_decode(b64_sig, (void **)&sig, &sig_len)) {
+      if (cfg->debug)
+        D(cfg->debug_file, "Failed to decode signature");
+      goto out;
+    }
+
+    free(b64_cdh);
+    free(b64_rpid);
+    free(b64_authdata);
+    free(b64_sig);
+
+    b64_cdh = NULL;
+    b64_rpid = NULL;
+    b64_authdata = NULL;
+    b64_sig = NULL;
 
     r = fido_assert_set_count(assert[i], 1);
     if (r != FIDO_OK) {
       if (cfg->debug)
-        D(cfg->debug_file, "Failed to set signature of assertion %u", i);
+        D(cfg->debug_file, "Failed to set signature count of assertion %u", i);
+      goto out;
     }
 
-    r = fido_assert_set_sig(assert[i], 0, resp, resp_len);
+    r = fido_assert_set_authdata(assert[i], 0, authdata, authdata_len);
+    if (r != FIDO_OK) {
+      if (cfg->debug)
+        D(cfg->debug_file, "Failed to set authdata of assertion %u", i);
+      goto out;
+    }
+
+    r = fido_assert_set_sig(assert[i], 0, sig, sig_len);
     if (r != FIDO_OK) {
       if (cfg->debug)
         D(cfg->debug_file, "Failed to set signature of assertion %u", i);
       goto out;
     }
 
-    free(resp);
-    resp = NULL;
+    free(authdata);
+    free(sig);
+
+    authdata = NULL;
+    sig = NULL;
 
     if (cose_type[i] == COSE_ES256)
       r = fido_assert_verify(assert[i], 0, COSE_ES256, es256_pk[i]);
     else
       r = fido_assert_verify(assert[i], 0, COSE_RS256, rs256_pk[i]);
 
-    if (r != FIDO_OK) {
+    if (r == FIDO_OK) {
       retval = 1;
       break;
     }
@@ -969,9 +1008,13 @@ out:
 
   free(kh);
   free(pk);
-  free(b64_resp);
   free(b64_challenge);
-  free(resp);
+  free(b64_cdh);
+  free(b64_rpid);
+  free(b64_authdata);
+  free(b64_sig);
+  free(authdata);
+  free(sig);
 
   return retval;
 }
