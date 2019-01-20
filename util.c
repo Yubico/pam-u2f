@@ -484,7 +484,6 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
   int r;
   int retval = -2;
   int cose_type;
-  int user_presence;
   size_t kh_len;
   size_t ndevs = 0;
   size_t ndevs_prev = 0;
@@ -623,11 +622,6 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
       goto out;
     }
 
-    if (strchr(devices[i].attributes, '+'))
-      user_presence = 1;
-    else
-      user_presence = 0;
-
     fido_assert_set_options(assert, false, false);
 
     if (!random_bytes(challenge, sizeof(challenge))) {
@@ -658,7 +652,7 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
       for (size_t j = 0; authlist[j] != NULL; j++) {
         fido_assert_set_options(assert, false, false);
         r = fido_dev_get_assert(authlist[j], assert, NULL);
-        if (user_presence) {
+        if (cfg->userpresence) {
           if ((!fido_dev_is_fido2(authlist[j]) &&
               r == FIDO_ERR_USER_PRESENCE_REQUIRED) || r == FIDO_OK) {
             if (cfg->manual == 0 && cfg->cue && !cued) {
