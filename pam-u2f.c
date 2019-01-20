@@ -59,6 +59,8 @@ static void parse_cfg(int flags, int argc, const char **argv, cfg_t *cfg) {
       cfg->cue = 1;
     if (strcmp(argv[i], "nodetect") == 0)
       cfg->nodetect = 1;
+    if (strcmp(argv[i], "userpresence") == 0)
+      cfg->userpresence = 1;
     if (strncmp(argv[i], "authfile=", 9) == 0)
       cfg->auth_file = argv[i] + 9;
     if (strncmp(argv[i], "authpending_file=", 17) == 0)
@@ -106,6 +108,7 @@ static void parse_cfg(int flags, int argc, const char **argv, cfg_t *cfg) {
     D(cfg->debug_file, "interactive=%d", cfg->interactive);
     D(cfg->debug_file, "cue=%d", cfg->cue);
     D(cfg->debug_file, "nodetect=%d", cfg->nodetect);
+    D(cfg->debug_file, "userpresence=%d", cfg->userpresence);
     D(cfg->debug_file, "manual=%d", cfg->manual);
     D(cfg->debug_file, "nouserok=%d", cfg->nouserok);
     D(cfg->debug_file, "openasuser=%d", cfg->openasuser);
