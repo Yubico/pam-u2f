@@ -560,9 +560,15 @@ void _debug(FILE *debug_file, const char *file, int line, const char *func, cons
     out = malloc(size);
   }
 
-  size = (unsigned int)sprintf(out, DEBUG_STR, file, line, func);
-  vsprintf(&out[size], fmt, ap);
-  va_end(ap);
+  if (out) {
+    size = (unsigned int)sprintf(out, DEBUG_STR, file, line, func);
+    vsprintf(&out[size], fmt, ap);
+    va_end(ap);
+  }
+  else {
+    out = buffer;
+    sprintf(out, "debug(pam_u2f): malloc failed when trying to log\n");
+  }
 
   if (debug_file == (FILE *)-1) {
     syslog(LOG_AUTHPRIV | LOG_DEBUG, "%s", out);
