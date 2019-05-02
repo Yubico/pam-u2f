@@ -20,11 +20,14 @@
 #include "b64.h"
 #include "cmdline.h"
 #include "util.h"
+#include "readpassphrase.h"
 
 int main(int argc, char *argv[]) {
   int exit_code = EXIT_FAILURE;
   struct gengetopt_args_info args_info;
   char buf[BUFSIZE];
+  char prompt[BUFSIZE];
+  char pin[BUFSIZE];
   char *p;
   char *response;
   fido_cred_t *cred = NULL;
@@ -35,7 +38,10 @@ int main(int argc, char *argv[]) {
   int cose_type;
   int resident_key;
   int user_presence;
+  int user_verification;
+  int pin_verification;
   int r;
+  int n;
   char *origin = NULL;
   char *appid = NULL;
   char *user = NULL;
@@ -171,6 +177,16 @@ int main(int argc, char *argv[]) {
   else
     user_presence = 1;
 
+  if (args_info.user_verification_given)
+    user_verification = 1;
+  else
+    user_verification = 0;
+
+  if (args_info.pin_verification_given)
+    pin_verification = 1;
+  else
+    pin_verification = 0;
+
   r = fido_cred_set_options(cred, resident_key, false);
   if (r != FIDO_OK) {
     fprintf(stderr, "error: fido_cred_set_options (%d) %s\n", r,
@@ -239,6 +255,21 @@ int main(int argc, char *argv[]) {
   }
 
   r = fido_dev_make_cred(dev, cred, NULL);
+  if (r == FIDO_ERR_PIN_REQUIRED) {
+    n = snprintf(prompt, sizeof(prompt), "Enter PIN for %s: ",
+                 fido_dev_info_path(di));
+    if (n < 0 || (size_t)n >= sizeof(prompt)) {
+      fprintf(stderr, "error: snprintf prompt");
+      exit(EXIT_FAILURE);
+    }
+    if (!readpassphrase(prompt, pin, sizeof(pin), RPP_ECHO_OFF)) {
+      fprintf(stderr, "error: failed to read pin");
+      exit(EXIT_FAILURE);
+    }
+    r = fido_dev_make_cred(dev, cred, pin);
+  }
+  explicit_bzero(pin, sizeof(pin));
+
   if (r != FIDO_OK) {
     fprintf(stderr, "error: fido_dev_make_cred (%d) %s\n", r, fido_strerr(r));
     exit(EXIT_FAILURE);
@@ -287,9 +318,11 @@ int main(int argc, char *argv[]) {
   if (!args_info.nouser_given)
     printf("%s", user);
 
-  printf(":%s,%s,%s,%s", resident_key ? "*" : b64_kh, b64_pk,
+  printf(":%s,%s,%s,%s%s%s", resident_key ? "*" : b64_kh, b64_pk,
          cose_type == COSE_ES256 ? "es256" : "rs256",
-         user_presence ? "+" : "-");
+         user_presence ? "+presence" : "",
+         user_verification ? "+verification" : "",
+         pin_verification ? "+pin" : "");
 
   exit_code = EXIT_SUCCESS;
 

@@ -9,6 +9,7 @@
 #include <openssl/ec.h>
 #include <openssl/obj_mac.h>
 
+#include <stdbool.h>
 #include <stdlib.h>
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -312,9 +313,9 @@ int get_devices_from_authfile(const char *authfile, const char *username,
         if (!s_token) {
           if (verbose) {
             D(debug_file, "Unable to retrieve attributes %d", i + 1);
-            D(debug_file, "Assuming '+' (backwards compatibility)");
+            D(debug_file, "Assuming 'p' (backwards compatibility)");
           }
-          devices[i].attributes = strdup("+");
+          devices[i].attributes = strdup("p");
         } else {
           if (verbose)
             D(debug_file, "Attributes for device number %d: %s", i + 1, s_token);
@@ -492,6 +493,10 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
   unsigned char *kh = NULL;
   unsigned char *pk = NULL;
   unsigned i = 0;
+  bool user_presence = false;
+  bool user_verification = false;
+  bool pin_verification = false;
+  char *pin = NULL;
 
   fido_init(cfg->debug ? FIDO_DEBUG : 0);
 
@@ -622,7 +627,28 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
       goto out;
     }
 
-    fido_assert_set_options(assert, false, false);
+    if (cfg->userpresence || strstr(devices[i].attributes, "presence"))
+      user_presence = true;
+    else
+      user_presence = false;
+
+    if (cfg->userverification || strstr(devices[i].attributes, "verification"))
+      user_verification = true;
+    else
+      user_verification = false;
+
+    if (cfg->pinverification || strstr(devices[i].attributes, "pin")) {
+      pin_verification = true;
+      user_verification = true;
+    } else
+      pin_verification = false;
+
+    r = fido_assert_set_options(assert, false, false);
+    if (r != FIDO_OK) {
+      if (cfg->debug)
+        D(cfg->debug_file, "Failed to set assertion options");
+      goto out;
+    }
 
     if (!random_bytes(challenge, sizeof(challenge))) {
       if (cfg->debug)
@@ -650,20 +676,41 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
 
     if (get_authenticators(cfg, devlist, ndevs, assert, kh, authlist)) {
       for (size_t j = 0; authlist[j] != NULL; j++) {
-        fido_assert_set_options(assert, false, false);
-        r = fido_dev_get_assert(authlist[j], assert, NULL);
-        if (cfg->userpresence) {
-          if ((!fido_dev_is_fido2(authlist[j]) &&
-              r == FIDO_ERR_USER_PRESENCE_REQUIRED) || r == FIDO_OK) {
+        r = fido_assert_set_options(assert, user_presence, user_verification);
+        if (r != FIDO_OK) {
+          if (cfg->debug)
+            D(cfg->debug_file, "Failed to reset assertion options");
+          goto out;
+        }
+
+        if (!random_bytes(challenge, sizeof(challenge))) {
+          if (cfg->debug)
+            D(cfg->debug_file, "Failed to regenerate challenge");
+          goto out;
+        }
+
+        r = fido_assert_set_clientdata_hash(assert, challenge, sizeof(challenge));
+        if (r != FIDO_OK) {
+          if (cfg->debug)
+            D(cfg->debug_file, "Unable to reset challenge: %s( %d)",
+              fido_strerr(r), r);
+          goto out;
+        }
+
+        if (pin_verification)
+              pin = converse(pamh, PAM_PROMPT_ECHO_OFF,
+                             "Please enter the PIN: ");
+        if (user_presence || user_verification) {
             if (cfg->manual == 0 && cfg->cue && !cued) {
               cued = 1;
               converse(pamh, PAM_TEXT_INFO, DEFAULT_CUE);
             }
-            retval = -1;
-            fido_assert_set_options(assert, true, false);
-            r = fido_dev_get_assert(authlist[j], assert, NULL);
-          } else
-            continue;
+        }
+        r = fido_dev_get_assert(authlist[j], assert, pin);
+        if (pin) {
+          explicit_bzero(pin, strlen(pin));
+          free(pin);
+          pin = NULL;
         }
         if (r == FIDO_OK) {
           r = fido_assert_verify(assert, 0, cose_type, cose_type == COSE_ES256 ?
@@ -768,6 +815,8 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
   int n;
   int r;
   unsigned i = 0;
+  bool user_presence = false;
+  bool user_verification = false;
 
   memset(assert, 0, sizeof(assert));
   memset(es256_pk, 0, sizeof(es256_pk));
@@ -791,10 +840,17 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
       goto out;
     }
 
-    if (strchr(devices[i].attributes, '+'))
-      fido_assert_set_options(assert[i], true, false);
-    else
-      fido_assert_set_options(assert[i], false, false);
+    if (strstr(devices[i].attributes, "presence"))
+      user_presence = true;
+    if (strstr(devices[i].attributes, "verification"))
+      user_verification = true;
+
+    r = fido_assert_set_options(assert[i], user_presence, user_verification);
+    if (r != FIDO_OK) {
+      if (cfg->debug)
+        D(cfg->debug_file, "Unable to set options: %s (%d)", fido_strerr(r), r);
+      goto out;
+    }
 
     if (cfg->debug)
       D(cfg->debug_file, "Attempting authentication with device number %d", i + 1);
@@ -891,7 +947,7 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
     if (cfg->debug)
       D(cfg->debug_file, "Challenge: %s", b64_challenge);
 
-    n = snprintf(prompt, sizeof(prompt), "Challenge #%d:", i +1);
+    n = snprintf(prompt, sizeof(prompt), "Challenge #%d:", i + 1);
     if (n <= 0 || (size_t)n >= sizeof(prompt)) {
       if (cfg->debug)
         D(cfg->debug_file, "Failed to print challenge prompt");
