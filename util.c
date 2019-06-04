@@ -97,8 +97,9 @@ int get_devices_from_authfile(const char *authfile, const char *username,
   retval = -2;
   while (fgets(buf, (int)(DEVSIZE * (max_devs - 1)), opwfile)) {
     char *saveptr = NULL;
-    if (buf[strlen(buf) - 1] == '\n')
-      buf[strlen(buf) - 1] = '\0';
+    size_t len = strlen(buf);
+    if (len > 0 && buf[len - 1] == '\n')
+      buf[len - 1] = '\0';
 
     if (verbose)
       D(debug_file, "Authorization line: %s", buf);
@@ -121,16 +122,16 @@ int get_devices_from_authfile(const char *authfile, const char *username,
 
       i = 0;
       while ((s_token = strtok_r(NULL, ",", &saveptr))) {
-        devices[i].keyHandle = NULL;
-        devices[i].publicKey = NULL;
-
-        if ((*n_devs)++ > MAX_DEVS - 1) {
-          *n_devs = MAX_DEVS;
+        if ((*n_devs)++ > max_devs - 1) {
+          *n_devs = max_devs;
           if (verbose)
             D(debug_file, "Found more than %d devices, ignoring the remaining ones",
-               MAX_DEVS);
+               max_devs);
           break;
         }
+
+        devices[i].keyHandle = NULL;
+        devices[i].publicKey = NULL;
 
         if (verbose)
           D(debug_file, "KeyHandle for device number %d: %s", i + 1, s_token);
