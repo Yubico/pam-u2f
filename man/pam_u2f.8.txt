@@ -37,6 +37,7 @@ Set to enable authentication attempts to succeed even if the user trying to auth
 
 *openasuser*::
 Setuid to the authenticating user when opening the authfile. Useful when the user's home is stored on an NFS volume mounted with the root_squash option (which maps root to nobody which will not be able to read the file).
+Note that after release 1.0.8 this is done by default when no global authfile or XDG_CONFIG_HOME environment variable has been set.
 
 *alwaysok*::
 Set to enable all authentication attempts to succeed (aka presentation mode).
@@ -68,6 +69,11 @@ auth sufficient pam_u2f.so debug origin=pam://$HOSTNAME appid=pam://$HOSTNAME
 auth required pam_u2f.so origin=http://example.com appid=http://example.com authfile=/etc/yubikey_mappings
 
 == CAVEATS
+By default the mapping file inside a home directory will be opened as
+the target user, whereas the central file will be opened as `root`. If
+the `XDG_CONFIG_HOME` variable is set, privileges will not be dropped
+unless the `openasuser` configuration setting is set.
+
 Using pam-u2f to secure the login to a computer while
 storing the mapping file in an encrypted home directory, will result
 in the impossibility of logging into the system. The partition is
