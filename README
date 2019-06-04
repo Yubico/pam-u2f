@@ -114,6 +114,8 @@ openasuser::
 Setuid to the authenticating user when opening the authfile. Useful when the
 user's home is stored on an NFS volume mounted with the root_squash option
 (which maps root to nobody which will not be able to read the file).
+Note that after release 1.0.8 this is done by default when no global
+authfile or XDG_CONFIG_HOME environment variable has been set.
 
 alwaysok::
 Set to enable all authentication attempts to succeed (aka presentation mode).
@@ -164,6 +166,11 @@ mappings will not be used and the opposite applies if user home directory
 mappings are being used, the central authorization mappings file will not
 be used.
 
+By default the mapping file inside a home directory will be opened as
+the target user, whereas the central file will be opened as `root`. If
+the `XDG_CONFIG_HOME` variable is set, privileges will not be dropped
+unless the `openasuser` configuration setting is set.
+
 IMPORTANT: Using pam-u2f to secure the login to a computer while
 storing the mapping file in an encrypted home directory, will result
 in the impossibility of logging into the system. The partition is
@@ -184,6 +191,10 @@ looks like:
 
  auth sufficient pam_u2f.so authfile=/etc/u2f_mappings
 
+If you do not set the `openasuser` setting, the authfile will be opened
+and parsed as `root` so make sure it has the correct owner and
+permissions set.
+
 IMPORTANT: On dynamics networks (e.g. where hostnames are set by DHCP),
 users should not rely on the default origin and appid ("pam://$HOSTNAME")
 but set those parameters explicitly to the same value.
@@ -196,6 +207,13 @@ line:
  <username>:<KeyHandle1>,<UserKey1>:<KeyHandle2>,<UserKey2>:...
 
 This is much the same concept as the SSH authorized_keys file.
+
+In this case, pam-u2f will drop privileges and read the mapping file
+as that user. This happens regardless of the `openasuser` option being
+set.
+
+Note that if you set the XDG_CONFIG_HOME variable, privileges will not
+be dropped by default. Consider also setting `openasuser` in that case.
 
 [[registration]]
 Obtaining key-handles and public keys
