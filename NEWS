@@ -2,6 +2,8 @@ Copyright (c) 2014-2018 Yubico AB - See COPYING
 
 pam-u2f NEWS -- History of user-visible changes.          -*- outline -*-
 
+* Version 1.0.9 (unreleased)
+
 * Version 1.0.8 (released 2019-06-04)
  ** Fix debug file descriptor leak CVE-2019-12210.
  ** Fix insecure debug file handling CVE-2019-12209.
