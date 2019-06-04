@@ -37,6 +37,8 @@ AC_CHECK_HEADERS([security/pam_modules.h security/_pam_macros.h security/pam_mod
    #include <security/pam_appl.h>])
 AC_CHECK_LIB([pam], [pam_start])
 
+AC_SEARCH_LIBS([pam_modutil_drop_priv], ["pam"], [AC_DEFINE([HAVE_PAM_MODUTIL_DROP_PRIV], [1])])
+
 case "$host" in
      *darwin*)  PAMDIR="/usr/lib/pam";;
      *linux*)   PAMDIR="/lib/x86_64-linux-gnu/security";;
@@ -71,6 +73,8 @@ AC_ARG_VAR([CWFLAGS], [Warning flags])
 AX_CHECK_COMPILE_FLAG([-Wall], [CWFLAGS="-Wall"])
 AX_CHECK_COMPILE_FLAG([-Wextra], [CWFLAGS="$CWFLAGS -Wextra"])
 AX_CHECK_COMPILE_FLAG([-Wconversion], [CWFLAGS="$CWFLAGS -Wconversion"])
+# Because pam headers are doing sign-conversion, see PAM_MODUTIL_DEF_PRIVS in pam_modutil.h
+AX_CHECK_COMPILE_FLAG([-Wconversion], [CWFLAGS="$CWFLAGS -Wno-sign-conversion"])
 AX_CHECK_COMPILE_FLAG([-Wpedantic], [CWFLAGS="$CWFLAGS -Wpedantic"])
 AX_CHECK_COMPILE_FLAG([-Wformat=2], [CWFLAGS="$CWFLAGS -Wformat=2"])
 AX_CHECK_COMPILE_FLAG([-Wstrict-prototypes], [CWFLAGS="$CWFLAGS -Wstrict-prototypes"])

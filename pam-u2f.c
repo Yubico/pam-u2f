@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2014-2018 Yubico AB - See COPYING
+ *  Copyright (C) 2014-2019 Yubico AB - See COPYING
  */
 
 /* Define which PAM interfaces we provide */
@@ -20,6 +20,7 @@
 #include <errno.h>
 
 #include "util.h"
+#include "drop_privs.h"
 
 /* If secure_getenv is not defined, define it here */
 #ifndef HAVE_SECURE_GETENV
@@ -31,7 +32,11 @@ char *secure_getenv(const char *name) {
 #endif
 
 static void parse_cfg(int flags, int argc, const char **argv, cfg_t *cfg) {
+  struct stat st;
+  FILE *file = NULL;
+  int fd = -1;
   int i;
+
   memset(cfg, 0, sizeof(cfg_t));
   cfg->debug_file = stderr;
 
@@ -76,14 +81,14 @@ static void parse_cfg(int flags, int argc, const char **argv, cfg_t *cfg) {
         cfg->debug_file = (FILE *)-1;
       }
       else {
-        struct stat st;
-        FILE *file;
-        if(lstat(filename, &st) == 0) {
-          if(S_ISREG(st.st_mode)) {
-            file = fopen(filename, "a");
-            if(file != NULL) {
-              cfg->debug_file = file;
-            }
+        fd = open(filename, O_WRONLY | O_APPEND | O_CLOEXEC | O_NOFOLLOW | O_NOCTTY);
+        if (fd >= 0 && (fstat(fd, &st) == 0) && S_ISREG(st.st_mode)) {
+          file = fdopen(fd, "a");
+          if(file != NULL) {
+            cfg->debug_file = file;
+            cfg->is_custom_debug_file = 1;
+            file = NULL;
+            fd = -1;
           }
         }
       }
@@ -111,6 +116,12 @@ static void parse_cfg(int flags, int argc, const char **argv, cfg_t *cfg) {
     D(cfg->debug_file, "appid=%s", cfg->appid ? cfg->appid : "(null)");
     D(cfg->debug_file, "prompt=%s", cfg->prompt ? cfg->prompt : "(null)");
   }
+
+  if (fd != -1)
+    close(fd);
+
+  if (file != NULL)
+    fclose(file);
 }
 
 #ifdef DBG
@@ -138,11 +149,12 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
   int retval = PAM_IGNORE;
   device_t *devices = NULL;
   unsigned n_devices = 0;
-  int openasuser;
+  int openasuser = 0;
   int should_free_origin = 0;
   int should_free_appid = 0;
   int should_free_auth_file = 0;
   int should_free_authpending_file = 0;
+  PAM_MODUTIL_DEF_PRIVS(privs);
 
   parse_cfg(flags, argc, argv, cfg);
 
@@ -225,6 +237,9 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
         goto done;
       }
 
+      /* Opening a file in a users $HOME, need to drop privs for security */
+      openasuser = geteuid() == 0 ? 1 : 0;
+
       snprintf(buf, authfile_dir_len,
                "%s/.config%s", pw->pw_dir, DEFAULT_AUTHFILE);
     } else {
@@ -240,9 +255,14 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
 
       snprintf(buf, authfile_dir_len,
                "%s%s", authfile_dir, DEFAULT_AUTHFILE);
+
+      if (!openasuser) {
+	DBG("WARNING: not dropping privileges when reading %s, please "
+	    "consider setting openasuser=1 in the module configuration", buf);
+      }
     }
 
-    DBG("Using default authentication file %s", buf);
+    DBG("Using authentication file %s", buf);
 
     cfg->auth_file = buf; /* cfg takes ownership */
     should_free_auth_file = 1;
@@ -251,25 +271,28 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
     DBG("Using authentication file %s", cfg->auth_file);
   }
 
-  openasuser = geteuid() == 0 && cfg->openasuser;
+  if (!openasuser) {
+    openasuser = geteuid() == 0 && cfg->openasuser;
+  }
   if (openasuser) {
-    if (seteuid(pw_s.pw_uid)) {
-      DBG("Unable to switch user to uid %i", pw_s.pw_uid);
+    DBG("Dropping privileges");
+    if (pam_modutil_drop_priv(pamh, &privs, pw)) {
+      DBG("Unable to switch user to uid %i", pw->pw_uid);
       retval = PAM_IGNORE;
       goto done;
     }
-    DBG("Switched to uid %i", pw_s.pw_uid);
+    DBG("Switched to uid %i", pw->pw_uid);
   }
   retval = get_devices_from_authfile(cfg->auth_file, user, cfg->max_devs,
                                      cfg->debug, cfg->debug_file,
                                      devices, &n_devices);
   if (openasuser) {
-    if (seteuid(0)) {
-      DBG("Unable to switch back to uid 0");
+    if (pam_modutil_regain_priv(pamh, &privs)) {
+      DBG("could not restore privileges");
       retval = PAM_IGNORE;
       goto done;
     }
-    DBG("Switched back to uid 0");
+    DBG("Restored privileges");
   }
 
   if (retval != 1) {
@@ -317,7 +340,8 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
     DBG("Using file '%s' for emitting touch request notifications", cfg->authpending_file);
 
     // Open (or create) the authpending_file to indicate that we start waiting for a touch
-    authpending_file_descriptor = open(cfg->authpending_file, O_RDONLY | O_CREAT, 0664);
+    authpending_file_descriptor =
+      open(cfg->authpending_file, O_RDONLY | O_CREAT | O_CLOEXEC | O_NOFOLLOW | O_NOCTTY, 0664);
     if (authpending_file_descriptor < 0) {
       DBG("Unable to emit 'authentication started' notification by opening the file '%s', (%s)",
           cfg->authpending_file, strerror(errno));
@@ -384,6 +408,10 @@ done:
     retval = PAM_SUCCESS;
   }
   DBG("done. [%s]", pam_strerror(pamh, retval));
+
+  if (cfg->is_custom_debug_file) {
+    fclose(cfg->debug_file);
+  }
 
   return retval;
 }
