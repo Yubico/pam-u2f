@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2014-2018 Yubico AB - See COPYING
+ *  Copyright (C) 2014-2019 Yubico AB - See COPYING
  */
 
 /* Define which PAM interfaces we provide */
@@ -31,7 +31,11 @@ char *secure_getenv(const char *name) {
 #endif
 
 static void parse_cfg(int flags, int argc, const char **argv, cfg_t *cfg) {
+  struct stat st;
+  FILE *file = NULL;
+  int fd = -1;
   int i;
+
   memset(cfg, 0, sizeof(cfg_t));
   cfg->debug_file = stderr;
 
@@ -76,14 +80,14 @@ static void parse_cfg(int flags, int argc, const char **argv, cfg_t *cfg) {
         cfg->debug_file = (FILE *)-1;
       }
       else {
-        struct stat st;
-        FILE *file;
-        if(lstat(filename, &st) == 0) {
-          if(S_ISREG(st.st_mode)) {
-            file = fopen(filename, "a");
-            if(file != NULL) {
-              cfg->debug_file = file;
-            }
+        fd = open(filename, O_WRONLY | O_APPEND | O_CLOEXEC | O_NOFOLLOW | O_NOCTTY);
+        if (fd >= 0 && (fstat(fd, &st) == 0) && S_ISREG(st.st_mode)) {
+          file = fdopen(fd, "a");
+          if(file != NULL) {
+            cfg->debug_file = file;
+            cfg->is_custom_debug_file = 1;
+            file = NULL;
+            fd = -1;
           }
         }
       }
@@ -111,6 +115,12 @@ static void parse_cfg(int flags, int argc, const char **argv, cfg_t *cfg) {
     D(cfg->debug_file, "appid=%s", cfg->appid ? cfg->appid : "(null)");
     D(cfg->debug_file, "prompt=%s", cfg->prompt ? cfg->prompt : "(null)");
   }
+
+  if (fd != -1)
+    close(fd);
+
+  if (file != NULL)
+    fclose(file);
 }
 
 #ifdef DBG
@@ -317,7 +327,8 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
     DBG("Using file '%s' for emitting touch request notifications", cfg->authpending_file);
 
     // Open (or create) the authpending_file to indicate that we start waiting for a touch
-    authpending_file_descriptor = open(cfg->authpending_file, O_RDONLY | O_CREAT, 0664);
+    authpending_file_descriptor =
+      open(cfg->authpending_file, O_RDONLY | O_CREAT | O_CLOEXEC | O_NOFOLLOW | O_NOCTTY, 0664);
     if (authpending_file_descriptor < 0) {
       DBG("Unable to emit 'authentication started' notification by opening the file '%s', (%s)",
           cfg->authpending_file, strerror(errno));
@@ -384,6 +395,10 @@ done:
     retval = PAM_SUCCESS;
   }
   DBG("done. [%s]", pam_strerror(pamh, retval));
+
+  if (cfg->is_custom_debug_file) {
+    fclose(cfg->debug_file);
+  }
 
   return retval;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2018 Yubico AB - See COPYING
+ * Copyright (C) 2014-2019 Yubico AB - See COPYING
  */
 
 #include "util.h"
@@ -36,7 +36,7 @@ int get_devices_from_authfile(const char *authfile, const char *username,
   /* Ensure we never return uninitialized count. */
   *n_devs = 0;
 
-  fd = open(authfile, O_RDONLY, 0);
+  fd = open(authfile, O_RDONLY | O_CLOEXEC | O_NOCTTY);
   if (fd < 0) {
     if (verbose)
       D(debug_file, "Cannot open file: %s (%s)", authfile, strerror(errno));
@@ -83,6 +83,8 @@ int get_devices_from_authfile(const char *authfile, const char *username,
     if (verbose)
       D(debug_file, "fdopen: %s", strerror(errno));
     goto err;
+  } else {
+    fd = -1; /* fd belongs to opwfile */
   }
 
   buf = malloc(sizeof(char) * (DEVSIZE * max_devs));
@@ -211,8 +213,10 @@ out:
 
   if (opwfile)
     fclose(opwfile);
-  else if (fd >= 0)
+
+  if (fd != -1)
     close(fd);
+
   return retval;
 }
 

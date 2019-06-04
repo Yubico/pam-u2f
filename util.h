@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2018 Yubico AB - See COPYING
+ * Copyright (C) 2014-2019 Yubico AB - See COPYING
  */
 
 #ifndef UTIL_H
@@ -45,6 +45,7 @@ typedef struct {
   const char *appid;
   const char *prompt;
   FILE *debug_file;
+  int is_custom_debug_file;
 } cfg_t;
 
 typedef struct {
