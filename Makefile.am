@@ -1,10 +1,10 @@
 #  Copyright (C) 2014-2018 Yubico AB - See COPYING
 
-SUBDIRS = . pamu2fcfg tests
+SUBDIRS = po . pamu2fcfg tests
 
 ACLOCAL_AMFLAGS = -I m4
 
-AM_CFLAGS = $(CWFLAGS)
+AM_CFLAGS = $(CWFLAGS) $(CFLAGS)
 AM_CPPFLAGS = -I$(srcdir)/.. -I$(builddir)/.. $(LIBU2FHOST_CFLAGS) $(LIBU2FSERVER_CFLAGS)
 
 libdir = $(PAMDIR)
@@ -26,7 +26,7 @@ dist_man8_MANS = $(top_builddir)/man/pam_u2f.8
 DISTCLEANFILES = $(dist_man8_MANS)
 
 MANSOURCES = $(top_builddir)/man/pam_u2f.8.txt
-EXTRA_DIST = $(MANSOURCES)
+EXTRA_DIST = build-aux/config.rpath  $(MANSOURCES)
 
 SUFFIXES = .8.txt .8
 

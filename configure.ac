@@ -18,6 +18,7 @@ AC_LIBTOOL_WIN32_DLL
 AC_DISABLE_STATIC
 AC_PROG_LIBTOOL
 
+AM_GNU_GETTEXT([external])
 
 AC_ARG_ENABLE([man],
   [AS_HELP_STRING([--disable-man], [Disable man page generation])],
@@ -54,10 +55,10 @@ AC_ARG_WITH(pam-dir,
 ])
 AC_SUBST(PAMDIR, "$PAMDIR")
 
-
 PKG_CHECK_MODULES([LIBU2FHOST], [u2f-host], [], [])
 PKG_CHECK_MODULES([LIBU2FSERVER], [u2f-server], [], [])
 
+CFLAGS="-DLOCALEDIR=\"\\\"${prefix}/share/locale\\\"\" $CFLAGS"
 
 # Check for secure_getenv
 am_save_CFLAGS="$CFLAGS"
@@ -87,13 +88,12 @@ AX_CHECK_COMPILE_FLAG([-Wpointer-arith], [CWFLAGS="$CWFLAGS -Wpointer-arith"])
 AC_ARG_VAR([CSFLAGS], [Warning suppression flags])
 AX_CHECK_COMPILE_FLAG([-Wno-unused-but-set-variable], [CSFLAGS="-Wno-unused-but-set-variable"])
 
-AC_CONFIG_FILES([
+AC_CONFIG_FILES([ po/Makefile.in
   Makefile
   pamu2fcfg/Makefile
   tests/Makefile
 ])
 AC_OUTPUT
-
 
 AC_MSG_NOTICE([Summary of build options:
 

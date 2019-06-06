@@ -1,0 +1,24 @@
+# Chinese translations for pam-u2f package.
+# Copyright (C) 2017 THE pam-u2f'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the pam-u2f package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: pam-u2f 1.0.4\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2017-09-27 15:40-0500\n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: zh\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: util.c:448
+msgid "Now, please enter the response(s) below, one per line."
+msgstr ""
+
+#: util.c:268
+msgid "Please touch the device."
+msgstr ""

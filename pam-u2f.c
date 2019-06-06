@@ -19,6 +19,11 @@
 #include <string.h>
 #include <errno.h>
 
+/* Include i10n headers */
+#include <libintl.h>
+#include <locale.h>
+#define _(STRING) gettext(STRING)
+
 #include "util.h"
 #include "drop_privs.h"
 
@@ -135,6 +140,10 @@ static void parse_cfg(int flags, int argc, const char **argv, cfg_t *cfg) {
 /* PAM entry point for authentication verification */
 int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
                         const char **argv) {
+  /* Prepare i10n */
+  setlocale (LC_ALL, "");
+  bindtextdomain ("pam-u2f", LOCALEDIR);
+  textdomain ("pam-u2f");
 
   struct passwd *pw = NULL, pw_s;
   const char *user = NULL;
