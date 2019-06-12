@@ -59,6 +59,12 @@ static void parse_cfg(int flags, int argc, const char **argv, cfg_t *cfg) {
       cfg->cue = 1;
     if (strcmp(argv[i], "nodetect") == 0)
       cfg->nodetect = 1;
+    if (strcmp(argv[i], "userpresence") == 0)
+      cfg->userpresence = 1;
+    if (strcmp(argv[i], "userverification") == 0)
+      cfg->userverification = 1;
+    if (strcmp(argv[i], "pinverification") == 0)
+      cfg->pinverification = 1;
     if (strncmp(argv[i], "authfile=", 9) == 0)
       cfg->auth_file = argv[i] + 9;
     if (strncmp(argv[i], "authpending_file=", 17) == 0)
@@ -106,6 +112,9 @@ static void parse_cfg(int flags, int argc, const char **argv, cfg_t *cfg) {
     D(cfg->debug_file, "interactive=%d", cfg->interactive);
     D(cfg->debug_file, "cue=%d", cfg->cue);
     D(cfg->debug_file, "nodetect=%d", cfg->nodetect);
+    D(cfg->debug_file, "userpresence=%d", cfg->userpresence);
+    D(cfg->debug_file, "userverification=%d", cfg->userverification);
+    D(cfg->debug_file, "pinverification=%d", cfg->pinverification);
     D(cfg->debug_file, "manual=%d", cfg->manual);
     D(cfg->debug_file, "nouserok=%d", cfg->nouserok);
     D(cfg->debug_file, "openasuser=%d", cfg->openasuser);
@@ -193,7 +202,7 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
     cfg->max_devs = MAX_DEVS;
   }
 
-  devices = malloc(sizeof(device_t) * cfg->max_devs);
+  devices = calloc(cfg->max_devs, sizeof(device_t));
   if (!devices) {
     DBG("Unable to allocate memory");
     retval = PAM_IGNORE;

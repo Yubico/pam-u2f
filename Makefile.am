@@ -5,7 +5,7 @@ SUBDIRS = . pamu2fcfg tests
 ACLOCAL_AMFLAGS = -I m4
 
 AM_CFLAGS = $(CWFLAGS)
-AM_CPPFLAGS = -I$(srcdir)/.. -I$(builddir)/.. $(LIBU2FHOST_CFLAGS) $(LIBU2FSERVER_CFLAGS)
+AM_CPPFLAGS = -I$(srcdir)/.. -I$(builddir)/.. $(LIBFIDO2_CFLAGS) $(LIBCRYPTO_CFLAGS)
 
 libdir = $(PAMDIR)
 
@@ -14,9 +14,11 @@ lib_LTLIBRARIES = pam_u2f.la
 pam_u2f_la_SOURCES = pam-u2f.c
 pam_u2f_la_SOURCES += util.c util.h
 pam_u2f_la_SOURCES += drop_privs.h drop_privs.c
+pam_u2f_la_SOURCES += b64.c b64.h
+pam_u2f_la_SOURCES += explicit_bzero.c
 
 pam_u2f_la_LIBADD = -lpam
-pam_u2f_la_LIBADD += $(LIBU2FHOST_LIBS) $(LIBU2FSERVER_LIBS)
+pam_u2f_la_LIBADD += $(LIBFIDO2_LIBS) $(LIBCRYPTO_LIBS)
 pam_u2f_la_LDFLAGS = -module -avoid-version
 
 DEFS = -DDEBUG_PAM -DPAM_DEBUG @DEFS@
