@@ -265,7 +265,7 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
       snprintf(buf, authfile_dir_len,
                "%s%s", authfile_dir, DEFAULT_AUTHFILE);
 
-      if (!openasuser) {
+      if (!cfg->openasuser) {
 	DBG("WARNING: not dropping privileges when reading %s, please "
 	    "consider setting openasuser=1 in the module configuration", buf);
       }
