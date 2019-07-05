@@ -141,6 +141,10 @@ If enabled, interactive mode becomes redundant and has no effect.
 cue::
 Set to prompt a message to remind to touch the device.
 
+[cue_prompt=your prompt here]::
+Set individual prompt message for the cue option. Watch the square brackets
+around this parameter to get spaces correctly recognized by PAM.
+
 nodetect::
 Set to skip detecting if a suitable U2F token is inserted before performing
 the full tactile authentication. This detection was created to avoid
