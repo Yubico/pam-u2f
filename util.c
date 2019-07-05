@@ -703,7 +703,9 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
         if (user_presence || user_verification) {
             if (cfg->manual == 0 && cfg->cue && !cued) {
               cued = 1;
-              converse(pamh, PAM_TEXT_INFO, DEFAULT_CUE);
+              converse(pamh, PAM_TEXT_INFO,
+                       cfg->cue_prompt != NULL ? cfg->cue_prompt : DEFAULT_CUE);
+
             }
         }
         r = fido_dev_get_assert(authlist[j], assert, pin);

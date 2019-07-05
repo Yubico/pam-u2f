@@ -47,6 +47,7 @@ typedef struct {
   const char *origin;
   const char *appid;
   const char *prompt;
+  const char *cue_prompt;
   FILE *debug_file;
   int is_custom_debug_file;
 } cfg_t;

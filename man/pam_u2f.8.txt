@@ -59,6 +59,10 @@ Set to drop to a manual console where challenges are printed on screen and respo
 *cue*::
 Set to prompt a message to remind to touch the device.
 
+[cue_prompt=your prompt here]::
+Set individual prompt message for the cue option. Watch the square brackets
+around this parameter to get spaces correctly recognized by PAM.
+
 *nodetect*::
 Skip detecting if a suitable key is inserted before performing a full authentication. See *NOTES* below.
 
