@@ -36,7 +36,7 @@
 #endif
 #include <paths.h>
 
-#include "readpassphrase.h"
+#include "_readpassphrase.h"
 
 #ifndef _PATH_TTY
 # define _PATH_TTY "/dev/tty"

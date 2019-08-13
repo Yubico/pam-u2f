@@ -13,6 +13,8 @@
 
 #ifndef HAVE_EXPLICIT_BZERO
 
+#include "util.h"
+
 #ifdef HAVE_MEMSET_S
 
 void

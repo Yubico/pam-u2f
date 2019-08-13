@@ -20,7 +20,11 @@
 #include "b64.h"
 #include "cmdline.h"
 #include "util.h"
-#include "readpassphrase.h"
+#ifndef HAVE_READPASSPHRASE
+#include "_readpassphrase.h"
+#else
+#include <readpassphrase.h>
+#endif
 
 int main(int argc, char *argv[]) {
   int exit_code = EXIT_FAILURE;
