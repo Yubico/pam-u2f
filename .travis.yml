@@ -64,6 +64,7 @@ matrix:
       script: ./build-aux/ci/build-xenial-gcc9.sh
     - os: linux
       compiler: clang-7
+      dist: xenial
       addons:
         apt:
           sources:
@@ -84,6 +85,7 @@ matrix:
       script: ./build-aux/ci/build-xenial-clang7.sh
     - os: linux
       compiler: clang-8
+      dist: xenial
       addons:
         apt:
           sources:
@@ -164,6 +166,7 @@ matrix:
       script: ./build-aux/ci/build-bionic-gcc9.sh
     - os: linux
       compiler: clang-7
+      dist: bionic
       addons:
         apt:
           sources:
@@ -185,6 +188,7 @@ matrix:
       script: ./build-aux/ci/build-bionic-clang7.sh
     - os: linux
       compiler: clang-8
+      dist: bionic
       addons:
         apt:
           sources:
