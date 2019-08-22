@@ -3,10 +3,6 @@ set -ex
 
 BUILDROOT="$(git rev-parse --show-toplevel)"
 
-pushd "$BUILDROOT" &>/dev/null
-  ./build-aux/ci/format-code.sh
-popd &>/dev/null
-
 pushd "/tmp" &>/dev/null
   # Build and install libcbor
   git clone git://github.com/pjk/libcbor

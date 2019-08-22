@@ -115,6 +115,7 @@ matrix:
           packages:
             - autoconf
             - check
+            - clang-format-6.0
             - gcc-7
             - gengetopt
             - help2man
