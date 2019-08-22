@@ -43,7 +43,7 @@ install-exec-hook:
 	chmod -f 644 $(PAMDIR)/pam_u2f.so || true
 
 indent:
-	clang-format -i *.c *.h pamu2fcfg/pamu2fcfg.c
+	clang-format -i *.c *.h pamu2fcfg/*.c pamu2fcfg/*.h
 
 ChangeLog:
 	cd $(srcdir) && git2cl > ChangeLog
