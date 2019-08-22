@@ -46,15 +46,14 @@ static int hex_decode(const char *ascii_hex, unsigned char **blob,
       *blob_len = 0;
       return (0);
     }
-    (*blob)[i] = (unsigned char)c;
+    (*blob)[i] = (unsigned char) c;
     ascii_hex += n;
   }
 
   return (1);
 }
 
-static char *normal_b64(const char *websafe_b64)
-{
+static char *normal_b64(const char *websafe_b64) {
   char *b64;
   char *p;
   size_t n;
@@ -72,32 +71,31 @@ static char *normal_b64(const char *websafe_b64)
 
   while ((p = strpbrk(p, "-_")) != NULL) {
     switch (*p) {
-    case '-':
-      *p++ = '+';
-      break;
-    case '_':
-      *p++ = '/';
-      break;
+      case '-':
+        *p++ = '+';
+        break;
+      case '_':
+        *p++ = '/';
+        break;
     }
-	}
+  }
 
   switch (n % 4) {
-  case 1:
-    b64[n] = '=';
-    break;
-  case 2:
-  case 3:
-    b64[n] = '=';
-    b64[n + 1] = '=';
-    break;
+    case 1:
+      b64[n] = '=';
+      break;
+    case 2:
+    case 3:
+      b64[n] = '=';
+      b64[n + 1] = '=';
+      break;
   }
 
   return (b64);
 }
 
 static es256_pk_t *translate_old_format_pubkey(const unsigned char *pk,
-                                               size_t pk_len)
-{
+                                               size_t pk_len) {
   es256_pk_t *es256_pk = NULL;
   EC_KEY *ec = NULL;
   EC_POINT *q = NULL;
@@ -175,14 +173,15 @@ int get_devices_from_authfile(const char *authfile, const char *username,
   gpu_ret = getpwuid_r(st.st_uid, &pw_s, buffer, sizeof(buffer), &pw);
   if (gpu_ret != 0 || pw == NULL) {
     D(debug_file, "Unable to retrieve credentials for uid %u, (%s)", st.st_uid,
-       strerror(errno));
+      strerror(errno));
     goto err;
   }
 
   if (strcmp(pw->pw_name, username) != 0 && strcmp(pw->pw_name, "root") != 0) {
     if (strcmp(username, "root") != 0) {
-      D(debug_file, "The owner of the authentication file is neither %s nor root",
-         username);
+      D(debug_file,
+        "The owner of the authentication file is neither %s nor root",
+        username);
     } else {
       D(debug_file, "The owner of the authentication file is not root");
     }
@@ -206,7 +205,7 @@ int get_devices_from_authfile(const char *authfile, const char *username,
   }
 
   retval = -2;
-  while (fgets(buf, (int)(DEVSIZE * (max_devs - 1)), opwfile)) {
+  while (fgets(buf, (int) (DEVSIZE * (max_devs - 1)), opwfile)) {
     char *saveptr = NULL;
     size_t len = strlen(buf);
     if (len > 0 && buf[len - 1] == '\n')
@@ -241,8 +240,9 @@ int get_devices_from_authfile(const char *authfile, const char *username,
         if ((*n_devs)++ > max_devs - 1) {
           *n_devs = max_devs;
           if (verbose)
-            D(debug_file, "Found more than %d devices, ignoring the remaining ones",
-               max_devs);
+            D(debug_file,
+              "Found more than %d devices, ignoring the remaining ones",
+              max_devs);
           break;
         }
 
@@ -259,7 +259,8 @@ int get_devices_from_authfile(const char *authfile, const char *username,
 
         if (!devices[i].keyHandle) {
           if (verbose)
-            D(debug_file, "Unable to allocate memory for keyHandle number %d", i);
+            D(debug_file, "Unable to allocate memory for keyHandle number %d",
+              i);
           goto err;
         }
 
@@ -281,7 +282,8 @@ int get_devices_from_authfile(const char *authfile, const char *username,
 
         if (!devices[i].publicKey) {
           if (verbose)
-            D(debug_file, "Unable to allocate memory for publicKey number %d", i);
+            D(debug_file, "Unable to allocate memory for publicKey number %d",
+              i);
           goto err;
         }
 
@@ -304,7 +306,8 @@ int get_devices_from_authfile(const char *authfile, const char *username,
 
         if (!devices[i].coseType) {
           if (verbose)
-            D(debug_file, "Unable to allocate memory for COSE type number %d", i);
+            D(debug_file, "Unable to allocate memory for COSE type number %d",
+              i);
           goto err;
         }
 
@@ -318,13 +321,15 @@ int get_devices_from_authfile(const char *authfile, const char *username,
           devices[i].attributes = strdup("p");
         } else {
           if (verbose)
-            D(debug_file, "Attributes for device number %d: %s", i + 1, s_token);
+            D(debug_file, "Attributes for device number %d: %s", i + 1,
+              s_token);
           devices[i].attributes = strdup(s_token);
         }
 
         if (!devices[i].attributes) {
           if (verbose)
-            D(debug_file, "Unable to allocate memory for attributes number %d", i);
+            D(debug_file, "Unable to allocate memory for attributes number %d",
+              i);
           goto err;
         }
 
@@ -334,7 +339,8 @@ int get_devices_from_authfile(const char *authfile, const char *username,
           free(websafe_b64);
           if (!devices[i].keyHandle) {
             if (verbose)
-              D(debug_file, "Unable to allocate memory for keyHandle number %d", i);
+              D(debug_file, "Unable to allocate memory for keyHandle number %d",
+                i);
             goto err;
           }
         }
@@ -451,7 +457,7 @@ static int get_authenticators(const cfg_t *cfg, const fido_dev_info_t *devlist,
     } else {
       r = fido_dev_get_assert(dev, assert, NULL);
       if ((!fido_dev_is_fido2(dev) && r == FIDO_ERR_USER_PRESENCE_REQUIRED) ||
-           (fido_dev_is_fido2(dev) && r == FIDO_OK)) {
+          (fido_dev_is_fido2(dev) && r == FIDO_OK)) {
         authlist[j++] = dev;
         if (cfg->debug)
           D(cfg->debug_file, "Found key in authenticator %zu", i);
@@ -504,7 +510,7 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
   if (!devlist) {
     if (cfg->debug)
       D(cfg->debug_file, "Unable to allocate devlist");
-   goto out;
+    goto out;
   }
 
   r = fido_dev_info_manifest(devlist, 64, &ndevs);
@@ -542,14 +548,16 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
   }
 
   if (cfg->nodetect && cfg->debug)
-    D(cfg->debug_file, "nodetect option specified, suitable key detection will be skipped");
+    D(cfg->debug_file,
+      "nodetect option specified, suitable key detection will be skipped");
 
   i = 0;
   while (i < n_devs) {
     retval = -2;
 
     if (cfg->debug)
-      D(cfg->debug_file, "Attempting authentication with device number %d", i + 1);
+      D(cfg->debug_file, "Attempting authentication with device number %d",
+        i + 1);
 
     assert = fido_assert_new();
     if (!assert) {
@@ -571,7 +579,7 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
     } else {
       if (cfg->debug)
         D(cfg->debug_file, "Key handle: %s", devices[i].keyHandle);
-      if (!b64_decode(devices[i].keyHandle, (void **)&kh, &kh_len)) {
+      if (!b64_decode(devices[i].keyHandle, (void **) &kh, &kh_len)) {
         if (cfg->debug)
           D(cfg->debug_file, "Failed to decode key handle");
         goto out;
@@ -580,7 +588,8 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
       r = fido_assert_allow_cred(assert, kh, kh_len);
       if (r != FIDO_OK) {
         if (cfg->debug)
-          D(cfg->debug_file, "Unable to set keyHandle: %s (%d)", fido_strerr(r), r);
+          D(cfg->debug_file, "Unable to set keyHandle: %s (%d)", fido_strerr(r),
+            r);
         goto out;
       }
     }
@@ -592,7 +601,7 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
         goto out;
       }
     } else {
-      if (!b64_decode(devices[i].publicKey, (void **)&pk, &pk_len)) {
+      if (!b64_decode(devices[i].publicKey, (void **) &pk, &pk_len)) {
         if (cfg->debug)
           D(cfg->debug_file, "Failed to decode public key");
         goto out;
@@ -689,7 +698,8 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
           goto out;
         }
 
-        r = fido_assert_set_clientdata_hash(assert, challenge, sizeof(challenge));
+        r =
+          fido_assert_set_clientdata_hash(assert, challenge, sizeof(challenge));
         if (r != FIDO_OK) {
           if (cfg->debug)
             D(cfg->debug_file, "Unable to reset challenge: %s( %d)",
@@ -698,15 +708,13 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
         }
 
         if (pin_verification)
-              pin = converse(pamh, PAM_PROMPT_ECHO_OFF,
-                             "Please enter the PIN: ");
+          pin = converse(pamh, PAM_PROMPT_ECHO_OFF, "Please enter the PIN: ");
         if (user_presence || user_verification) {
-            if (cfg->manual == 0 && cfg->cue && !cued) {
-              cued = 1;
-              converse(pamh, PAM_TEXT_INFO,
-                       cfg->cue_prompt != NULL ? cfg->cue_prompt : DEFAULT_CUE);
-
-            }
+          if (cfg->manual == 0 && cfg->cue && !cued) {
+            cued = 1;
+            converse(pamh, PAM_TEXT_INFO,
+                     cfg->cue_prompt != NULL ? cfg->cue_prompt : DEFAULT_CUE);
+          }
         }
         r = fido_dev_get_assert(authlist[j], assert, pin);
         if (pin) {
@@ -715,8 +723,10 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
           pin = NULL;
         }
         if (r == FIDO_OK) {
-          r = fido_assert_verify(assert, 0, cose_type, cose_type == COSE_ES256 ?
-                                (const void *)es256_pk : (const void *)rs256_pk);
+          r = fido_assert_verify(assert, 0, cose_type,
+                                 cose_type == COSE_ES256
+                                   ? (const void *) es256_pk
+                                   : (const void *) rs256_pk);
           if (r == FIDO_OK) {
             retval = 1;
             goto out;
@@ -749,8 +759,9 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
 
     if (ndevs > ndevs_prev) {
       if (cfg->debug)
-        D(cfg->debug_file, "Devices max_index has changed: %zu (was %zu). Starting over",
-          ndevs, ndevs_prev);
+        D(cfg->debug_file,
+          "Devices max_index has changed: %zu (was %zu). Starting over", ndevs,
+          ndevs_prev);
       ndevs_prev = ndevs;
       i = 0;
     }
@@ -855,13 +866,14 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
     }
 
     if (cfg->debug)
-      D(cfg->debug_file, "Attempting authentication with device number %d", i + 1);
+      D(cfg->debug_file, "Attempting authentication with device number %d",
+        i + 1);
 
     if (!strcmp(devices[i].keyHandle, "*")) {
       if (cfg->debug)
         D(cfg->debug_file, "Credential is resident");
     } else {
-      if (!b64_decode(devices[i].keyHandle, (void **)&kh, &kh_len)) {
+      if (!b64_decode(devices[i].keyHandle, (void **) &kh, &kh_len)) {
         if (cfg->debug)
           D(cfg->debug_file, "Failed to decode key handle");
         goto out;
@@ -870,7 +882,8 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
       r = fido_assert_allow_cred(assert[i], kh, kh_len);
       if (r != FIDO_OK) {
         if (cfg->debug)
-          D(cfg->debug_file, "Unable to set keyHandle: %s (%d)", fido_strerr(r), r);
+          D(cfg->debug_file, "Unable to set keyHandle: %s (%d)", fido_strerr(r),
+            r);
         goto out;
       }
 
@@ -885,7 +898,7 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
         goto out;
       }
     } else {
-      if (!b64_decode(devices[i].publicKey, (void **)&pk, &pk_len)) {
+      if (!b64_decode(devices[i].publicKey, (void **) &pk, &pk_len)) {
         if (cfg->debug)
           D(cfg->debug_file, "Failed to decode public key");
         goto out;
@@ -933,7 +946,8 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
       goto out;
     }
 
-    r = fido_assert_set_clientdata_hash(assert[i], challenge, sizeof(challenge));
+    r =
+      fido_assert_set_clientdata_hash(assert[i], challenge, sizeof(challenge));
     if (r != FIDO_OK) {
       if (cfg->debug)
         D(cfg->debug_file, "Failed to set challenge");
@@ -950,7 +964,7 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
       D(cfg->debug_file, "Challenge: %s", b64_challenge);
 
     n = snprintf(prompt, sizeof(prompt), "Challenge #%d:", i + 1);
-    if (n <= 0 || (size_t)n >= sizeof(prompt)) {
+    if (n <= 0 || (size_t) n >= sizeof(prompt)) {
       if (cfg->debug)
         D(cfg->debug_file, "Failed to print challenge prompt");
       goto out;
@@ -960,7 +974,7 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
 
     n = snprintf(buf, sizeof(buf), "%s\n%s\n%s", b64_challenge, cfg->origin,
                  devices[i].keyHandle);
-    if (n <= 0 || (size_t)n >= sizeof(buf)) {
+    if (n <= 0 || (size_t) n >= sizeof(buf)) {
       if (cfg->debug)
         D(cfg->debug_file, "Failed to print fido2-assert input string");
       goto out;
@@ -973,14 +987,14 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
   }
 
   converse(pamh, PAM_TEXT_INFO,
-             "Please pass the challenge(s) above to fido2-assert, and "
-             "paste the results in the prompt below.");
+           "Please pass the challenge(s) above to fido2-assert, and "
+           "paste the results in the prompt below.");
 
   retval = -1;
 
   for (i = 0; i < n_devs; ++i) {
     n = snprintf(prompt, sizeof(prompt), "Response #%d: ", i + 1);
-    if (n <= 0 || (size_t)n >= sizeof(prompt)) {
+    if (n <= 0 || (size_t) n >= sizeof(prompt)) {
       if (cfg->debug)
         D(cfg->debug_file, "Failed to print response prompt");
       goto out;
@@ -991,13 +1005,13 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
     b64_authdata = converse(pamh, PAM_PROMPT_ECHO_ON, prompt);
     b64_sig = converse(pamh, PAM_PROMPT_ECHO_ON, prompt);
 
-    if (!b64_decode(b64_authdata, (void **)&authdata, &authdata_len)) {
+    if (!b64_decode(b64_authdata, (void **) &authdata, &authdata_len)) {
       if (cfg->debug)
         D(cfg->debug_file, "Failed to decode authenticator data");
       goto out;
     }
 
-    if (!b64_decode(b64_sig, (void **)&sig, &sig_len)) {
+    if (!b64_decode(b64_sig, (void **) &sig, &sig_len)) {
       if (cfg->debug)
         D(cfg->debug_file, "Failed to decode signature");
       goto out;
@@ -1077,7 +1091,7 @@ static int _converse(pam_handle_t *pamh, int nargs,
   struct pam_conv *conv;
   int retval;
 
-  retval = pam_get_item(pamh, PAM_CONV, (void *)&conv);
+  retval = pam_get_item(pamh, PAM_CONV, (void *) &conv);
 
   if (retval != PAM_SUCCESS) {
     return retval;
@@ -1087,7 +1101,8 @@ static int _converse(pam_handle_t *pamh, int nargs,
 }
 
 char *converse(pam_handle_t *pamh, int echocode, const char *prompt) {
-  const struct pam_message msg = {.msg_style = echocode, .msg = (char *)prompt};
+  const struct pam_message msg = {.msg_style = echocode,
+                                  .msg = (char *) prompt};
   const struct pam_message *msgs = &msg;
   struct pam_response *resp = NULL;
   int retval = _converse(pamh, 1, &msgs, &resp);
@@ -1115,21 +1130,21 @@ char *converse(pam_handle_t *pamh, int echocode, const char *prompt) {
 }
 
 #if defined(PAM_DEBUG)
-void _debug(FILE *debug_file, const char *file, int line, const char *func, const char *fmt, ...) {
+void _debug(FILE *debug_file, const char *file, int line, const char *func,
+            const char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
 #ifdef __linux__
-  if (debug_file == (FILE *)-1) {
+  if (debug_file == (FILE *) -1) {
     syslog(LOG_AUTHPRIV | LOG_DEBUG, DEBUG_STR, file, line, func);
     vsyslog(LOG_AUTHPRIV | LOG_DEBUG, fmt, ap);
-  }
-  else {
+  } else {
     fprintf(debug_file, DEBUG_STR, file, line, func);
     vfprintf(debug_file, fmt, ap);
     fprintf(debug_file, "\n");
   }
-#else /* Windows, MAC */
-  fprintf(debug_file, DEBUG_STR, file, line, func );
+#else  /* Windows, MAC */
+  fprintf(debug_file, DEBUG_STR, file, line, func);
   vfprintf(debug_file, fmt, ap);
   fprintf(debug_file, "\n");
 #endif /* __linux__ */
@@ -1151,7 +1166,7 @@ int random_bytes(void *buf, size_t cnt) {
 
   n = read(fd, buf, cnt);
   close(fd);
-  if (n < 0 || (size_t)n != cnt)
+  if (n < 0 || (size_t) n != cnt)
     return (0);
 
   return (1);

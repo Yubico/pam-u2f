@@ -213,8 +213,9 @@ int main(int argc, char *argv[]) {
 
   if (ndevs == 0) {
     for (i = 0; i < TIMEOUT; i += FREQUENCY) {
-      fprintf(stderr, "\rNo U2F device available, please insert one now, you "
-                      "have %2d seconds",
+      fprintf(stderr,
+              "\rNo U2F device available, please insert one now, you "
+              "have %2d seconds",
               TIMEOUT - i);
       fflush(stderr);
       sleep(FREQUENCY);
@@ -260,9 +261,9 @@ int main(int argc, char *argv[]) {
 
   r = fido_dev_make_cred(dev, cred, NULL);
   if (r == FIDO_ERR_PIN_REQUIRED) {
-    n = snprintf(prompt, sizeof(prompt), "Enter PIN for %s: ",
-                 fido_dev_info_path(di));
-    if (n < 0 || (size_t)n >= sizeof(prompt)) {
+    n = snprintf(prompt, sizeof(prompt),
+                 "Enter PIN for %s: ", fido_dev_info_path(di));
+    if (n < 0 || (size_t) n >= sizeof(prompt)) {
       fprintf(stderr, "error: snprintf prompt");
       exit(EXIT_FAILURE);
     }
@@ -297,7 +298,7 @@ int main(int argc, char *argv[]) {
     exit(EXIT_FAILURE);
   }
 
-  pk = (const unsigned char *)fido_cred_pubkey_ptr(cred);
+  pk = (const unsigned char *) fido_cred_pubkey_ptr(cred);
   if (!pk) {
     fprintf(stderr, "error: fido_cred_pubkey_ptr returned NULL\n");
     exit(EXIT_FAILURE);

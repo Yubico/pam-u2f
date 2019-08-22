@@ -53,11 +53,13 @@ struct _ykpam_privs {
   FILE *debug_file;
 };
 
-#define PAM_MODUTIL_DEF_PRIVS(n) \
-  gid_t n##_saved_groups[SAVED_GROUPS_MAX_LEN]; \
-  struct _ykpam_privs n = {-1, -1, n##_saved_groups, SAVED_GROUPS_MAX_LEN, cfg->debug_file}
+#define PAM_MODUTIL_DEF_PRIVS(n)                                               \
+  gid_t n##_saved_groups[SAVED_GROUPS_MAX_LEN];                                \
+  struct _ykpam_privs n = {-1, -1, n##_saved_groups, SAVED_GROUPS_MAX_LEN,     \
+                           cfg->debug_file}
 
-int pam_modutil_drop_priv(pam_handle_t *, struct _ykpam_privs *, struct passwd *);
+int pam_modutil_drop_priv(pam_handle_t *, struct _ykpam_privs *,
+                          struct passwd *);
 int pam_modutil_regain_priv(pam_handle_t *, struct _ykpam_privs *);
 
 #endif

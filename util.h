@@ -23,7 +23,7 @@
 #define DEBUG_STR "debug(pam_u2f): %s:%d (%s): "
 
 #if defined(DEBUG_PAM)
-#define D(file, ...)  _debug(file, __FILE__, __LINE__, __func__, __VA_ARGS__)
+#define D(file, ...) _debug(file, __FILE__, __LINE__, __func__, __VA_ARGS__)
 #else
 #define D(file, ...)
 #endif /* DEBUG_PAM */
@@ -73,8 +73,8 @@ char *converse(pam_handle_t *pamh, int echocode, const char *prompt);
 void _debug(FILE *, const char *, int, const char *, const char *, ...);
 int random_bytes(void *, size_t);
 
-#if !defined(HAVE_EXPLICIT_BZERO) 
+#if !defined(HAVE_EXPLICIT_BZERO)
 void explicit_bzero(void *, size_t);
-#endif 
+#endif
 
 #endif /* UTIL_H */
