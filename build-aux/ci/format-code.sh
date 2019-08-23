@@ -12,24 +12,24 @@ COMMIT_RANGE="${TRAVIS_COMMIT_RANGE:-$1}"
 
 if [ -z "${COMMIT_RANGE}" ]; then
     >&2 echo "Empty commit range, missing parameter"
-    exit 0
+    return 0
 fi
 
 >&2 echo "Commit range $COMMIT_RANGE"
 
-FILES_TO_CHECK="$(git diff --name-only "$COMMIT_RANGE" | grep -e '\.c$' -e '\.h$')"
+FILES_TO_CHECK="$(git diff --name-only "$COMMIT_RANGE" | grep -e '.c$' -e '.h$')"
 CFV="${CLANG_FORMAT_VERSION:--6.0}"
 
 if [ -z "${FILES_TO_CHECK}" ]; then
     >&2 echo "No source code to check for formatting"
-    exit 0
+    return 0
 fi
 
 FORMAT_DIFF=$(git diff -U0 ${COMMIT_RANGE} -- ${FILES_TO_CHECK} | clang-format-diff$CFV -p1)
 
 if [ -z "${FORMAT_DIFF}" ]; then
     >&2 echo "All source code in the diff is properly formatted"
-    exit 0
+    return 0
 else
     >&2 echo -e "Found formatting errors\n"
     echo "${FORMAT_DIFF}"
