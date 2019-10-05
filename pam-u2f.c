@@ -279,6 +279,25 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
     should_free_auth_file = 1;
     buf = NULL;
   } else {
+    if (strncmp(cfg->auth_file, "/", 1) != 0) { /* Individual authorization mapping by user: auth_file is not absolute path, so prepend user home dir. */
+      openasuser = geteuid() == 0 ? 1 : 0;
+
+      authfile_dir_len = strlen(pw->pw_dir) + strlen("/") + strlen(cfg->auth_file) + 1;
+      buf = malloc(sizeof(char) * (authfile_dir_len));
+
+      if (!buf) {
+        DBG("Unable to allocate memory");
+        retval = PAM_IGNORE;
+        goto done;
+      }
+
+      snprintf(buf, authfile_dir_len, "%s/%s", pw->pw_dir, cfg->auth_file);
+
+      cfg->auth_file = buf; /* update cfg */
+      should_free_auth_file = 1;   
+      buf = NULL;
+    }
+
     DBG("Using authentication file %s", cfg->auth_file);
   }
 
