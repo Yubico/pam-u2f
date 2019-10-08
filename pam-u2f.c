@@ -280,8 +280,8 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
     buf = NULL;
   } else {
     if (cfg->auth_file[0] != '/') {
-	    /* Individual authorization mapping by user: auth_file is not
-                absolute path, so prepend user home dir. */
+      /* Individual authorization mapping by user: auth_file is not
+          absolute path, so prepend user home dir. */
       openasuser = geteuid() == 0 ? 1 : 0;
 
       authfile_dir_len =
