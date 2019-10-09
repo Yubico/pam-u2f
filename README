@@ -78,8 +78,9 @@ debug::
 Enables debug output
 
 debug_file::
-Filename to write debugging messages to. If this file is missing, nothing will be logged! This regular file **has to be created by you** 
-or **must exist and be a regular file** for anything getting logged to it. It is not created by pam-u2f on purpose (for security 
+Filename to write debugging messages to. **If this file is missing, nothing will be logged**. This regular file **has to be created by the user**
+or **must exist and be a regular file** for anything getting logged to it. It is not created by pam-u2f on purpose (for security considerations).
+This filename may be alternatively set to "stderr" (default), "stdout", or "syslog".
 
 origin=origin::
 Set the origin for the U2F authentication procedure.
