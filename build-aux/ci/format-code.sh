@@ -17,7 +17,7 @@ fi
 
 >&2 echo "Commit range $COMMIT_RANGE"
 
-FILES_TO_CHECK="$(git diff --name-only "$COMMIT_RANGE" | grep -e '.c$' -e '.h$')"
+FILES_TO_CHECK="$(git diff --name-only "$COMMIT_RANGE" | grep -e '.c$' -e '.h$' || true)"
 CFV="${CLANG_FORMAT_VERSION:--6.0}"
 
 if [ -z "${FILES_TO_CHECK}" ]; then
