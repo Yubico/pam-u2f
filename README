@@ -204,9 +204,12 @@ users should not rely on the default origin and appid ("pam://$HOSTNAME")
 but set those parameters explicitly to the same value.
 
 == Individual authorization mapping by user
-Each user creates a `~/.config/Yubico/u2f_keys` file inside of their home
-directory and places the mapping in that file, the file must have only one
-line:
+Each user creates a `.config/Yubico/u2f_keys` (default) file inside their 
+home directory and places the mapping in that file. You may want to specify 
+a different per user file (relative to the user's home dir), i.e. 
+`.ssh/u2f_keys`.
+
+The file must have only one line:
 
  <username>:<KeyHandle1>,<UserKey1>:<KeyHandle2>,<UserKey2>:...
 
