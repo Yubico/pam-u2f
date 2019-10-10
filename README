@@ -98,7 +98,8 @@ to keyHandles and user keys.  The format is
 second_keyHandle,second_public_key:...+ the default location of the
 file is $XDG_CONFIG_HOME/Yubico/u2f_keys. If the environment variable
 is not set, $HOME/.config/Yubico/u2f_keys is used.
-(more on <<files,Authorization Mapping Files>>).
+(more on <<files,Authorization Mapping Files>>). An individual (per user) file
+may be configured, see <<individualAuth>>.
 
 authpending_file=file::
 Set the location of the file that is used for touch request notifications.
@@ -205,11 +206,13 @@ IMPORTANT: On dynamics networks (e.g. where hostnames are set by DHCP),
 users should not rely on the default origin and appid ("pam://$HOSTNAME")
 but set those parameters explicitly to the same value.
 
+[[individualAuth]]
 == Individual authorization mapping by user
 Each user creates a `.config/Yubico/u2f_keys` (default) file inside their 
 home directory and places the mapping in that file. You may want to specify 
-a different per user file (relative to the user's home dir), i.e. 
-`.ssh/u2f_keys`.
+a different per user file (relative to the users' home dir), i.e.
+`.ssh/u2f_keys`. Bear in mind, setting an absolute path here is possible although
+very likely a fragile setup, and probably not exhibiting the intended behaviour.
 
 The file must have only one line:
 
