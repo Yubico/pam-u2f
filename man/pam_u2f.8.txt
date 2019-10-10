@@ -30,7 +30,7 @@ Set the application ID for the U2F authentication procedure. If no value is spec
 
 *authfile*=_file_::
 Set the location of the file that holds the mappings of user names to keyHandles and user keys. The format is username:keyHandle1,public_key1:keyHandle2,public_key2:... the default location of the file is $XDG_CONFIG_HOME/Yubico/u2f_keys. If the environment variable is not set, $HOME/.config/Yubico/u2f_keys is used.
-An individual (per user) file may be configured relative to the users' home dirs, i.e.`.ssh/u2f_keys`.
+An individual (per user) file may be configured relative to the users' home dirs, i.e. ".ssh/u2f_keys".
 
 *authpending_file*=_file_::
 Set the location of the file that is used for touch request notifications. This file will be opened when pam-u2f starts waiting for a user to touch the device, and will be closed when it no longer waits for a touch. Use inotify to listen on these events, or a more high-level tool like yubikey-touch-detector. Default value: /var/run/user/$UID/pam-u2f-authpending. Set an empty value in order to disable this functionality, like so: "authpending_file=".
@@ -77,9 +77,9 @@ auth required pam_u2f.so origin=http://example.com appid=http://example.com auth
 
 == CAVEATS
 By default the mapping file inside a home directory will be opened as
-the target user, whereas the central file will be opened as `root`. If
-the `XDG_CONFIG_HOME` variable is set, privileges will not be dropped
-unless the `openasuser` configuration setting is set.
+the target user, whereas the central file will be opened as "root". If
+the "XDG_CONFIG_HOME" variable is set, privileges will not be dropped
+unless the "openasuser" configuration setting is set.
 
 Using pam-u2f to secure the login to a computer while
 storing the mapping file in an encrypted home directory, will result
