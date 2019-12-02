@@ -652,10 +652,17 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
     } else
       pin_verification = false;
 
-    r = fido_assert_set_options(assert, false, false);
+    r = fido_assert_set_up(assert, FIDO_OPT_FALSE);
     if (r != FIDO_OK) {
       if (cfg->debug)
-        D(cfg->debug_file, "Failed to set assertion options");
+        D(cfg->debug_file, "Failed to set UP");
+      goto out;
+    }
+
+    r = fido_assert_set_uv(assert, FIDO_OPT_FALSE);
+    if (r != FIDO_OK) {
+      if (cfg->debug)
+        D(cfg->debug_file, "Failed to set UV");
       goto out;
     }
 
@@ -685,10 +692,17 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
 
     if (get_authenticators(cfg, devlist, ndevs, assert, kh, authlist)) {
       for (size_t j = 0; authlist[j] != NULL; j++) {
-        r = fido_assert_set_options(assert, user_presence, user_verification);
+        r = fido_assert_set_up(assert, user_presence);
         if (r != FIDO_OK) {
           if (cfg->debug)
-            D(cfg->debug_file, "Failed to reset assertion options");
+            D(cfg->debug_file, "Failed to reset UP");
+          goto out;
+        }
+
+        r = fido_assert_set_uv(assert, user_verification);
+        if (r != FIDO_OK) {
+          if (cfg->debug)
+            D(cfg->debug_file, "Failed to reset UV");
           goto out;
         }
 
@@ -858,10 +872,17 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
     if (strstr(devices[i].attributes, "verification"))
       user_verification = true;
 
-    r = fido_assert_set_options(assert[i], user_presence, user_verification);
+    r = fido_assert_set_up(assert[i], user_presence);
     if (r != FIDO_OK) {
       if (cfg->debug)
-        D(cfg->debug_file, "Unable to set options: %s (%d)", fido_strerr(r), r);
+        D(cfg->debug_file, "Unable to set UP: %s (%d)", fido_strerr(r), r);
+      goto out;
+    }
+
+    r = fido_assert_set_uv(assert[i], user_verification);
+    if (r != FIDO_OK) {
+      if (cfg->debug)
+        D(cfg->debug_file, "Unable to set UV: %s (%d)", fido_strerr(r), r);
       goto out;
     }
 
