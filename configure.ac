@@ -57,7 +57,7 @@ AC_SUBST(PAMDIR, "$PAMDIR")
 
 
 PKG_CHECK_MODULES([LIBCRYPTO], [libcrypto], [], [])
-PKG_CHECK_MODULES([LIBFIDO2], [libfido2], [], [])
+PKG_CHECK_MODULES([LIBFIDO2], [libfido2 >= 1.2.0], [], [])
 
 
 # Check for secure_getenv, readpassphrase, explicit_bzero, and memset_s

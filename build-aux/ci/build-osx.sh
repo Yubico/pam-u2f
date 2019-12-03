@@ -24,5 +24,7 @@ pushd "/tmp" &>/dev/null
 popd &>/dev/null
 
 pushd "$BUILDROOT" &>/dev/null
-  ./autogen.sh && ./configure --disable-silent-rules --disable-man && make
+  ./autogen.sh
+  ./configure --disable-silent-rules --disable-man
+  make
 popd &>/dev/null

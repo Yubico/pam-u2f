@@ -191,10 +191,15 @@ int main(int argc, char *argv[]) {
   else
     pin_verification = 0;
 
-  r = fido_cred_set_options(cred, resident_key, false);
+  r = fido_cred_set_rk(cred, resident_key);
   if (r != FIDO_OK) {
-    fprintf(stderr, "error: fido_cred_set_options (%d) %s\n", r,
-            fido_strerr(r));
+    fprintf(stderr, "error: fido_cred_set_rk (%d) %s\n", r, fido_strerr(r));
+    exit(EXIT_FAILURE);
+  }
+
+  r = fido_cred_set_uv(cred, false);
+  if (r != FIDO_OK) {
+    fprintf(stderr, "error: fido_cred_set_uv (%d) %s\n", r, fido_strerr(r));
     exit(EXIT_FAILURE);
   }
 
