@@ -39,6 +39,9 @@ static void parse_cfg(int flags, int argc, const char **argv, cfg_t *cfg) {
 
   memset(cfg, 0, sizeof(cfg_t));
   cfg->debug_file = stderr;
+  cfg->userpresence = -1;
+  cfg->userverification = -1;
+  cfg->pinverification = -1;
 
   for (i = 0; i < argc; i++) {
     if (strncmp(argv[i], "max_devices=", 12) == 0)
@@ -59,12 +62,12 @@ static void parse_cfg(int flags, int argc, const char **argv, cfg_t *cfg) {
       cfg->cue = 1;
     if (strcmp(argv[i], "nodetect") == 0)
       cfg->nodetect = 1;
-    if (strcmp(argv[i], "userpresence") == 0)
-      cfg->userpresence = 1;
-    if (strcmp(argv[i], "userverification") == 0)
-      cfg->userverification = 1;
-    if (strcmp(argv[i], "pinverification") == 0)
-      cfg->pinverification = 1;
+    if (strncmp(argv[i], "userpresence=", 13) == 0)
+      sscanf(argv[i], "userpresence=%d", &cfg->userpresence);
+    if (strncmp(argv[i], "userverification=", 17) == 0)
+      sscanf(argv[i], "userverification=%d", &cfg->userverification);
+    if (strncmp(argv[i], "pinverification=", 16) == 0)
+      sscanf(argv[i], "pinverification=%d", &cfg->pinverification);
     if (strncmp(argv[i], "authfile=", 9) == 0)
       cfg->auth_file = argv[i] + 9;
     if (strncmp(argv[i], "authpending_file=", 17) == 0)
