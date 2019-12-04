@@ -127,97 +127,28 @@ fail:
   return (es256_pk);
 }
 
-int get_devices_from_authfile(const char *authfile, const char *username,
-                              unsigned max_devs, int verbose, FILE *debug_file,
-                              device_t *devices, unsigned *n_devs) {
+static int parse_native_format(const cfg_t *cfg, const char *username,
+                               char *buf, FILE* opwfile,
+                               device_t *devices, unsigned *n_devs) {
 
-  char *buf = NULL;
   char *s_user, *s_token;
-  int retval = 0;
-  int fd = -1;
-  struct stat st;
-  struct passwd *pw = NULL, pw_s;
-  char buffer[BUFSIZE];
-  int gpu_ret;
-  FILE *opwfile = NULL;
   unsigned i;
-
-  /* Ensure we never return uninitialized count. */
-  *n_devs = 0;
-
-  fd = open(authfile, O_RDONLY | O_CLOEXEC | O_NOCTTY);
-  if (fd < 0) {
-    if (verbose)
-      D(debug_file, "Cannot open file: %s (%s)", authfile, strerror(errno));
-    goto err;
-  }
-
-  if (fstat(fd, &st) < 0) {
-    if (verbose)
-      D(debug_file, "Cannot stat file: %s (%s)", authfile, strerror(errno));
-    goto err;
-  }
-
-  if (!S_ISREG(st.st_mode)) {
-    if (verbose)
-      D(debug_file, "%s is not a regular file", authfile);
-    goto err;
-  }
-
-  if (st.st_size == 0) {
-    if (verbose)
-      D(debug_file, "File %s is empty", authfile);
-    goto err;
-  }
-
-  gpu_ret = getpwuid_r(st.st_uid, &pw_s, buffer, sizeof(buffer), &pw);
-  if (gpu_ret != 0 || pw == NULL) {
-    D(debug_file, "Unable to retrieve credentials for uid %u, (%s)", st.st_uid,
-      strerror(errno));
-    goto err;
-  }
-
-  if (strcmp(pw->pw_name, username) != 0 && strcmp(pw->pw_name, "root") != 0) {
-    if (strcmp(username, "root") != 0) {
-      D(debug_file,
-        "The owner of the authentication file is neither %s nor root",
-        username);
-    } else {
-      D(debug_file, "The owner of the authentication file is not root");
-    }
-    goto err;
-  }
-
-  opwfile = fdopen(fd, "r");
-  if (opwfile == NULL) {
-    if (verbose)
-      D(debug_file, "fdopen: %s", strerror(errno));
-    goto err;
-  } else {
-    fd = -1; /* fd belongs to opwfile */
-  }
-
-  buf = malloc(sizeof(char) * (DEVSIZE * max_devs));
-  if (!buf) {
-    if (verbose)
-      D(debug_file, "Unable to allocate memory");
-    goto err;
-  }
+  int retval;
 
   retval = -2;
-  while (fgets(buf, (int) (DEVSIZE * (max_devs - 1)), opwfile)) {
+  while (fgets(buf, (int) (DEVSIZE * (cfg->max_devs - 1)), opwfile)) {
     char *saveptr = NULL;
     size_t len = strlen(buf);
     if (len > 0 && buf[len - 1] == '\n')
       buf[len - 1] = '\0';
 
-    if (verbose)
-      D(debug_file, "Authorization line: %s", buf);
+    if (cfg->debug)
+      D(cfg->debug_file, "Authorization line: %s", buf);
 
     s_user = strtok_r(buf, ":", &saveptr);
     if (s_user && strcmp(username, s_user) == 0) {
-      if (verbose)
-        D(debug_file, "Matched user: %s", s_user);
+      if (cfg->debug)
+        D(cfg->debug_file, "Matched user: %s", s_user);
 
       retval = -1; // We found at least one line for the user
 
@@ -236,13 +167,13 @@ int get_devices_from_authfile(const char *authfile, const char *username,
       *n_devs = 0;
 
       i = 0;
-      while ((s_token = strtok_r(NULL, ",", &saveptr)) != NULL) {
-        if ((*n_devs)++ > max_devs - 1) {
-          *n_devs = max_devs;
-          if (verbose)
-            D(debug_file,
+      while ((s_token = strtok_r(NULL, ",", &saveptr))) {
+        if ((*n_devs)++ > cfg->max_devs - 1) {
+          *n_devs = cfg->max_devs;
+          if (cfg->debug)
+            D(cfg->debug_file,
               "Found more than %d devices, ignoring the remaining ones",
-              max_devs);
+              cfg->max_devs);
           break;
         }
 
@@ -252,39 +183,39 @@ int get_devices_from_authfile(const char *authfile, const char *username,
         devices[i].attributes = NULL;
         devices[i].old_format = 0;
 
-        if (verbose)
-          D(debug_file, "KeyHandle for device number %d: %s", i + 1, s_token);
+        if (cfg->debug)
+          D(cfg->debug_file, "KeyHandle for device number %d: %s", i + 1, s_token);
 
         devices[i].keyHandle = strdup(s_token);
 
         if (!devices[i].keyHandle) {
-          if (verbose)
-            D(debug_file, "Unable to allocate memory for keyHandle number %d",
+          if (cfg->debug)
+            D(cfg->debug_file, "Unable to allocate memory for keyHandle number %d",
               i);
-          goto err;
+          return retval;
         }
 
-        if (!strcmp(devices[i].keyHandle, "*") && verbose)
-          D(debug_file, "Credential is resident");
+        if (!strcmp(devices[i].keyHandle, "*") && cfg->debug)
+          D(cfg->debug_file, "Credential is resident");
 
         s_token = strtok_r(NULL, ",", &saveptr);
 
         if (!s_token) {
-          if (verbose)
-            D(debug_file, "Unable to retrieve publicKey number %d", i + 1);
-          goto err;
+          if (cfg->debug)
+            D(cfg->debug_file, "Unable to retrieve publicKey number %d", i + 1);
+          return retval;
         }
 
-        if (verbose)
-          D(debug_file, "publicKey for device number %d: %s", i + 1, s_token);
+        if (cfg->debug)
+          D(cfg->debug_file, "publicKey for device number %d: %s", i + 1, s_token);
 
         devices[i].publicKey = strdup(s_token);
 
         if (!devices[i].publicKey) {
-          if (verbose)
-            D(debug_file, "Unable to allocate memory for publicKey number %d",
+          if (cfg->debug)
+            D(cfg->debug_file, "Unable to allocate memory for publicKey number %d",
               i);
-          goto err;
+          return retval;
         }
 
         s_token = strtok_r(NULL, ",", &saveptr);
@@ -292,45 +223,45 @@ int get_devices_from_authfile(const char *authfile, const char *username,
         devices[i].old_format = 0;
 
         if (!s_token) {
-          if (verbose) {
-            D(debug_file, "Unable to retrieve COSE type %d", i + 1);
-            D(debug_file, "Assuming ES256 (backwards compatibility)");
+          if (cfg->debug) {
+            D(cfg->debug_file, "Unable to retrieve COSE type %d", i + 1);
+            D(cfg->debug_file, "Assuming ES256 (backwards compatibility)");
           }
           devices[i].old_format = 1;
           devices[i].coseType = strdup("es256");
         } else {
-          if (verbose)
-            D(debug_file, "COSE type for device number %d: %s", i + 1, s_token);
+          if (cfg->debug)
+            D(cfg->debug_file, "COSE type for device number %d: %s", i + 1, s_token);
           devices[i].coseType = strdup(s_token);
         }
 
         if (!devices[i].coseType) {
-          if (verbose)
-            D(debug_file, "Unable to allocate memory for COSE type number %d",
+          if (cfg->debug)
+            D(cfg->debug_file, "Unable to allocate memory for COSE type number %d",
               i);
-          goto err;
+          return retval;
         }
 
         s_token = strtok_r(NULL, ":", &saveptr);
 
         if (!s_token) {
-          if (verbose) {
-            D(debug_file, "Unable to retrieve attributes %d", i + 1);
-            D(debug_file, "Assuming 'p' (backwards compatibility)");
+          if (cfg->debug) {
+            D(cfg->debug_file, "Unable to retrieve attributes %d", i + 1);
+            D(cfg->debug_file, "Assuming 'p' (backwards compatibility)");
           }
           devices[i].attributes = strdup("p");
         } else {
-          if (verbose)
-            D(debug_file, "Attributes for device number %d: %s", i + 1,
+          if (cfg->debug)
+            D(cfg->debug_file, "Attributes for device number %d: %s", i + 1,
               s_token);
           devices[i].attributes = strdup(s_token);
         }
 
         if (!devices[i].attributes) {
-          if (verbose)
-            D(debug_file, "Unable to allocate memory for attributes number %d",
+          if (cfg->debug)
+            D(cfg->debug_file, "Unable to allocate memory for attributes number %d",
               i);
-          goto err;
+          return retval;
         }
 
         if (devices[i].old_format) {
@@ -338,10 +269,10 @@ int get_devices_from_authfile(const char *authfile, const char *username,
           devices[i].keyHandle = normal_b64(websafe_b64);
           free(websafe_b64);
           if (!devices[i].keyHandle) {
-            if (verbose)
-              D(debug_file, "Unable to allocate memory for keyHandle number %d",
+            if (cfg->debug)
+              D(cfg->debug_file, "Unable to allocate memory for keyHandle number %d",
                 i);
-            goto err;
+            return retval;
           }
         }
 
@@ -350,8 +281,98 @@ int get_devices_from_authfile(const char *authfile, const char *username,
     }
   }
 
-  if (verbose)
-    D(debug_file, "Found %d device(s) for user %s", *n_devs, username);
+  return 1;
+}
+
+int get_devices_from_authfile(const cfg_t *cfg, const char *username,
+                              device_t *devices, unsigned *n_devs) {
+
+  char *buf = NULL;
+  int retval = 0;
+  int fd = -1;
+  struct stat st;
+  struct passwd *pw = NULL, pw_s;
+  char buffer[BUFSIZE];
+  int gpu_ret;
+  FILE *opwfile = NULL;
+  unsigned i;
+
+  /* Ensure we never return uninitialized count. */
+  *n_devs = 0;
+
+  fd = open(cfg->auth_file, O_RDONLY | O_CLOEXEC | O_NOCTTY);
+  if (fd < 0) {
+    if (cfg->debug)
+      D(cfg->debug_file, "Cannot open file: %s (%s)", cfg->auth_file, strerror(errno));
+    goto err;
+  }
+
+  if (fstat(fd, &st) < 0) {
+    if (cfg->debug)
+      D(cfg->debug_file, "Cannot stat file: %s (%s)", cfg->auth_file, strerror(errno));
+    goto err;
+  }
+
+  if (!S_ISREG(st.st_mode)) {
+    if (cfg->debug)
+      D(cfg->debug_file, "%s is not a regular file", cfg->auth_file);
+    goto err;
+  }
+
+  if (st.st_size == 0) {
+    if (cfg->debug)
+      D(cfg->debug_file, "File %s is empty", cfg->auth_file);
+    goto err;
+  }
+
+  gpu_ret = getpwuid_r(st.st_uid, &pw_s, buffer, sizeof(buffer), &pw);
+  if (gpu_ret != 0 || pw == NULL) {
+    D(cfg->debug_file, "Unable to retrieve credentials for uid %u, (%s)", st.st_uid,
+      strerror(errno));
+    goto err;
+  }
+
+  if (strcmp(pw->pw_name, username) != 0 && strcmp(pw->pw_name, "root") != 0) {
+    if (strcmp(username, "root") != 0) {
+      D(cfg->debug_file,
+        "The owner of the authentication file is neither %s nor root",
+        username);
+    } else {
+      D(cfg->debug_file, "The owner of the authentication file is not root");
+    }
+    goto err;
+  }
+
+  opwfile = fdopen(fd, "r");
+  if (opwfile == NULL) {
+    if (cfg->debug)
+      D(cfg->debug_file, "fdopen: %s", strerror(errno));
+    goto err;
+  } else {
+    fd = -1; /* fd belongs to opwfile */
+  }
+
+  buf = malloc(sizeof(char) * (DEVSIZE * cfg->max_devs));
+  if (!buf) {
+    if (cfg->debug)
+      D(cfg->debug_file, "Unable to allocate memory");
+    goto err;
+  }
+
+  if (cfg->sshformat == 0) {
+    retval = parse_native_format(cfg, username, buf, opwfile, devices, n_devs);
+  } else {
+    retval = -9;
+    //retval = parse_ssh_format(buf, opwfile);
+  }
+
+  if (retval != 1) {
+    // NOTE(adma): error message is logged by the previous function
+    goto err;
+  }
+
+  if (cfg->debug)
+    D(cfg->debug_file, "Found %d device(s) for user %s", *n_devs, username);
 
   retval = 1;
   goto out;

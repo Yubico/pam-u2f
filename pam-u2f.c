@@ -71,6 +71,8 @@ static void parse_cfg(int flags, int argc, const char **argv, cfg_t *cfg) {
       sscanf(argv[i], "pinverification=%d", &cfg->pinverification);
     if (strncmp(argv[i], "authfile=", 9) == 0)
       cfg->auth_file = argv[i] + 9;
+    if (strncmp(argv[i], "sshformat", 9) == 0)
+      cfg->sshformat = 1;
     if (strncmp(argv[i], "authpending_file=", 17) == 0)
       cfg->authpending_file = argv[i] + 17;
     if (strncmp(argv[i], "origin=", 7) == 0)
@@ -123,6 +125,7 @@ static void parse_cfg(int flags, int argc, const char **argv, cfg_t *cfg) {
     D(cfg->debug_file, "nouserok=%d", cfg->nouserok);
     D(cfg->debug_file, "openasuser=%d", cfg->openasuser);
     D(cfg->debug_file, "alwaysok=%d", cfg->alwaysok);
+    D(cfg->debug_file, "sshformat=%d", cfg->sshformat);
     D(cfg->debug_file, "authfile=%s",
       cfg->auth_file ? cfg->auth_file : "(null)");
     D(cfg->debug_file, "authpending_file=%s",
@@ -321,9 +324,8 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
     }
     DBG("Switched to uid %i", pw->pw_uid);
   }
-  retval =
-    get_devices_from_authfile(cfg->auth_file, user, cfg->max_devs, cfg->debug,
-                              cfg->debug_file, devices, &n_devices);
+  retval = get_devices_from_authfile(cfg, user, devices, &n_devices);
+
   if (openasuser) {
     if (pam_modutil_regain_priv(pamh, &privs)) {
       DBG("could not restore privileges");

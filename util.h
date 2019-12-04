@@ -42,6 +42,7 @@ typedef struct {
   int userpresence;
   int userverification;
   int pinverification;
+  int sshformat;
   const char *auth_file;
   const char *authpending_file;
   const char *origin;
@@ -60,8 +61,7 @@ typedef struct {
   int old_format;
 } device_t;
 
-int get_devices_from_authfile(const char *authfile, const char *username,
-                              unsigned max_devs, int verbose, FILE *debug_file,
+int get_devices_from_authfile(const cfg_t *cfg, const char *username,
                               device_t *devices, unsigned *n_devs);
 void free_devices(device_t *devices, const unsigned n_devs);
 
