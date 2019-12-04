@@ -643,7 +643,8 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
     else
       user_presence = FIDO_OPT_OMIT;
 
-    if (cfg->userverification == 1 || strstr(devices[i].attributes, "verification"))
+    if (cfg->userverification == 1 ||
+        strstr(devices[i].attributes, "verification"))
       user_verification = FIDO_OPT_TRUE;
     else if (cfg->userverification == 0)
       user_verification = FIDO_OPT_FALSE;
