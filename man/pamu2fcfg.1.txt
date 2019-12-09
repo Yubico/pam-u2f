@@ -26,7 +26,19 @@ Origin URL to use during registration. Defaults to pam://hostname
 *-i*, *--appid*=_STRING_::
 Application ID to use during registration. Defaults to *origin*
 
-*-V*, *--version*
+*-r*, *--resident*::
+Generate a resident credential. Defaults to off.
+
+*-t*, *--type*=_STRING_::
+COSE type to use during registration (ES256 or RS256). Defaults to ES256.
+
+*-N*, *--pin-verification*::
+Require PIN verification during authentication. Defaults to off.
+
+*-V*, *--user-verification*::
+Require user verification during authentication. Defaults to off.
+
+*--version*:
 *Print version and exit*
 
 Group: user (mutually exclusive)
@@ -45,4 +57,4 @@ Report pamu2fcfg bugs in the issue tracker: https://github.com/Yubico/pam-u2f/is
 
 The pam-u2f home page: https://developers.yubico.com/pam-u2f/
 
-YubiKeys can be obtained from Yubico: http://www.yubico.com/
+YubiKeys can be obtained from Yubico: https://www.yubico.com/

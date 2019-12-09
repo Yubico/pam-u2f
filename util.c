@@ -499,9 +499,9 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
   unsigned char *kh = NULL;
   unsigned char *pk = NULL;
   unsigned i = 0;
-  bool user_presence = false;
-  bool user_verification = false;
-  bool pin_verification = false;
+  fido_opt_t user_presence = FIDO_OPT_OMIT;
+  fido_opt_t user_verification = FIDO_OPT_OMIT;
+  fido_opt_t pin_verification = FIDO_OPT_OMIT;
   char *pin = NULL;
 
   fido_init(cfg->debug ? FIDO_DEBUG : 0);
@@ -636,21 +636,28 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
       goto out;
     }
 
-    if (cfg->userpresence || strstr(devices[i].attributes, "presence"))
-      user_presence = true;
+    if (cfg->userpresence == 1 || strstr(devices[i].attributes, "presence"))
+      user_presence = FIDO_OPT_TRUE;
+    else if (cfg->userpresence == 0)
+      user_presence = FIDO_OPT_FALSE;
     else
-      user_presence = false;
+      user_presence = FIDO_OPT_OMIT;
 
-    if (cfg->userverification || strstr(devices[i].attributes, "verification"))
-      user_verification = true;
+    if (cfg->userverification == 1 ||
+        strstr(devices[i].attributes, "verification"))
+      user_verification = FIDO_OPT_TRUE;
+    else if (cfg->userverification == 0)
+      user_verification = FIDO_OPT_FALSE;
     else
-      user_verification = false;
+      user_verification = FIDO_OPT_OMIT;
 
-    if (cfg->pinverification || strstr(devices[i].attributes, "pin")) {
-      pin_verification = true;
-      user_verification = true;
-    } else
-      pin_verification = false;
+    if (cfg->pinverification == 1 || strstr(devices[i].attributes, "pin")) {
+      pin_verification = FIDO_OPT_TRUE;
+      user_verification = FIDO_OPT_TRUE;
+    } else if (cfg->pinverification == 0)
+      pin_verification = FIDO_OPT_FALSE;
+    else
+      pin_verification = FIDO_OPT_OMIT;
 
     r = fido_assert_set_up(assert, FIDO_OPT_FALSE);
     if (r != FIDO_OK) {
@@ -659,7 +666,7 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
       goto out;
     }
 
-    r = fido_assert_set_uv(assert, FIDO_OPT_FALSE);
+    r = fido_assert_set_uv(assert, FIDO_OPT_OMIT);
     if (r != FIDO_OK) {
       if (cfg->debug)
         D(cfg->debug_file, "Failed to set UV");
@@ -721,7 +728,7 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
           goto out;
         }
 
-        if (pin_verification)
+        if (pin_verification == FIDO_OPT_TRUE)
           pin = converse(pamh, PAM_PROMPT_ECHO_OFF, "Please enter the PIN: ");
         if (user_presence || user_verification) {
           if (cfg->manual == 0 && cfg->cue && !cued) {

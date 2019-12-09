@@ -69,6 +69,21 @@ around this parameter to get spaces correctly recognized by PAM.
 *nodetect*::
 Skip detecting if a suitable key is inserted before performing a full authentication. See *NOTES* below.
 
+*userpresence*=_int_::
+If 1, require user presence during authentication. If 0, do not request user
+presence during authentication. Otherwise, fallback to the authenticator's
+default behaviour.
+
+*userverification*=_int_::
+If 1, require user verification during authentication. If 0, do not request
+user verification during authentication. Otherwise, fallback to the
+authenticator's default behaviour.
+
+*pinverification*=_int_::
+If 1, require PIN verification during authentication. If 0, do not request
+PIN verification during authentication. Otherwise, fallback to the
+authenticator's default behaviour.
+
 == EXAMPLES
 
 auth sufficient pam_u2f.so debug origin=pam://$HOSTNAME appid=pam://$HOSTNAME
