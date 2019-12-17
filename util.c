@@ -308,7 +308,7 @@ static int parse_ssh_format(const cfg_t *cfg, char *buf, size_t buf_size,
   int ch;
   int retval;
   char *decoded;
-  char *decoded_initial;
+  char *decoded_initial = NULL;
   size_t decoded_len;
   unsigned len;
 
