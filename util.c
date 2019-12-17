@@ -334,7 +334,7 @@ static int parse_ssh_format(const cfg_t *cfg, char *buf, size_t buf_size,
     goto out;
   }
 
-  while (opwfile_size > 0 && buf_size > 0) {
+  while (opwfile_size > 0 && buf_size > 1) {
     ch = fgetc(opwfile);
     if (ch == EOF) {
       if (cfg->debug) {
