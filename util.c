@@ -19,9 +19,21 @@
 #include <errno.h>
 #include <unistd.h>
 #include <string.h>
+#include <arpa/inet.h>
 
 #include "b64.h"
 #include "util.h"
+
+#define SSH_HEADER "-----BEGIN OPENSSH PRIVATE KEY-----\n"
+#define SSH_HEADER_LEN (sizeof(SSH_HEADER) - 1)
+#define SSH_TRAILER "-----END OPENSSH PRIVATE KEY-----\n"
+#define SSH_TRAILER_LEN (sizeof(SSH_TRAILER) - 1)
+#define SSH_AUTH_MAGIC "openssh-key-v1"
+#define SSH_AUTH_MAGIC_LEN (sizeof(SSH_AUTH_MAGIC)) // AUTH_MAGIC includes \0
+#define SSH_ES256 "sk-ecdsa-sha2-nistp256@openssh.com"
+#define SSH_ES256_LEN (sizeof(SSH_ES256) - 1)
+#define SSH_P256_NAME "nistp256"
+#define SSH_P256_NAME_LEN (sizeof(SSH_P256_NAME) - 1)
 
 static int hex_decode(const char *ascii_hex, unsigned char **blob,
                       size_t *blob_len) {
@@ -284,6 +296,569 @@ static int parse_native_format(const cfg_t *cfg, const char *username,
   return 1;
 }
 
+static int parse_ssh_format(const cfg_t *cfg, char *buf,
+                            FILE* opwfile, size_t opwfile_size,
+                            device_t *devices, unsigned *n_devs) {
+
+  char *cp = buf;
+  int ch;
+  int retval;
+  char *decoded;
+  char *decoded_initial;
+  size_t decoded_len;
+  unsigned len;
+
+  // The logic below is inspired by
+  // how ssh parses its own keys. See sshkey.c
+
+  retval = -2;
+  if (opwfile_size > BUFSIZE ||
+      opwfile_size < SSH_HEADER_LEN + SSH_TRAILER_LEN) {
+    if (cfg->debug) {
+      D(cfg->debug_file, "Malformed SSH key (length)");
+    }
+    goto out;
+  }
+
+  // NOTE(adma): +1 for \0
+  if (fgets(buf, SSH_HEADER_LEN + 1, opwfile) == NULL ||
+      strlen(buf) != SSH_HEADER_LEN ||
+      strncmp(buf, SSH_HEADER, SSH_HEADER_LEN) != 0) {
+    if (cfg->debug) {
+      D(cfg->debug_file, "Malformed SSH key (header)");
+    }
+    goto out;
+  }
+
+  while (opwfile_size > 0) {
+    ch = fgetc(opwfile);
+    if (ch == EOF) {
+      if (cfg->debug) {
+        D(cfg->debug_file, "Unexpected authfile termination");
+      }
+      goto out;
+    }
+
+    opwfile_size--;
+
+    if (ch != '\n' && ch != '\r') {
+      *cp = (char) ch;
+      if (ch == '-') {
+        // NOTE(adma): no +1 here since we already read one '-'
+        if (fgets(cp + 1, SSH_TRAILER_LEN, opwfile) == NULL ||
+            strlen(cp) != SSH_TRAILER_LEN ||
+            strncmp(cp, SSH_TRAILER, SSH_TRAILER_LEN) != 0) {
+          if (cfg->debug) {
+            D(cfg->debug_file, "Malformed SSH key (trailer)");
+          }
+        return retval;
+      }
+
+      *(cp) = '\0';
+      break;
+      } else {
+        cp++;
+      }
+    }
+  }
+
+  if (cfg->debug) { // TODO(adma): too verbose? Delete?
+    D(cfg->debug_file, "Credential is \"%s\"", buf);
+  }
+  retval = -1;
+
+  decoded_len = strlen(buf);
+  if (b64_decode(buf, (void **) &decoded, &decoded_len) == 0) {
+    if (cfg->debug) {
+      D(cfg->debug_file, "Unable to decode credential");
+    }
+    goto out;
+  }
+  decoded_initial = decoded;
+
+  // magic
+  if (decoded_len < SSH_AUTH_MAGIC_LEN ||
+      memcmp(decoded, SSH_AUTH_MAGIC, SSH_AUTH_MAGIC_LEN) != 0) {
+    if (cfg->debug) {
+      D(cfg->debug_file, "Malformed SSH key (magic)");
+    }
+    goto out;
+  }
+
+  decoded += SSH_AUTH_MAGIC_LEN;
+  decoded_len -= SSH_AUTH_MAGIC_LEN;
+
+  // ciphername
+  if (decoded_len < sizeof(uint32_t)) {
+    if (cfg->debug) {
+      D(cfg->debug_file, "Malformed SSH key (ciphername length)");
+    }
+    goto out;
+  }
+  len = ntohl(*((uint32_t *) decoded));
+  decoded += sizeof(uint32_t);
+  decoded_len -= sizeof(uint32_t);
+
+  if (decoded_len < len) {
+    if (cfg->debug) {
+      D(cfg->debug_file, "Malformed SSH key (ciphername)");
+    }
+    goto out;
+  }
+
+  if (cfg->debug) {
+    D(cfg->debug_file, "ciphername (%u): \"%s\"", len, decoded);
+  }
+
+  decoded += len;
+  decoded_len -= len;
+
+  // kdfname
+  if (decoded_len < sizeof(uint32_t)) {
+    if (cfg->debug) {
+      D(cfg->debug_file, "Malformed SSH key (kdfname length)");
+    }
+    goto out;
+  }
+  len = ntohl(*((uint32_t *) decoded));
+  decoded += sizeof(uint32_t);
+  decoded_len -= sizeof(uint32_t);
+
+  if (decoded_len < len) {
+    if (cfg->debug) {
+      D(cfg->debug_file, "Malformed SSH key (kdfname)");
+    }
+    goto out;
+  }
+
+  if (cfg->debug) {
+    D(cfg->debug_file, "kdfname (%u): \"%s\"", len, decoded);
+  }
+
+  decoded += len;
+  decoded_len -= len;
+
+  // kdfoptions
+  if (decoded_len < sizeof(uint32_t)) {
+    if (cfg->debug) {
+      D(cfg->debug_file, "Malformed SSH key (kdfoptions length)");
+    }
+    goto out;
+  }
+  len = ntohl(*((uint32_t *) decoded));
+  decoded += sizeof(uint32_t);
+  decoded_len -= sizeof(uint32_t);
+
+  if (decoded_len < len) {
+    if (cfg->debug) {
+      D(cfg->debug_file, "Malformed SSH key (kdfoptions)");
+    }
+    goto out;
+  }
+
+  if (cfg->debug) {
+    D(cfg->debug_file, "kdfoptions (%u): \"%s\"", len, decoded);
+  }
+
+  decoded += len;
+  decoded_len -= len;
+
+  // nkeys (should be 1)
+  if (decoded_len < sizeof(uint32_t)) {
+    if (cfg->debug) {
+      D(cfg->debug_file, "Malformed SSH key (nkeys length)");
+    }
+    goto out;
+  }
+  len = ntohl(*((uint32_t *) decoded));
+  decoded += sizeof(uint32_t);
+  decoded_len -= sizeof(uint32_t);
+
+  if (cfg->debug) {
+    D(cfg->debug_file, "nkeys: %u", len);
+  }
+
+  if (len != 1) {
+    if (cfg->debug) {
+      D(cfg->debug_file, "Multiple keys not supported");
+    }
+    goto out;
+  }
+
+  devices[0].keyHandle = NULL;
+  devices[0].publicKey = NULL;
+  devices[0].coseType = NULL;
+  devices[0].attributes = NULL;
+  devices[0].old_format = 0;
+
+  // public_key
+  if (decoded_len < sizeof(uint32_t)) {
+    if (cfg->debug) {
+      D(cfg->debug_file, "Malformed SSH key (pubkey length)");
+    }
+    goto out;
+  }
+  len = ntohl(*((uint32_t *) decoded));
+  decoded += sizeof(uint32_t);
+  decoded_len -= sizeof(uint32_t);
+
+  if (decoded_len < len) {
+    if (cfg->debug) {
+      D(cfg->debug_file, "Malformed SSH key (pubkey)");
+    }
+    goto out;
+  }
+
+  // skip pubkey
+  decoded += len;
+  decoded_len -= len;
+
+  // private key
+  if (decoded_len < sizeof(uint32_t)) {
+    if (cfg->debug) {
+      D(cfg->debug_file, "Malformed SSH key (pvtkey length)");
+    }
+    goto out;
+  }
+  len = ntohl(*((uint32_t *) decoded));
+  decoded += sizeof(uint32_t);
+  decoded_len -= sizeof(uint32_t);
+
+  if (decoded_len < len) {
+    if (cfg->debug) {
+      D(cfg->debug_file, "Malformed SSH key (pvtkey)");
+    }
+    goto out;
+  }
+
+  // check1
+  if (decoded_len < sizeof(uint32_t)) {
+    if (cfg->debug) {
+      D(cfg->debug_file, "Malformed SSH key (check1 length)");
+    }
+    goto out;
+  }
+  uint32_t check1 = ntohl(*((uint32_t *) decoded));
+  decoded += sizeof(uint32_t);
+  decoded_len -= sizeof(uint32_t);
+  if (cfg->debug) {
+    D(cfg->debug_file, "check1: %u", check1);
+  }
+
+  // check2
+  if (decoded_len < sizeof(uint32_t)) {
+    if (cfg->debug) {
+      D(cfg->debug_file, "Malformed SSH key (check2 length)");
+    }
+    goto out;
+  }
+  uint32_t check2 = ntohl(*((uint32_t *) decoded));
+  decoded += sizeof(uint32_t);
+  decoded_len -= sizeof(uint32_t);
+  if (cfg->debug) {
+    D(cfg->debug_file, "check2: %u", check2);
+  }
+
+  if (check1 != check2) {
+    if (cfg->debug) {
+      D(cfg->debug_file, "Mismatched check values");
+      goto out;
+    }
+  }
+
+  // key type
+  if (decoded_len < sizeof(uint32_t)) {
+    if (cfg->debug) {
+      D(cfg->debug_file, "Malformed SSH key (keytype length)");
+    }
+    goto out;
+  }
+  len = ntohl(*((uint32_t *) decoded));
+  decoded += sizeof(uint32_t);
+  decoded_len -= sizeof(uint32_t);
+
+  if (decoded_len < len) {
+    if (cfg->debug) {
+      D(cfg->debug_file, "Malformed SSH key (keytype)");
+    }
+    goto out;
+  }
+
+  // TODO(adma): Add support for eddsa
+  if (len == SSH_ES256_LEN &&
+      memcmp(decoded, SSH_ES256, SSH_ES256_LEN) == 0) {
+    if (cfg->debug) {
+      D(cfg->debug_file, "keytype (%u) \"%s\"", len, decoded);
+    }
+  } else {
+    if (cfg->debug) {
+      D(cfg->debug_file, "Unknown key type %s", decoded);
+    }
+    goto out;
+  }
+
+  decoded += len;
+  decoded_len -= len;
+
+  // curve name
+  if (decoded_len < sizeof(uint32_t)) {
+    if (cfg->debug) {
+      D(cfg->debug_file, "Malformed SSH key (curvename length)");
+    }
+    goto out;
+  }
+  len = ntohl(*((uint32_t *) decoded));
+  decoded += sizeof(uint32_t);
+  decoded_len -= sizeof(uint32_t);
+
+  if (decoded_len < len) {
+    if (cfg->debug) {
+      D(cfg->debug_file, "Malformed SSH key (curvename)");
+    }
+    goto out;
+  }
+
+  // TODO(adma): Add support for eddsa
+  if (len == SSH_P256_NAME_LEN &&
+      memcmp(decoded, SSH_P256_NAME, SSH_P256_NAME_LEN) == 0) {
+    if (cfg->debug) {
+      D(cfg->debug_file, "curvename (%u) \"%s\"", len, decoded);
+    }
+  } else {
+    if (cfg->debug) {
+      D(cfg->debug_file, "Unknown curve %s", decoded);
+    }
+    goto out;
+  }
+
+  devices[0].coseType = strdup("es256");
+  if (devices[0].coseType == NULL) {
+    if (cfg->debug) {
+      D(cfg->debug_file, "Unable to allocate COSE type");
+    }
+    goto out;
+  }
+
+  decoded += len;
+  decoded_len -= len;
+
+  // point
+  if (decoded_len < sizeof(uint32_t)) {
+    if (cfg->debug) {
+      D(cfg->debug_file, "Malformed SSH key (point length)");
+    }
+    goto out;
+  }
+  len = ntohl(*((uint32_t *) decoded));
+  decoded += sizeof(uint32_t);
+  decoded_len -= sizeof(uint32_t);
+
+  if (decoded_len < len) {
+    if (cfg->debug) {
+      D(cfg->debug_file, "Malformed SSH key (point)");
+    }
+    goto out;
+  }
+
+  if (len != 65) { // TODO(adma): unmagify and add support for eddsa
+    if (cfg->debug) {
+      D(cfg->debug_file, "Invalid point length, should be %d, found %d", 65, len);
+    }
+    goto out;
+  }
+
+  // Skip the initial '04'
+  if (!b64_encode(decoded + 1, len - 1, &devices[0].publicKey)) {
+    if (cfg->debug) {
+      D(cfg->debug_file, "Unable to allocate public key");
+    }
+    goto out;
+  }
+  decoded += len;
+  decoded_len -= len;
+
+  // application
+  if (decoded_len < sizeof(uint32_t)) {
+    if (cfg->debug) {
+      D(cfg->debug_file, "Malformed SSH key (application length)");
+    }
+    goto out;
+  }
+  len = ntohl(*((uint32_t *) decoded));
+  decoded += sizeof(uint32_t);
+  decoded_len -= sizeof(uint32_t);
+
+  if (decoded_len < len) {
+    if (cfg->debug) {
+      D(cfg->debug_file, "Malformed SSH key (application)");
+    }
+    goto out;
+  }
+
+  if (cfg->debug) {
+    D(cfg->debug_file, "application (%u): \"%s\"", len, decoded);
+  }
+
+  decoded += len;
+  decoded_len -= len;
+
+  // flags
+  if (decoded_len < sizeof(uint8_t)) {
+    if (cfg->debug) {
+      D(cfg->debug_file, "Malformed SSH key (length)");
+    }
+    goto out;
+  }
+  uint8_t flags = *decoded;
+  decoded++;
+  decoded_len--;
+  if (cfg->debug) {
+    D(cfg->debug_file, "flags: %02x", flags);
+  }
+
+  if ((flags & 0x01) == 0x01) {
+    devices[0].attributes = strdup("+presence"); // TODO(adma): FIXME make nice
+  } else {
+    devices[0].attributes = "";
+  }
+
+  // keyhandle
+  if (decoded_len < sizeof(uint32_t)) {
+    if (cfg->debug) {
+      D(cfg->debug_file, "Malformed SSH key (keyhandle length)");
+    }
+    goto out;
+  }
+  len = ntohl(*((uint32_t *) decoded));
+  decoded += sizeof(uint32_t);
+  decoded_len -= sizeof(uint32_t);
+
+  if (decoded_len < len) {
+    if (cfg->debug) {
+      D(cfg->debug_file, "Malformed SSH key (keyhandle)");
+    }
+    goto out;
+  }
+
+  if (!b64_encode(decoded, len, &devices[0].keyHandle)) {
+    if (cfg->debug) {
+      D(cfg->debug_file, "Unable to allocate keyhandle");
+    }
+    goto out;
+  }
+
+  decoded += len;
+  decoded_len -= len;
+
+  if (cfg->debug) {
+    D(cfg->debug_file, "KeyHandle for device number 1: %s", devices[0].keyHandle);
+    D(cfg->debug_file, "publicKey for device number 1: %s", devices[0].publicKey);
+    D(cfg->debug_file, "COSE type for device number 1: %s", devices[0].coseType);
+    D(cfg->debug_file, "Attributes for device number 1: %s", devices[0].attributes);
+  }
+
+  // reserved
+  if (decoded_len < sizeof(uint32_t)) {
+    if (cfg->debug) {
+      D(cfg->debug_file, "Malformed SSH key (reserved length)");
+    }
+    goto out;
+  }
+  len = ntohl(*((uint32_t *) decoded));
+  decoded += sizeof(uint32_t);
+  decoded_len -= sizeof(uint32_t);
+
+  if (decoded_len < len) {
+    if (cfg->debug) {
+      D(cfg->debug_file, "Malformed SSH key (reserved)");
+    }
+    goto out;
+  }
+
+  if (cfg->debug) {
+    D(cfg->debug_file, "reserved (%u): \"%s\"", len, decoded);
+  }
+
+  decoded += len;
+  decoded_len -= len;
+
+  // comment
+  if (decoded_len < sizeof(uint32_t)) {
+    if (cfg->debug) {
+      D(cfg->debug_file, "Malformed SSH key (comment length)");
+    }
+    goto out;
+  }
+  len = ntohl(*((uint32_t *) decoded));
+  decoded += sizeof(uint32_t);
+  decoded_len -= sizeof(uint32_t);
+
+  if (decoded_len < len) {
+    if (cfg->debug) {
+      D(cfg->debug_file, "Malformed SSH key (comment)");
+    }
+    goto out;
+  }
+
+  if (cfg->debug) {
+    D(cfg->debug_file, "comment (%u): \"%s\"", len, decoded);
+  }
+
+  decoded += len;
+  decoded_len -= len;
+
+  if (decoded_len >= 255) {
+    if (cfg->debug) {
+      D(cfg->debug_file, "Malformed SSH key (padding length)");
+    }
+    goto out;
+  }
+
+  for (int i = 1; (unsigned) i <= decoded_len; i++) {
+    if (*decoded != i) {
+      if (cfg->debug) {
+        D(cfg->debug_file, "Malformed SSH key (padding)");
+      }
+      goto out;
+    }
+  }
+
+  free(decoded_initial);
+  decoded_initial = NULL;
+
+  *n_devs = 1;
+
+  return 1;
+
+  out:
+  if (devices[0].keyHandle) {
+    free(devices[0].keyHandle);
+    devices[0].keyHandle = NULL;
+  }
+
+  if (devices[0].publicKey) {
+    free(devices[0].publicKey);
+    devices[0].publicKey = NULL;
+  }
+
+  if (devices[0].coseType) {
+    free(devices[0].coseType);
+    devices[0].coseType = NULL;
+  }
+
+  if (devices[0].attributes) {
+    free(devices[0].attributes);
+    devices[0].attributes = NULL;
+  }
+
+  if (decoded_initial) {
+    free(decoded_initial);
+    decoded_initial = NULL;
+  }
+
+  return retval;
+}
+
 int get_devices_from_authfile(const cfg_t *cfg, const char *username,
                               device_t *devices, unsigned *n_devs) {
 
@@ -295,6 +870,7 @@ int get_devices_from_authfile(const cfg_t *cfg, const char *username,
   char buffer[BUFSIZE];
   int gpu_ret;
   FILE *opwfile = NULL;
+  size_t opwfile_size;
   unsigned i;
 
   /* Ensure we never return uninitialized count. */
@@ -324,6 +900,7 @@ int get_devices_from_authfile(const cfg_t *cfg, const char *username,
       D(cfg->debug_file, "File %s is empty", cfg->auth_file);
     goto err;
   }
+  opwfile_size = st.st_size;
 
   gpu_ret = getpwuid_r(st.st_uid, &pw_s, buffer, sizeof(buffer), &pw);
   if (gpu_ret != 0 || pw == NULL) {
@@ -362,8 +939,7 @@ int get_devices_from_authfile(const cfg_t *cfg, const char *username,
   if (cfg->sshformat == 0) {
     retval = parse_native_format(cfg, username, buf, opwfile, devices, n_devs);
   } else {
-    retval = -9;
-    //retval = parse_ssh_format(buf, opwfile);
+    retval = parse_ssh_format(cfg, buf, opwfile, opwfile_size, devices, n_devs);
   }
 
   if (retval != 1) {
@@ -657,7 +1233,7 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
       goto out;
     }
 
-    if (cfg->userpresence == 1 || strstr(devices[i].attributes, "presence"))
+    if (cfg->userpresence == 1 || strstr(devices[i].attributes, "+presence"))
       user_presence = FIDO_OPT_TRUE;
     else if (cfg->userpresence == 0)
       user_presence = FIDO_OPT_FALSE;
@@ -778,7 +1354,7 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
       }
     } else {
       if (cfg->debug)
-        D(cfg->debug_file, "Device for this keyhandle is not present.");
+        D(cfg->debug_file, "Device for this keyhandle is not present");
     }
 
     i++;

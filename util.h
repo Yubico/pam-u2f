@@ -20,6 +20,7 @@
 #define DEFAULT_PROMPT "Insert your U2F device, then press ENTER."
 #define DEFAULT_CUE "Please touch the device."
 #define DEFAULT_ORIGIN_PREFIX "pam://"
+#define SSH_ORIGIN "ssh:"
 #define DEBUG_STR "debug(pam_u2f): %s:%d (%s): "
 
 #if defined(DEBUG_PAM)

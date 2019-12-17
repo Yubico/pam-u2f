@@ -178,12 +178,16 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
   PAM_MODUTIL_DEF_PRIVS(privs);
 
   if (!cfg->origin) {
-    strcpy(buffer, DEFAULT_ORIGIN_PREFIX);
+    if (!cfg->sshformat) {
+      strcpy(buffer, DEFAULT_ORIGIN_PREFIX);
 
-    if (gethostname(buffer + strlen(DEFAULT_ORIGIN_PREFIX),
-                    BUFSIZE - strlen(DEFAULT_ORIGIN_PREFIX)) == -1) {
-      DBG("Unable to get host name");
-      goto done;
+      if (gethostname(buffer + strlen(DEFAULT_ORIGIN_PREFIX),
+                      BUFSIZE - strlen(DEFAULT_ORIGIN_PREFIX)) == -1) {
+        DBG("Unable to get host name");
+        goto done;
+      }
+    } else {
+      strcpy(buffer, SSH_ORIGIN);
     }
     DBG("Origin not specified, using \"%s\"", buffer);
     cfg->origin = strdup(buffer);
