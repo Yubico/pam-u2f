@@ -140,8 +140,8 @@ fail:
 }
 
 static int parse_native_format(const cfg_t *cfg, const char *username,
-                               char *buf, FILE* opwfile,
-                               device_t *devices, unsigned *n_devs) {
+                               char *buf, FILE *opwfile, device_t *devices,
+                               unsigned *n_devs) {
 
   char *s_user, *s_token;
   unsigned i;
@@ -196,14 +196,15 @@ static int parse_native_format(const cfg_t *cfg, const char *username,
         devices[i].old_format = 0;
 
         if (cfg->debug)
-          D(cfg->debug_file, "KeyHandle for device number %d: %s", i + 1, s_token);
+          D(cfg->debug_file, "KeyHandle for device number %d: %s", i + 1,
+            s_token);
 
         devices[i].keyHandle = strdup(s_token);
 
         if (!devices[i].keyHandle) {
           if (cfg->debug)
-            D(cfg->debug_file, "Unable to allocate memory for keyHandle number %d",
-              i);
+            D(cfg->debug_file,
+              "Unable to allocate memory for keyHandle number %d", i);
           return retval;
         }
 
@@ -219,14 +220,15 @@ static int parse_native_format(const cfg_t *cfg, const char *username,
         }
 
         if (cfg->debug)
-          D(cfg->debug_file, "publicKey for device number %d: %s", i + 1, s_token);
+          D(cfg->debug_file, "publicKey for device number %d: %s", i + 1,
+            s_token);
 
         devices[i].publicKey = strdup(s_token);
 
         if (!devices[i].publicKey) {
           if (cfg->debug)
-            D(cfg->debug_file, "Unable to allocate memory for publicKey number %d",
-              i);
+            D(cfg->debug_file,
+              "Unable to allocate memory for publicKey number %d", i);
           return retval;
         }
 
@@ -243,14 +245,15 @@ static int parse_native_format(const cfg_t *cfg, const char *username,
           devices[i].coseType = strdup("es256");
         } else {
           if (cfg->debug)
-            D(cfg->debug_file, "COSE type for device number %d: %s", i + 1, s_token);
+            D(cfg->debug_file, "COSE type for device number %d: %s", i + 1,
+              s_token);
           devices[i].coseType = strdup(s_token);
         }
 
         if (!devices[i].coseType) {
           if (cfg->debug)
-            D(cfg->debug_file, "Unable to allocate memory for COSE type number %d",
-              i);
+            D(cfg->debug_file,
+              "Unable to allocate memory for COSE type number %d", i);
           return retval;
         }
 
@@ -271,8 +274,8 @@ static int parse_native_format(const cfg_t *cfg, const char *username,
 
         if (!devices[i].attributes) {
           if (cfg->debug)
-            D(cfg->debug_file, "Unable to allocate memory for attributes number %d",
-              i);
+            D(cfg->debug_file,
+              "Unable to allocate memory for attributes number %d", i);
           return retval;
         }
 
@@ -282,8 +285,8 @@ static int parse_native_format(const cfg_t *cfg, const char *username,
           free(websafe_b64);
           if (!devices[i].keyHandle) {
             if (cfg->debug)
-              D(cfg->debug_file, "Unable to allocate memory for keyHandle number %d",
-                i);
+              D(cfg->debug_file,
+                "Unable to allocate memory for keyHandle number %d", i);
             return retval;
           }
         }
@@ -296,9 +299,9 @@ static int parse_native_format(const cfg_t *cfg, const char *username,
   return 1;
 }
 
-static int parse_ssh_format(const cfg_t *cfg, char *buf,
-                            FILE* opwfile, size_t opwfile_size,
-                            device_t *devices, unsigned *n_devs) {
+static int parse_ssh_format(const cfg_t *cfg, char *buf, FILE *opwfile,
+                            size_t opwfile_size, device_t *devices,
+                            unsigned *n_devs) {
 
   char *cp = buf;
   int ch;
@@ -351,11 +354,11 @@ static int parse_ssh_format(const cfg_t *cfg, char *buf,
           if (cfg->debug) {
             D(cfg->debug_file, "Malformed SSH key (trailer)");
           }
-        return retval;
-      }
+          return retval;
+        }
 
-      *(cp) = '\0';
-      break;
+        *(cp) = '\0';
+        break;
       } else {
         cp++;
       }
@@ -585,8 +588,7 @@ static int parse_ssh_format(const cfg_t *cfg, char *buf,
   }
 
   // TODO(adma): Add support for eddsa
-  if (len == SSH_ES256_LEN &&
-      memcmp(decoded, SSH_ES256, SSH_ES256_LEN) == 0) {
+  if (len == SSH_ES256_LEN && memcmp(decoded, SSH_ES256, SSH_ES256_LEN) == 0) {
     if (cfg->debug) {
       D(cfg->debug_file, "keytype (%u) \"%s\"", len, decoded);
     }
@@ -662,7 +664,8 @@ static int parse_ssh_format(const cfg_t *cfg, char *buf,
 
   if (len != 65) { // TODO(adma): unmagify and add support for eddsa
     if (cfg->debug) {
-      D(cfg->debug_file, "Invalid point length, should be %d, found %d", 65, len);
+      D(cfg->debug_file, "Invalid point length, should be %d, found %d", 65,
+        len);
     }
     goto out;
   }
@@ -751,10 +754,14 @@ static int parse_ssh_format(const cfg_t *cfg, char *buf,
   decoded_len -= len;
 
   if (cfg->debug) {
-    D(cfg->debug_file, "KeyHandle for device number 1: %s", devices[0].keyHandle);
-    D(cfg->debug_file, "publicKey for device number 1: %s", devices[0].publicKey);
-    D(cfg->debug_file, "COSE type for device number 1: %s", devices[0].coseType);
-    D(cfg->debug_file, "Attributes for device number 1: %s", devices[0].attributes);
+    D(cfg->debug_file, "KeyHandle for device number 1: %s",
+      devices[0].keyHandle);
+    D(cfg->debug_file, "publicKey for device number 1: %s",
+      devices[0].publicKey);
+    D(cfg->debug_file, "COSE type for device number 1: %s",
+      devices[0].coseType);
+    D(cfg->debug_file, "Attributes for device number 1: %s",
+      devices[0].attributes);
   }
 
   // reserved
@@ -830,7 +837,7 @@ static int parse_ssh_format(const cfg_t *cfg, char *buf,
 
   return 1;
 
-  out:
+out:
   if (devices[0].keyHandle) {
     free(devices[0].keyHandle);
     devices[0].keyHandle = NULL;
@@ -879,13 +886,15 @@ int get_devices_from_authfile(const cfg_t *cfg, const char *username,
   fd = open(cfg->auth_file, O_RDONLY | O_CLOEXEC | O_NOCTTY);
   if (fd < 0) {
     if (cfg->debug)
-      D(cfg->debug_file, "Cannot open file: %s (%s)", cfg->auth_file, strerror(errno));
+      D(cfg->debug_file, "Cannot open file: %s (%s)", cfg->auth_file,
+        strerror(errno));
     goto err;
   }
 
   if (fstat(fd, &st) < 0) {
     if (cfg->debug)
-      D(cfg->debug_file, "Cannot stat file: %s (%s)", cfg->auth_file, strerror(errno));
+      D(cfg->debug_file, "Cannot stat file: %s (%s)", cfg->auth_file,
+        strerror(errno));
     goto err;
   }
 
@@ -904,8 +913,8 @@ int get_devices_from_authfile(const cfg_t *cfg, const char *username,
 
   gpu_ret = getpwuid_r(st.st_uid, &pw_s, buffer, sizeof(buffer), &pw);
   if (gpu_ret != 0 || pw == NULL) {
-    D(cfg->debug_file, "Unable to retrieve credentials for uid %u, (%s)", st.st_uid,
-      strerror(errno));
+    D(cfg->debug_file, "Unable to retrieve credentials for uid %u, (%s)",
+      st.st_uid, strerror(errno));
     goto err;
   }
 
