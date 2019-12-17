@@ -34,6 +34,7 @@
 #define SSH_ES256_LEN (sizeof(SSH_ES256) - 1)
 #define SSH_P256_NAME "nistp256"
 #define SSH_P256_NAME_LEN (sizeof(SSH_P256_NAME) - 1)
+#define SSH_SK_USER_PRESENCE_REQD 0x01
 
 static int hex_decode(const char *ascii_hex, unsigned char **blob,
                       size_t *blob_len) {
@@ -721,8 +722,8 @@ static int parse_ssh_format(const cfg_t *cfg, char *buf, size_t buf_size,
     D(cfg->debug_file, "flags: %02x", flags);
   }
 
-  if ((flags & 0x01) == 0x01) {
-    devices[0].attributes = strdup("+presence"); // TODO(adma): FIXME make nice
+  if ((flags & SSH_SK_USER_PRESENCE_REQD) == SSH_SK_USER_PRESENCE_REQD) {
+    devices[0].attributes = strdup("+presence");
     if (devices[0].attributes == NULL) {
       if (cfg->debug) {
         D(cfg->debug_file, "Unable to allocate attributes");
