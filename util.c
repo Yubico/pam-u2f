@@ -299,9 +299,9 @@ static int parse_native_format(const cfg_t *cfg, const char *username,
   return 1;
 }
 
-static int parse_ssh_format(const cfg_t *cfg, char *buf, FILE *opwfile,
-                            size_t opwfile_size, device_t *devices,
-                            unsigned *n_devs) {
+static int parse_ssh_format(const cfg_t *cfg, char *buf, size_t buf_size,
+                            FILE *opwfile, size_t opwfile_size,
+                            device_t *devices, unsigned *n_devs) {
 
   char *cp = buf;
   int ch;
@@ -315,7 +315,7 @@ static int parse_ssh_format(const cfg_t *cfg, char *buf, FILE *opwfile,
   // how ssh parses its own keys. See sshkey.c
 
   retval = -2;
-  if (opwfile_size > BUFSIZE ||
+  if (opwfile_size > buf_size ||
       opwfile_size < SSH_HEADER_LEN + SSH_TRAILER_LEN) {
     if (cfg->debug) {
       D(cfg->debug_file, "Malformed SSH key (length)");
@@ -333,7 +333,7 @@ static int parse_ssh_format(const cfg_t *cfg, char *buf, FILE *opwfile,
     goto out;
   }
 
-  while (opwfile_size > 0) {
+  while (opwfile_size > 0 && buf_size > 0) {
     ch = fgetc(opwfile);
     if (ch == EOF) {
       if (cfg->debug) {
@@ -343,12 +343,14 @@ static int parse_ssh_format(const cfg_t *cfg, char *buf, FILE *opwfile,
     }
 
     opwfile_size--;
+    buf_size--;
 
     if (ch != '\n' && ch != '\r') {
       *cp = (char) ch;
       if (ch == '-') {
         // NOTE(adma): no +1 here since we already read one '-'
-        if (fgets(cp + 1, SSH_TRAILER_LEN, opwfile) == NULL ||
+        if (buf_size < SSH_TRAILER_LEN ||
+            fgets(cp + 1, SSH_TRAILER_LEN, opwfile) == NULL ||
             strlen(cp) != SSH_TRAILER_LEN ||
             strncmp(cp, SSH_TRAILER, SSH_TRAILER_LEN) != 0) {
           if (cfg->debug) {
@@ -948,7 +950,7 @@ int get_devices_from_authfile(const cfg_t *cfg, const char *username,
   if (cfg->sshformat == 0) {
     retval = parse_native_format(cfg, username, buf, opwfile, devices, n_devs);
   } else {
-    retval = parse_ssh_format(cfg, buf, opwfile, opwfile_size, devices, n_devs);
+    retval = parse_ssh_format(cfg, buf, DEVSIZE * cfg->max_devs, opwfile, opwfile_size, devices, n_devs);
   }
 
   if (retval != 1) {
