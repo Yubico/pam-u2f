@@ -947,7 +947,7 @@ int get_devices_from_authfile(const cfg_t *cfg, const char *username,
     fd = -1; /* fd belongs to opwfile */
   }
 
-  buf = calloc(1, sizeof(char) * (DEVSIZE * cfg->max_devs));
+  buf = calloc(1, (DEVSIZE * cfg->max_devs));
   if (!buf) {
     if (cfg->debug)
       D(cfg->debug_file, "Unable to allocate memory");
