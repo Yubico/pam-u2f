@@ -723,6 +723,12 @@ static int parse_ssh_format(const cfg_t *cfg, char *buf, size_t buf_size,
 
   if ((flags & 0x01) == 0x01) {
     devices[0].attributes = strdup("+presence"); // TODO(adma): FIXME make nice
+    if (devices[0].attributes == NULL) {
+      if (cfg->debug) {
+        D(cfg->debug_file, "Unable to allocate attributes");
+      }
+      goto out;
+    }
   } else {
     devices[0].attributes = "";
   }
