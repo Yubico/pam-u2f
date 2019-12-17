@@ -957,7 +957,8 @@ int get_devices_from_authfile(const cfg_t *cfg, const char *username,
   if (cfg->sshformat == 0) {
     retval = parse_native_format(cfg, username, buf, opwfile, devices, n_devs);
   } else {
-    retval = parse_ssh_format(cfg, buf, DEVSIZE * cfg->max_devs, opwfile, opwfile_size, devices, n_devs);
+    retval = parse_ssh_format(cfg, buf, DEVSIZE * cfg->max_devs, opwfile,
+                              opwfile_size, devices, n_devs);
   }
 
   if (retval != 1) {
