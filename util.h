@@ -16,6 +16,9 @@
 #define DEVSIZE (((PK_LEN) + (KH_LEN) + (RD_LEN)))
 #define DEFAULT_AUTHFILE_DIR_VAR "XDG_CONFIG_HOME"
 #define DEFAULT_AUTHFILE "/Yubico/u2f_keys"
+#define DEFAULT_AUTHFILE_SSH "/id_ecdsa_sk"
+#define DEFAULT_AUTHFILE_DIR "/.config"
+#define DEFAULT_AUTHFILE_DIR_SSH "/.ssh"
 #define DEFAULT_AUTHPENDING_FILE_PATH "/var/run/user/%d/pam-u2f-authpending"
 #define DEFAULT_PROMPT "Insert your U2F device, then press ENTER."
 #define DEFAULT_CUE "Please touch the device."

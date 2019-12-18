@@ -163,6 +163,8 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
   char *buf = NULL;
   char *authfile_dir;
   size_t authfile_dir_len;
+  char *default_authfile;
+  char *default_authfile_dir;
   int pgu_ret, gpn_ret;
   int retval = PAM_IGNORE;
   device_t *devices = NULL;
@@ -244,14 +246,22 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
   DBG("Found user %s", user);
   DBG("Home directory for %s is %s", user, pw->pw_dir);
 
+  if (!cfg->sshformat) {
+    default_authfile = DEFAULT_AUTHFILE;
+    default_authfile_dir = DEFAULT_AUTHFILE_DIR;
+  } else {
+    default_authfile = DEFAULT_AUTHFILE_SSH;
+    default_authfile_dir = DEFAULT_AUTHFILE_DIR_SSH;
+  }
+
   if (!cfg->auth_file) {
     buf = NULL;
     authfile_dir = secure_getenv(DEFAULT_AUTHFILE_DIR_VAR);
     if (!authfile_dir) {
-      DBG("Variable %s is not set. Using default value ($HOME/.config/)",
-          DEFAULT_AUTHFILE_DIR_VAR);
+      DBG("Variable %s is not set. Using default value ($HOME%s/)",
+          DEFAULT_AUTHFILE_DIR_VAR, default_authfile_dir);
       authfile_dir_len =
-        strlen(pw->pw_dir) + strlen("/.config") + strlen(DEFAULT_AUTHFILE) + 1;
+        strlen(pw->pw_dir) + strlen(default_authfile_dir) + strlen(default_authfile) + 1;
       buf = malloc(sizeof(char) * (authfile_dir_len));
 
       if (!buf) {
@@ -263,11 +273,11 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
       /* Opening a file in a users $HOME, need to drop privs for security */
       openasuser = geteuid() == 0 ? 1 : 0;
 
-      snprintf(buf, authfile_dir_len, "%s/.config%s", pw->pw_dir,
-               DEFAULT_AUTHFILE);
+      snprintf(buf, authfile_dir_len, "%s%s%s", pw->pw_dir,
+               default_authfile_dir, default_authfile);
     } else {
       DBG("Variable %s set to %s", DEFAULT_AUTHFILE_DIR_VAR, authfile_dir);
-      authfile_dir_len = strlen(authfile_dir) + strlen(DEFAULT_AUTHFILE) + 1;
+      authfile_dir_len = strlen(authfile_dir) + strlen(default_authfile) + 1;
       buf = malloc(sizeof(char) * (authfile_dir_len));
 
       if (!buf) {
@@ -276,7 +286,7 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
         goto done;
       }
 
-      snprintf(buf, authfile_dir_len, "%s%s", authfile_dir, DEFAULT_AUTHFILE);
+      snprintf(buf, authfile_dir_len, "%s%s", authfile_dir, default_authfile);
 
       if (!cfg->openasuser) {
         DBG("WARNING: not dropping privileges when reading %s, please "
