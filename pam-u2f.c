@@ -260,8 +260,8 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
     if (!authfile_dir) {
       DBG("Variable %s is not set. Using default value ($HOME%s/)",
           DEFAULT_AUTHFILE_DIR_VAR, default_authfile_dir);
-      authfile_dir_len =
-        strlen(pw->pw_dir) + strlen(default_authfile_dir) + strlen(default_authfile) + 1;
+      authfile_dir_len = strlen(pw->pw_dir) + strlen(default_authfile_dir) +
+                         strlen(default_authfile) + 1;
       buf = malloc(sizeof(char) * (authfile_dir_len));
 
       if (!buf) {
