@@ -263,9 +263,9 @@ static int parse_native_format(const cfg_t *cfg, const char *username,
         if (!s_token) {
           if (cfg->debug) {
             D(cfg->debug_file, "Unable to retrieve attributes %d", i + 1);
-            D(cfg->debug_file, "Assuming 'p' (backwards compatibility)");
+            D(cfg->debug_file, "Assuming 'presence' (backwards compatibility)");
           }
-          devices[i].attributes = strdup("p");
+          devices[i].attributes = strdup("+presence");
         } else {
           if (cfg->debug)
             D(cfg->debug_file, "Attributes for device number %d: %s", i + 1,
