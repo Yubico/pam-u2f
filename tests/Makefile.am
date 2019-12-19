@@ -8,5 +8,5 @@ AM_LDFLAGS = -no-install
 
 LDADD = $(top_builddir)/pam_u2f.la
 
-check_PROGRAMS = basic
+check_PROGRAMS = basic get_devices
 TESTS = $(check_PROGRAMS)
