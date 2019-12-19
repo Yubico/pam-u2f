@@ -823,6 +823,7 @@ static int parse_ssh_format(const cfg_t *cfg, char *buf, size_t buf_size,
   decoded += len;
   decoded_len -= len;
 
+  // padding
   if (decoded_len >= 255) {
     if (cfg->debug) {
       D(cfg->debug_file, "Malformed SSH key (padding length)");
@@ -831,7 +832,7 @@ static int parse_ssh_format(const cfg_t *cfg, char *buf, size_t buf_size,
   }
 
   for (int i = 1; (unsigned) i <= decoded_len; i++) {
-    if (*decoded != i) {
+    if (decoded[i - 1] != i) {
       if (cfg->debug) {
         D(cfg->debug_file, "Malformed SSH key (padding)");
       }
