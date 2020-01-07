@@ -702,7 +702,7 @@ static int parse_ssh_format(const cfg_t *cfg, char *buf, size_t buf_size,
   }
 
   if (cfg->debug) {
-    D(cfg->debug_file, "application (%u): \"%s\"", len, decoded);
+    D(cfg->debug_file, "application (%u): \"%.*s\"", len, len, decoded);
   }
 
   decoded += len;
