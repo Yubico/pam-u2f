@@ -328,8 +328,8 @@ int main(int argc, char *argv[]) {
   if (!args_info.nouser_given)
     printf("%s", user);
 
-  printf(":%s,%s,%s,%s%s%s", resident_key == FIDO_OPT_TRUE ? "*" : b64_kh, b64_pk,
-         cose_type == COSE_ES256 ? "es256" : "rs256",
+  printf(":%s,%s,%s,%s%s%s", resident_key == FIDO_OPT_TRUE ? "*" : b64_kh,
+         b64_pk, cose_type == COSE_ES256 ? "es256" : "rs256",
          user_presence ? "+presence" : "",
          user_verification ? "+verification" : "",
          pin_verification ? "+pin" : "");

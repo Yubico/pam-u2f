@@ -33,9 +33,9 @@
 #define SSH_ES256_LEN (sizeof(SSH_ES256) - 1)
 #define SSH_P256_NAME "nistp256"
 #define SSH_P256_NAME_LEN (sizeof(SSH_P256_NAME) - 1)
-#define SSH_SK_USER_PRESENCE_REQD       0x01
-#define SSH_SK_USER_VERIFICATION_REQD   0x04
-#define SSH_SK_RESIDENT_KEY             0x20
+#define SSH_SK_USER_PRESENCE_REQD 0x01
+#define SSH_SK_USER_VERIFICATION_REQD 0x04
+#define SSH_SK_RESIDENT_KEY 0x20
 
 static int hex_decode(const char *ascii_hex, unsigned char **blob,
                       size_t *blob_len) {
@@ -729,7 +729,8 @@ static int parse_ssh_format(const cfg_t *cfg, char *buf, size_t buf_size,
     strcat(attributes, "+presence");
   }
 
-  if ((flags & SSH_SK_USER_VERIFICATION_REQD) == SSH_SK_USER_VERIFICATION_REQD) {
+  if ((flags & SSH_SK_USER_VERIFICATION_REQD) ==
+      SSH_SK_USER_VERIFICATION_REQD) {
     strcat(attributes, "+verification");
   }
 
