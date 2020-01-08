@@ -9,7 +9,6 @@
 #include <openssl/ec.h>
 #include <openssl/obj_mac.h>
 
-#include <stdbool.h>
 #include <stdlib.h>
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -1475,8 +1474,8 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
   int n;
   int r;
   unsigned i = 0;
-  bool user_presence = false;
-  bool user_verification = false;
+  fido_opt_t user_presence = FIDO_OPT_OMIT;
+  fido_opt_t user_verification = FIDO_OPT_OMIT;
 
   memset(assert, 0, sizeof(assert));
   memset(es256_pk, 0, sizeof(es256_pk));
@@ -1501,9 +1500,9 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
     }
 
     if (strstr(devices[i].attributes, "presence"))
-      user_presence = true;
     if (strstr(devices[i].attributes, "verification"))
-      user_verification = true;
+      user_presence = FIDO_OPT_TRUE;
+      user_verification = FIDO_OPT_TRUE;
 
     r = fido_assert_set_up(assert[i], user_presence);
     if (r != FIDO_OK) {
