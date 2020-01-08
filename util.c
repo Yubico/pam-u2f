@@ -1277,7 +1277,6 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
 
     if (cfg->pinverification == 1 || strstr(devices[i].attributes, "pin")) {
       pin_verification = FIDO_OPT_TRUE;
-      user_verification = FIDO_OPT_TRUE;
     } else if (cfg->pinverification == 0)
       pin_verification = FIDO_OPT_FALSE;
     else
