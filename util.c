@@ -1268,14 +1268,14 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
       user_presence = FIDO_OPT_OMIT;
 
     if (cfg->userverification == 1 ||
-        strstr(devices[i].attributes, "verification"))
+        strstr(devices[i].attributes, "+verification"))
       user_verification = FIDO_OPT_TRUE;
     else if (cfg->userverification == 0)
       user_verification = FIDO_OPT_FALSE;
     else
       user_verification = FIDO_OPT_OMIT;
 
-    if (cfg->pinverification == 1 || strstr(devices[i].attributes, "pin")) {
+    if (cfg->pinverification == 1 || strstr(devices[i].attributes, "+pin")) {
       pin_verification = FIDO_OPT_TRUE;
     } else if (cfg->pinverification == 0)
       pin_verification = FIDO_OPT_FALSE;
@@ -1498,9 +1498,9 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
       goto out;
     }
 
-    if (strstr(devices[i].attributes, "presence"))
-    if (strstr(devices[i].attributes, "verification"))
+    if (strstr(devices[i].attributes, "+presence"))
       user_presence = FIDO_OPT_TRUE;
+    if (strstr(devices[i].attributes, "+verification"))
       user_verification = FIDO_OPT_TRUE;
 
     r = fido_assert_set_up(assert[i], user_presence);
