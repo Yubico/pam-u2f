@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
   const fido_dev_info_t *di = NULL;
   size_t ndevs;
   int cose_type;
-  int resident_key;
+  fido_opt_t resident_key;
   int user_presence;
   int user_verification;
   int pin_verification;
@@ -165,16 +165,16 @@ int main(int argc, char *argv[]) {
     fprintf(stderr, "\n");
   }
 
-  r = fido_cred_set_user(cred, userid, sizeof(userid), user, NULL, NULL);
+  r = fido_cred_set_user(cred, userid, sizeof(userid), user, user, NULL);
   if (r != FIDO_OK) {
     fprintf(stderr, "error: fido_cred_set_user (%d) %s\n", r, fido_strerr(r));
     exit(EXIT_FAILURE);
   }
 
   if (args_info.resident_given)
-    resident_key = 1;
+    resident_key = FIDO_OPT_TRUE;
   else
-    resident_key = 0;
+    resident_key = FIDO_OPT_OMIT;
 
   if (args_info.no_user_presence_given)
     user_presence = 0;
@@ -197,7 +197,7 @@ int main(int argc, char *argv[]) {
     exit(EXIT_FAILURE);
   }
 
-  r = fido_cred_set_uv(cred, false);
+  r = fido_cred_set_uv(cred, FIDO_OPT_OMIT);
   if (r != FIDO_OK) {
     fprintf(stderr, "error: fido_cred_set_uv (%d) %s\n", r, fido_strerr(r));
     exit(EXIT_FAILURE);
@@ -328,7 +328,7 @@ int main(int argc, char *argv[]) {
   if (!args_info.nouser_given)
     printf("%s", user);
 
-  printf(":%s,%s,%s,%s%s%s", resident_key ? "*" : b64_kh, b64_pk,
+  printf(":%s,%s,%s,%s%s%s", resident_key == FIDO_OPT_TRUE ? "*" : b64_kh, b64_pk,
          cose_type == COSE_ES256 ? "es256" : "rs256",
          user_presence ? "+presence" : "",
          user_verification ? "+verification" : "",
