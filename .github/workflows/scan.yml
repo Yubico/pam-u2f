@@ -1,6 +1,11 @@
 name: static code analysis
+# Documentation: https://github.com/Yubico/yes-static-code-analysis
 
-on: [push]
+on:
+  push:
+  schedule:
+    - cron: '0 0 * * 1'
+
 env:
   SCAN_IMG:
     yes-docker-local.artifactory.in.yubico.org/static-code-analysis/c:v1
@@ -23,7 +28,8 @@ jobs:
     - name: Scan but do not fail on warnings
       run: |
         docker run -v${PWD}:/k -e COMPILE_DEPS="${COMPILE_DEPS}" \
-          -e PROJECT_NAME=${GITHUB_REPOSITORY#Yubico/} -t ${SCAN_IMG} || true
+          -e PROJECT_NAME=${GITHUB_REPOSITORY#Yubico/} -t ${SCAN_IMG}
+      continue-on-error: true
 
     - uses: actions/upload-artifact@master
       if: failure()
