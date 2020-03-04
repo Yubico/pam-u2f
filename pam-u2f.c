@@ -429,7 +429,7 @@ done:
     free(buf);
     buf = NULL;
   }
-#define free_const(a)	free((void *)(uintptr_t)(a))
+#define free_const(a) free((void *) (uintptr_t)(a))
   if (should_free_origin) {
     free_const(cfg->origin);
     cfg->origin = NULL;
@@ -474,5 +474,5 @@ PAM_EXTERN int pam_sm_setcred(pam_handle_t *pamh, int flags, int argc,
 }
 
 #ifdef PAM_MODULE_ENTRY
-PAM_MODULE_ENTRY("pam_u2f"); 
+PAM_MODULE_ENTRY("pam_u2f");
 #endif

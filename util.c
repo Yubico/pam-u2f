@@ -1131,7 +1131,7 @@ static int _converse(pam_handle_t *pamh, int nargs,
 
 char *converse(pam_handle_t *pamh, int echocode, const char *prompt) {
   const struct pam_message msg = {.msg_style = echocode,
-                                  .msg = (char *)(uintptr_t)prompt};
+                                  .msg = (char *) (uintptr_t) prompt};
   const struct pam_message *msgs = &msg;
   struct pam_response *resp = NULL;
   int retval = _converse(pamh, 1, &msgs, &resp);
