@@ -13,6 +13,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <syslog.h>
 #include <pwd.h>
