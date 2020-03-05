@@ -236,7 +236,7 @@ int get_devices_from_authfile(const char *authfile, const char *username,
       *n_devs = 0;
 
       i = 0;
-      while ((s_token = strtok_r(NULL, ",", &saveptr))) {
+      while ((s_token = strtok_r(NULL, ",", &saveptr)) != NULL) {
         if ((*n_devs)++ > max_devs - 1) {
           *n_devs = max_devs;
           if (verbose)
@@ -730,7 +730,8 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
 
         if (pin_verification == FIDO_OPT_TRUE)
           pin = converse(pamh, PAM_PROMPT_ECHO_OFF, "Please enter the PIN: ");
-        if (user_presence || user_verification) {
+        if (user_presence == FIDO_OPT_TRUE ||
+            user_verification == FIDO_OPT_TRUE) {
           if (cfg->manual == 0 && cfg->cue && !cued) {
             cued = 1;
             converse(pamh, PAM_TEXT_INFO,
@@ -1130,7 +1131,7 @@ static int _converse(pam_handle_t *pamh, int nargs,
 
 char *converse(pam_handle_t *pamh, int echocode, const char *prompt) {
   const struct pam_message msg = {.msg_style = echocode,
-                                  .msg = (char *) prompt};
+                                  .msg = (char *) (uintptr_t) prompt};
   const struct pam_message *msgs = &msg;
   struct pam_response *resp = NULL;
   int retval = _converse(pamh, 1, &msgs, &resp);
@@ -1162,7 +1163,7 @@ void _debug(FILE *debug_file, const char *file, int line, const char *func,
             const char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
-#ifdef __linux__
+#ifdef LOG_DEBUG
   if (debug_file == (FILE *) -1) {
     syslog(LOG_AUTHPRIV | LOG_DEBUG, DEBUG_STR, file, line, func);
     vsyslog(LOG_AUTHPRIV | LOG_DEBUG, fmt, ap);
