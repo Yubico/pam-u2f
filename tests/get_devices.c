@@ -134,13 +134,13 @@ int main(int argc, const char **argv) {
   assert(n_devs == 1);
 
   assert(strcmp(dev[0].coseType, "es256") == 0);
-  assert(
-    strcmp(dev[0].keyHandle, "HftI6IHewEFB4OhBMeT9WjnG097GYvpE4dTxSS33JTRzRP6V/"
-                             "oBPyj3vurnTRJwif98V8YhceMAH8lDePA1dxQ==") == 0);
-  assert(strcmp(dev[0].publicKey, "7h0f9+"
-                                  "MuzG087QC8zjLK9UoEksAXHmmGmoHGPvWwfkfSsH2cqq"
-                                  "p7Qyi4LO7Y58OxlEq79gbWqNYEP0H56zvZ4Q==") ==
-         0);
+  assert(strcmp(dev[0].keyHandle,
+                "HftI6IHewEFB4OhBMeT9WjnG097GYvpE4dTxSS33JTRzRP6V/"
+                "oBPyj3vurnTRJwif98V8YhceMAH8lDePA1dxQ==") == 0);
+  assert(strcmp(dev[0].publicKey,
+                "7h0f9+"
+                "MuzG087QC8zjLK9UoEksAXHmmGmoHGPvWwfkfSsH2cqq"
+                "p7Qyi4LO7Y58OxlEq79gbWqNYEP0H56zvZ4Q==") == 0);
   assert(strcmp(dev[0].attributes, "+presence+verification+pin") == 0);
   assert(dev[0].old_format == 0);
 
@@ -158,9 +158,9 @@ int main(int argc, const char **argv) {
   assert(n_devs == 1);
 
   assert(strcmp(dev[0].coseType, "es256") == 0);
-  assert(
-    strcmp(dev[0].keyHandle, "yvFPHZBdPoBcdhF86mImwNQm2DUgfPw0s26QCpm4XQO0is4ql"
-                             "x3nIdyVP9WHszpJ5uFV/1mjd09L3P6ton1fAw==") == 0);
+  assert(strcmp(dev[0].keyHandle,
+                "yvFPHZBdPoBcdhF86mImwNQm2DUgfPw0s26QCpm4XQO0is4ql"
+                "x3nIdyVP9WHszpJ5uFV/1mjd09L3P6ton1fAw==") == 0);
   assert(
     strcmp(dev[0].publicKey,
            "JTP+Uu9VE/79hD1H+Uzf9yqSCi9HgeMLeuc3jQ43TCxg5o+GeFL7Q6e63p3Dn4/"
@@ -232,10 +232,10 @@ int main(int argc, const char **argv) {
   assert(strcmp(dev[0].keyHandle,
                 "vw9z9n3ndQkTKPY3+LDy1Fd2otIsV5LgcYE+"
                 "dR0buViSZnKcLJ1kav46mQ47jtelw82/6q3Z2/VKQ44F763tVg==") == 0);
-  assert(
-    strcmp(dev[0].publicKey, "X+"
-                             "GY5K9BSG24K9uVnaWgE8wlRhElIPp526M0Xw8H7zqVkGJm2OF"
-                             "T1ZQeowjxqEx4agArzPTT5WvukpERNLe81Q==") == 0);
+  assert(strcmp(dev[0].publicKey,
+                "X+"
+                "GY5K9BSG24K9uVnaWgE8wlRhElIPp526M0Xw8H7zqVkGJm2OF"
+                "T1ZQeowjxqEx4agArzPTT5WvukpERNLe81Q==") == 0);
   assert(strcmp(dev[0].attributes, "+verification+pin") == 0);
   assert(dev[0].old_format == 0);
 
@@ -434,9 +434,9 @@ int main(int argc, const char **argv) {
   assert(dev[0].old_format == 0);
 
   assert(strcmp(dev[1].coseType, "es256") == 0);
-  assert(
-    strcmp(dev[1].keyHandle, "i1grPL1cYGGda7VDTA5C4eqaLZXaW7u8LdIIz2QR8f0L07myF"
-                             "DVWFpHmdhEzFAPGtL2kgwdXwx4NvC8VfEKwjA==") == 0);
+  assert(strcmp(dev[1].keyHandle,
+                "i1grPL1cYGGda7VDTA5C4eqaLZXaW7u8LdIIz2QR8f0L07myF"
+                "DVWFpHmdhEzFAPGtL2kgwdXwx4NvC8VfEKwjA==") == 0);
   assert(strcmp(dev[1].publicKey,
                 "14+UmD2jiBtceZTsshDPl3rKvHFOWeLdNx9nfq4gTHwi+4GmzUvA+"
                 "XwCohusQsjWocfoyTejYWKL/ZKc5wRuYQ==") == 0);
@@ -514,10 +514,10 @@ int main(int argc, const char **argv) {
   assert(strcmp(dev[1].keyHandle,
                 "auU99KPIIvKGbRcVmsiEyGp/rPx1RNruXI2qS8+JgX1e7nWPczLvmlkx8/"
                 "0Z8ZBNqy69aocwQgGHRWKEbDdwlw==") == 0);
-  assert(
-    strcmp(dev[1].publicKey, "oG+"
-                             "oN40QezgwX3S6xFk2sR3jiQnobXxxFQy7Mo5vv9hryeIHX13z"
-                             "G0OZK0KJuhj4A71OAeNXd065P9tVHeQtOQ==") == 0);
+  assert(strcmp(dev[1].publicKey,
+                "oG+"
+                "oN40QezgwX3S6xFk2sR3jiQnobXxxFQy7Mo5vv9hryeIHX13z"
+                "G0OZK0KJuhj4A71OAeNXd065P9tVHeQtOQ==") == 0);
   assert(strcmp(dev[1].attributes, "+presence+pin") == 0);
   assert(dev[1].old_format == 0);
 
@@ -543,19 +543,19 @@ int main(int argc, const char **argv) {
   assert(strcmp(dev[0].keyHandle,
                 "5sVKkhoc+afHBtAp7csIg/Sq4RFi1arnr/"
                 "Qi9quwpNZ4gPhlI6FFBP4CmH8HLw/n5xt8iQxUD83aue23WbrDVA==") == 0);
-  assert(
-    strcmp(dev[0].publicKey, "K1oB5vq8XezU8NCA9jEuuxtLjbNS8bTAFEZXeNWvCQ5vF6viE"
-                             "7hvjBPfTrf2KoLz1JtYxHAngZMW+XOZIloVzw==") == 0);
+  assert(strcmp(dev[0].publicKey,
+                "K1oB5vq8XezU8NCA9jEuuxtLjbNS8bTAFEZXeNWvCQ5vF6viE"
+                "7hvjBPfTrf2KoLz1JtYxHAngZMW+XOZIloVzw==") == 0);
   assert(strcmp(dev[0].attributes, "+presence+verification+pin") == 0);
   assert(dev[0].old_format == 0);
 
   assert(strcmp(dev[1].coseType, "es256") == 0);
-  assert(
-    strcmp(dev[1].keyHandle, "RQWf8kjjCXCNrMhUHHHIeWvQVlft96SShOsfTylA0QUO8UzuS"
-                             "Y1mQQFaOPGde1wSX9b2P7tpfTlhYflfgAwkuQ==") == 0);
-  assert(
-    strcmp(dev[1].publicKey, "SGFYgZZ0rJoAPhj7KzDKSpm2a7y4lE8PIZ6T8WYeDqrsZxrrx"
-                             "Shc2sx2cAu+r70c8sb6etjab3m9CxobV8ADcA==") == 0);
+  assert(strcmp(dev[1].keyHandle,
+                "RQWf8kjjCXCNrMhUHHHIeWvQVlft96SShOsfTylA0QUO8UzuS"
+                "Y1mQQFaOPGde1wSX9b2P7tpfTlhYflfgAwkuQ==") == 0);
+  assert(strcmp(dev[1].publicKey,
+                "SGFYgZZ0rJoAPhj7KzDKSpm2a7y4lE8PIZ6T8WYeDqrsZxrrx"
+                "Shc2sx2cAu+r70c8sb6etjab3m9CxobV8ADcA==") == 0);
   assert(strcmp(dev[1].attributes, "+presence+verification+pin") == 0);
   assert(dev[1].old_format == 0);
 
@@ -578,9 +578,9 @@ int main(int argc, const char **argv) {
   assert(n_devs == 2);
 
   assert(strcmp(dev[0].coseType, "es256") == 0);
-  assert(
-    strcmp(dev[0].keyHandle, "ACoC1fhEYhdOstzkaCb1PqcU4T6xMrXxe5GEQjPDsheOxJzWG"
-                             "XTpaA3abmHZ3khcJ8Off/ecyPq2kMMqh3l7Xg==") == 0);
+  assert(strcmp(dev[0].keyHandle,
+                "ACoC1fhEYhdOstzkaCb1PqcU4T6xMrXxe5GEQjPDsheOxJzWG"
+                "XTpaA3abmHZ3khcJ8Off/ecyPq2kMMqh3l7Xg==") == 0);
   assert(
     strcmp(dev[0].publicKey,
            "c79BTe8BahuDUaeBAATyT8NKq+"
@@ -590,9 +590,9 @@ int main(int argc, const char **argv) {
   assert(dev[0].old_format == 0);
 
   assert(strcmp(dev[1].coseType, "es256") == 0);
-  assert(
-    strcmp(dev[1].keyHandle, "0BdgF8gbsYuFfUrpI3K01LcEwnWBxZ6Ewj61GXZJPQh3IcK4H"
-                             "+QMMG6nqzBhfLipVwGqUugZxCZP2eR9151kog==") == 0);
+  assert(strcmp(dev[1].keyHandle,
+                "0BdgF8gbsYuFfUrpI3K01LcEwnWBxZ6Ewj61GXZJPQh3IcK4H"
+                "+QMMG6nqzBhfLipVwGqUugZxCZP2eR9151kog==") == 0);
   assert(strcmp(dev[1].publicKey,
                 "X0vskPE+AKWmGrp3ZGhUJVXeAm+sN6nCbMeC30IpItVhMdSosP9I0jOMmsQeF+"
                 "rKh+00K30iNucHdXguLPYL7g==") == 0);
@@ -618,23 +618,23 @@ int main(int argc, const char **argv) {
   assert(n_devs == 2);
 
   assert(strcmp(dev[0].coseType, "es256") == 0);
-  assert(
-    strcmp(dev[0].keyHandle, "7jPjHZzm/"
-                             "Ec6oKy6gpq+XXI3P435OLJFO4o3iGH8KUQlEw+"
-                             "1Zv0FmUtguJ2HIZifRsIyMILdu2rwCDgcqmuj9Q==") == 0);
-  assert(
-    strcmp(dev[0].publicKey, "xzrbCZKe8sNdrE0F3dkRwsfkwInYUrKHEAMeeHkNrRLbQqlJH"
-                             "n9C2j5puty3FDVKMV5y1MCrwyJ8IEZHtX2H+Q==") == 0);
+  assert(strcmp(dev[0].keyHandle,
+                "7jPjHZzm/"
+                "Ec6oKy6gpq+XXI3P435OLJFO4o3iGH8KUQlEw+"
+                "1Zv0FmUtguJ2HIZifRsIyMILdu2rwCDgcqmuj9Q==") == 0);
+  assert(strcmp(dev[0].publicKey,
+                "xzrbCZKe8sNdrE0F3dkRwsfkwInYUrKHEAMeeHkNrRLbQqlJH"
+                "n9C2j5puty3FDVKMV5y1MCrwyJ8IEZHtX2H+Q==") == 0);
   assert(strcmp(dev[0].attributes, "+verification") == 0);
   assert(dev[0].old_format == 0);
 
   assert(strcmp(dev[1].coseType, "es256") == 0);
-  assert(
-    strcmp(dev[1].keyHandle, "ghKvm1MLkHIWwr6qjzenROIPfoJCUfrFTlqOXLrMktBSqHaYh"
-                             "oA7NpqwVa3jJ86hpJFekWDOqoV1sLz+GZ9UtQ==") == 0);
-  assert(
-    strcmp(dev[1].publicKey, "SyrD8BKIReOUHLII642tgpA+i1S8d+6MOcnfGapk32blq0/"
-                             "qYWmgzJ5lqv+BsO0nBoOG6uXLqLqMkKt3/zLj1w==") == 0);
+  assert(strcmp(dev[1].keyHandle,
+                "ghKvm1MLkHIWwr6qjzenROIPfoJCUfrFTlqOXLrMktBSqHaYh"
+                "oA7NpqwVa3jJ86hpJFekWDOqoV1sLz+GZ9UtQ==") == 0);
+  assert(strcmp(dev[1].publicKey,
+                "SyrD8BKIReOUHLII642tgpA+i1S8d+6MOcnfGapk32blq0/"
+                "qYWmgzJ5lqv+BsO0nBoOG6uXLqLqMkKt3/zLj1w==") == 0);
   assert(strcmp(dev[1].attributes, "+verification") == 0);
   assert(dev[1].old_format == 0);
 
@@ -668,12 +668,12 @@ int main(int argc, const char **argv) {
   assert(dev[0].old_format == 0);
 
   assert(strcmp(dev[1].coseType, "es256") == 0);
-  assert(
-    strcmp(dev[1].keyHandle, "uBTQIj0EUe2YoeLfVXksAo9gXTJJ2cXMyPqOMNvE2g9pDwetJ"
-                             "IdPTR9oUorMiuRZiXALAlfaayc4vMgQvWXdxw==") == 0);
-  assert(
-    strcmp(dev[1].publicKey, "cToPi0zc8+U6g1kpqJ2pHXCKQyxyNrJAvuLqBmknwxhciBj0+"
-                             "iTDFaut0Vc1MSu/r6yrw2mHSnuYXTmPx3mhmw==") == 0);
+  assert(strcmp(dev[1].keyHandle,
+                "uBTQIj0EUe2YoeLfVXksAo9gXTJJ2cXMyPqOMNvE2g9pDwetJ"
+                "IdPTR9oUorMiuRZiXALAlfaayc4vMgQvWXdxw==") == 0);
+  assert(strcmp(dev[1].publicKey,
+                "cToPi0zc8+U6g1kpqJ2pHXCKQyxyNrJAvuLqBmknwxhciBj0+"
+                "iTDFaut0Vc1MSu/r6yrw2mHSnuYXTmPx3mhmw==") == 0);
   assert(strcmp(dev[1].attributes, "+pin") == 0);
   assert(dev[1].old_format == 0);
 
@@ -696,13 +696,13 @@ int main(int argc, const char **argv) {
   assert(n_devs == 2);
 
   assert(strcmp(dev[0].coseType, "es256") == 0);
-  assert(strcmp(dev[0].keyHandle, "Ypw0/"
-                                  "A5KEPshXH0zO72Qlgt1uHvB4VnVRBpObzVGDeS8LxR9s"
-                                  "mealISARIOo3rlOLgjqj6dkJxqu1LoLm22UpA==") ==
-         0);
-  assert(
-    strcmp(dev[0].publicKey, "dFnZLWVzEvbSw6O4ld9Fjb1Pki4NptNpvASGEthr5GsaWRp6p"
-                             "Le1Uqwm/IrVrOgwO2Q6sB0SXsQKdAIWbMrPHw==") == 0);
+  assert(strcmp(dev[0].keyHandle,
+                "Ypw0/"
+                "A5KEPshXH0zO72Qlgt1uHvB4VnVRBpObzVGDeS8LxR9s"
+                "mealISARIOo3rlOLgjqj6dkJxqu1LoLm22UpA==") == 0);
+  assert(strcmp(dev[0].publicKey,
+                "dFnZLWVzEvbSw6O4ld9Fjb1Pki4NptNpvASGEthr5GsaWRp6p"
+                "Le1Uqwm/IrVrOgwO2Q6sB0SXsQKdAIWbMrPHw==") == 0);
   assert(strcmp(dev[0].attributes, "+verification+pin") == 0);
   assert(dev[0].old_format == 0);
 
@@ -736,17 +736,17 @@ int main(int argc, const char **argv) {
 
   assert(strcmp(dev[0].coseType, "es256") == 0);
   assert(strcmp(dev[0].keyHandle, "*") == 0);
-  assert(
-    strcmp(dev[0].publicKey, "JvWtmu8JaeUNYklKkii5KflmS9vVXtTGcqLdWNXcRHza5qCuB"
-                             "oYX/QNWlKoZklPfsmjTVkXcnBh+B4DSZM55fw==") == 0);
+  assert(strcmp(dev[0].publicKey,
+                "JvWtmu8JaeUNYklKkii5KflmS9vVXtTGcqLdWNXcRHza5qCuB"
+                "oYX/QNWlKoZklPfsmjTVkXcnBh+B4DSZM55fw==") == 0);
   assert(strcmp(dev[0].attributes, "+presence") == 0);
   assert(dev[0].old_format == 0);
 
   assert(strcmp(dev[1].coseType, "es256") == 0);
   assert(strcmp(dev[1].keyHandle, "*") == 0);
-  assert(
-    strcmp(dev[1].publicKey, "4AXGf9eUWUXpfLNJ+2uySBvz2FmkK2EZP+wyKuTf73UDS8/"
-                             "vi+DZVllXuhrXmQA36NLwqS8YPEIq6pRLYE6m2A==") == 0);
+  assert(strcmp(dev[1].publicKey,
+                "4AXGf9eUWUXpfLNJ+2uySBvz2FmkK2EZP+wyKuTf73UDS8/"
+                "vi+DZVllXuhrXmQA36NLwqS8YPEIq6pRLYE6m2A==") == 0);
   assert(strcmp(dev[1].attributes, "+presence") == 0);
   assert(dev[1].old_format == 0);
 
@@ -909,9 +909,9 @@ int main(int argc, const char **argv) {
 
   assert(strcmp(dev[0].coseType, "es256") == 0);
   assert(strcmp(dev[0].keyHandle, "*") == 0);
-  assert(
-    strcmp(dev[0].publicKey, "KBBozy1XYywARLB1AcY5hYvUN2hYHpGY2YyxAIczZ7GXrfWeZ"
-                             "8RGOW7+Z34DaozgLFeHMQSCXJuNYK+fw8khEw==") == 0);
+  assert(strcmp(dev[0].publicKey,
+                "KBBozy1XYywARLB1AcY5hYvUN2hYHpGY2YyxAIczZ7GXrfWeZ"
+                "8RGOW7+Z34DaozgLFeHMQSCXJuNYK+fw8khEw==") == 0);
   assert(strcmp(dev[0].attributes, "+verification") == 0);
   assert(dev[0].old_format == 0);
 
@@ -1013,9 +1013,9 @@ int main(int argc, const char **argv) {
   assert(n_devs == 2);
 
   assert(strcmp(dev[0].coseType, "es256") == 0);
-  assert(
-    strcmp(dev[0].keyHandle, "ooq2bCWeHFXzWqKwWFRliREQjOtUWKtWJbr7KwSh3FLNiCFgB"
-                             "uie4tqq3Pee86o7ew32u1+ITLsCBEYPrTQMAg==") == 0);
+  assert(strcmp(dev[0].keyHandle,
+                "ooq2bCWeHFXzWqKwWFRliREQjOtUWKtWJbr7KwSh3FLNiCFgB"
+                "uie4tqq3Pee86o7ew32u1+ITLsCBEYPrTQMAg==") == 0);
   assert(strcmp(dev[0].publicKey,
                 "39hCGEGO7kqz3Pig/bL0ycZxLfcpWPtX8fKxb/"
                 "S8xx2BdSUs6HXTzIDmifuFv6pabpy3DxUvcA0yIygMAO1ZQw==") == 0);
@@ -1026,10 +1026,10 @@ int main(int argc, const char **argv) {
   assert(strcmp(dev[1].keyHandle,
                 "2O2vxjSMeMl6obzQCkIE3VL2Qtija5sLJuJkMrP+/"
                 "bAFeoLp7m2SPKKRUFFXsO8Z44HTL7PKoFmY4+r5Qwt00w==") == 0);
-  assert(strcmp(dev[1].publicKey, "qZIaqR+"
-                                  "mGxEnvo04LtsX4krKV5r5PBVBfJYDXi2zS7uXSHgRr7K"
-                                  "OQHaNgx70E2IBrVmUlaFAH4QhDnDAeishBA==") ==
-         0);
+  assert(strcmp(dev[1].publicKey,
+                "qZIaqR+"
+                "mGxEnvo04LtsX4krKV5r5PBVBfJYDXi2zS7uXSHgRr7K"
+                "OQHaNgx70E2IBrVmUlaFAH4QhDnDAeishBA==") == 0);
   assert(strcmp(dev[1].attributes, "+presence") == 0);
   assert(dev[1].old_format == 0);
 
@@ -1055,17 +1055,17 @@ int main(int argc, const char **argv) {
   assert(strcmp(dev[0].keyHandle, "9HY72OR/"
                                   "kQECy5PbwfJwSaWZFlLL1CHamlm1LMZFozCBj6hzq4V9"
                                   "BpkkkMObxNL9gFd8yOXKDflFiVVoGq7sWQ==") == 0);
-  assert(
-    strcmp(dev[0].publicKey, "sn+"
-                             "cAxAvdlnwwwvLCLoEjiza2G0aPniyqgomxmm1aLisMl1z9Vpv"
-                             "dlGgO4nOPLYZSoRkW6nKvOBzztGYq/knfQ==") == 0);
+  assert(strcmp(dev[0].publicKey,
+                "sn+"
+                "cAxAvdlnwwwvLCLoEjiza2G0aPniyqgomxmm1aLisMl1z9Vpv"
+                "dlGgO4nOPLYZSoRkW6nKvOBzztGYq/knfQ==") == 0);
   assert(strcmp(dev[0].attributes, "+presence") == 0);
   assert(dev[0].old_format == 0);
 
   assert(strcmp(dev[1].coseType, "es256") == 0);
-  assert(
-    strcmp(dev[1].keyHandle, "43JAMt5EnG72Sx/4C9ptEd+6/f1RMOKWBSQj4U6pnQyVvPFI/"
-                             "nX2jvN4EYqMQrdGYaszRbh0AL0an3hKZJNqLw==") == 0);
+  assert(strcmp(dev[1].keyHandle,
+                "43JAMt5EnG72Sx/4C9ptEd+6/f1RMOKWBSQj4U6pnQyVvPFI/"
+                "nX2jvN4EYqMQrdGYaszRbh0AL0an3hKZJNqLw==") == 0);
   assert(strcmp(dev[1].publicKey, "aPlEf4vR+SUrOykB1tk+"
                                   "H1XKsEiSIBMK252bPz7kLHusnAgqgPZLqcruFEegChmY"
                                   "yhytWDPluPrw1o16FFyf5Q==") == 0);
@@ -1091,19 +1091,19 @@ int main(int argc, const char **argv) {
   assert(n_devs == 2);
 
   assert(strcmp(dev[0].coseType, "es256") == 0);
-  assert(
-    strcmp(dev[0].keyHandle, "kNfZ8Uot7TcImjCXhji32Apur3172TYc4XLA0uDQsdW1lrIRe"
-                             "cyZP5chyPrkNxIrRIZ58UgiMxD72fiaCiQghw==") == 0);
-  assert(
-    strcmp(dev[0].publicKey, "QiscDH8fpvC9imwd7UiQ8n2XeqNRWW5sUxmboMbiNLUXWrvuG"
-                             "7pEBvWYQA3yLdmOvvb/3MijCh6AZr/3fpwZKQ==") == 0);
+  assert(strcmp(dev[0].keyHandle,
+                "kNfZ8Uot7TcImjCXhji32Apur3172TYc4XLA0uDQsdW1lrIRe"
+                "cyZP5chyPrkNxIrRIZ58UgiMxD72fiaCiQghw==") == 0);
+  assert(strcmp(dev[0].publicKey,
+                "QiscDH8fpvC9imwd7UiQ8n2XeqNRWW5sUxmboMbiNLUXWrvuG"
+                "7pEBvWYQA3yLdmOvvb/3MijCh6AZr/3fpwZKQ==") == 0);
   assert(strcmp(dev[0].attributes, "") == 0);
   assert(dev[0].old_format == 0);
 
   assert(strcmp(dev[1].coseType, "es256") == 0);
-  assert(
-    strcmp(dev[1].keyHandle, "4ICSXy6FCp7NUErnJAOoyqGOnszEMmnIxjgH2NmiC9cyn0XqB"
-                             "xmr1+YHt9fv6yhbrPrnn9/QLvysS+VZBc9twQ==") == 0);
+  assert(strcmp(dev[1].keyHandle,
+                "4ICSXy6FCp7NUErnJAOoyqGOnszEMmnIxjgH2NmiC9cyn0XqB"
+                "xmr1+YHt9fv6yhbrPrnn9/QLvysS+VZBc9twQ==") == 0);
   assert(strcmp(dev[1].publicKey,
                 "IJMQOa1WrUkBwZKKviNxkMlvKGkiIbXcIdWf+"
                 "Rv1BPWI9Xo1edi1LF7ux8sZs6mbQEn3z+v+UCSgO13ZtFzI/w==") == 0);

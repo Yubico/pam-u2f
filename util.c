@@ -275,7 +275,8 @@ static int parse_native_format(const cfg_t *cfg, const char *username,
 
         if (devices[i].old_format == 1) {
           if (cfg->debug) {
-            D(cfg->debug_file, "Old format for device %d, no attributes", i + 1);
+            D(cfg->debug_file, "Old format for device %d, no attributes",
+              i + 1);
             D(cfg->debug_file, "Assuming 'presence' (backwards compatibility)");
           }
           s_token = "+presence";
