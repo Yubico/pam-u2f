@@ -145,7 +145,7 @@ static int parse_native_format(const cfg_t *cfg, const char *username,
                                char *buf, FILE *opwfile, device_t *devices,
                                unsigned *n_devs) {
 
-  char *s_user, *s_token;
+  char *s_user, *s_token, *s_credential;
   unsigned i;
   int retval;
 
@@ -181,13 +181,17 @@ static int parse_native_format(const cfg_t *cfg, const char *username,
       *n_devs = 0;
 
       i = 0;
-      while ((s_token = strtok_r(NULL, ",", &saveptr))) {
+      while ((s_credential = strtok_r(NULL, ":", &saveptr))) {
+        // s_credential is the whole line now
+        char *credsaveptr = NULL;
+
         if ((*n_devs)++ > cfg->max_devs - 1) {
           *n_devs = cfg->max_devs;
-          if (cfg->debug)
+          if (cfg->debug) {
             D(cfg->debug_file,
               "Found more than %d devices, ignoring the remaining ones",
               cfg->max_devs);
+          }
           break;
         }
 
@@ -197,46 +201,52 @@ static int parse_native_format(const cfg_t *cfg, const char *username,
         devices[i].attributes = NULL;
         devices[i].old_format = 0;
 
-        if (cfg->debug)
+        s_token = strtok_r(s_credential, ",", &credsaveptr);
+
+        if (cfg->debug) {
           D(cfg->debug_file, "KeyHandle for device number %d: %s", i + 1,
             s_token);
+        }
 
         devices[i].keyHandle = strdup(s_token);
 
         if (!devices[i].keyHandle) {
-          if (cfg->debug)
+          if (cfg->debug) {
             D(cfg->debug_file,
               "Unable to allocate memory for keyHandle number %d", i);
+          }
           return retval;
         }
 
-        if (!strcmp(devices[i].keyHandle, "*") && cfg->debug)
+        if (!strcmp(devices[i].keyHandle, "*") && cfg->debug) {
           D(cfg->debug_file, "Credential is resident");
+        }
 
-        s_token = strtok_r(NULL, ",", &saveptr);
+        s_token = strtok_r(NULL, ",", &credsaveptr);
 
         if (!s_token) {
-          if (cfg->debug)
+          if (cfg->debug) {
             D(cfg->debug_file, "Unable to retrieve publicKey number %d", i + 1);
+          }
           return retval;
         }
 
-        if (cfg->debug)
+        if (cfg->debug) {
           D(cfg->debug_file, "publicKey for device number %d: %s", i + 1,
             s_token);
+        }
 
         devices[i].publicKey = strdup(s_token);
 
         if (!devices[i].publicKey) {
-          if (cfg->debug)
+          if (cfg->debug) {
             D(cfg->debug_file,
               "Unable to allocate memory for publicKey number %d", i);
+          }
           return retval;
         }
 
-        s_token = strtok_r(NULL, ",", &saveptr);
-
-        devices[i].old_format = 0;
+        s_token = strtok_r(NULL, ",", &credsaveptr);
 
         if (!s_token) {
           if (cfg->debug) {
@@ -246,38 +256,44 @@ static int parse_native_format(const cfg_t *cfg, const char *username,
           devices[i].old_format = 1;
           devices[i].coseType = strdup("es256");
         } else {
-          if (cfg->debug)
+          if (cfg->debug) {
             D(cfg->debug_file, "COSE type for device number %d: %s", i + 1,
               s_token);
+          }
           devices[i].coseType = strdup(s_token);
         }
 
         if (!devices[i].coseType) {
-          if (cfg->debug)
+          if (cfg->debug) {
             D(cfg->debug_file,
               "Unable to allocate memory for COSE type number %d", i);
+          }
           return retval;
         }
 
-        s_token = strtok_r(NULL, ":", &saveptr);
+        s_token = strtok_r(NULL, ",", &credsaveptr);
 
-        if (!s_token) {
+        if (devices[i].old_format == 1) {
           if (cfg->debug) {
-            D(cfg->debug_file, "Unable to retrieve attributes %d", i + 1);
+            D(cfg->debug_file, "Old format for device %d, no attributes", i + 1);
             D(cfg->debug_file, "Assuming 'presence' (backwards compatibility)");
           }
-          devices[i].attributes = strdup("+presence");
-        } else {
-          if (cfg->debug)
-            D(cfg->debug_file, "Attributes for device number %d: %s", i + 1,
-              s_token);
-          devices[i].attributes = strdup(s_token);
+          s_token = "+presence";
+        } else if (!s_token) {
+          s_token = "";
         }
 
+        if (cfg->debug) {
+          D(cfg->debug_file, "Attributes for device number %d: %s", i + 1,
+            s_token);
+        }
+        devices[i].attributes = strdup(s_token);
+
         if (!devices[i].attributes) {
-          if (cfg->debug)
+          if (cfg->debug) {
             D(cfg->debug_file,
               "Unable to allocate memory for attributes number %d", i);
+          }
           return retval;
         }
 
@@ -286,9 +302,10 @@ static int parse_native_format(const cfg_t *cfg, const char *username,
           devices[i].keyHandle = normal_b64(websafe_b64);
           free(websafe_b64);
           if (!devices[i].keyHandle) {
-            if (cfg->debug)
+            if (cfg->debug) {
               D(cfg->debug_file,
                 "Unable to allocate memory for keyHandle number %d", i);
+            }
             return retval;
           }
         }
