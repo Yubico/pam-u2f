@@ -4,8 +4,11 @@ import collections
 import re
 import subprocess
 import sys
+import getpass
 
 PUC = "../pamu2fcfg/pamu2fcfg"
+
+user = getpass.getuser()
 
 resident = ["", "-r"]
 
@@ -24,10 +27,10 @@ def print_test_case(filename, sshformat, credentials):
     start = """
   cfg.auth_file = "{authfile}";
   cfg.sshformat = {ssh};
-  rc = get_devices_from_authfile(&cfg, "myuser", dev, &n_devs);
+  rc = get_devices_from_authfile(&cfg, %(user)s, dev, &n_devs);
   assert(rc == 1);
   assert(n_devs == {devices});
-"""
+""" % {'user': user}
 
     checks = """
   assert(strcmp(dev[{i}].coseType, "es256") == 0);
@@ -61,16 +64,15 @@ def print_test_case(filename, sshformat, credentials):
 
 
 # Single credentials
-print >> sys.stderr, "Generating single credentials"
+print ("Generating single credentials", file=sys.stderr)
 
 for r in resident:
     for p in presence:
         for n in pin:
             for v in verification:
                 filename = "credentials/new_" + r + p + v + n
-                print >> sys.stderr, "Generating " + filename
-                line = subprocess.check_output([PUC, "-umyuser", r, p, v, n])
-
+                print ("Generating " + filename, file=sys.stderr)
+                line = subprocess.check_output([PUC, "-u"+user, r, p, v, n]).decode('utf-8')
                 matches = re.match(r'^.*?:(.*?),(.*?),es256,(.*)', line, re.M)
                 with open(filename, "w") as outfile:
                     outfile.write(line)
@@ -83,15 +85,15 @@ for r in resident:
 
 
 # Double credentials
-print >> sys.stderr, "Generating double credentials"
+print ("Generating double credentials", file=sys.stderr)
 
 for r in resident:
     for p in presence:
         for n in pin:
             for v in verification:
                 filename = "credentials/new_double_" + r + p + v + n
-                print >> sys.stderr, "Generating " + filename
-                line = subprocess.check_output([PUC, "-umyuser", r, p, v, n])
+                print ("Generating " + filename, file=sys.stderr)
+                line = subprocess.check_output([PUC, "-u"+user, r, p, v, n]).decode('utf-8')
 
                 matches = re.match(r'^.*?:(.*?),(.*?),es256,(.*)', line, re.M)
                 with open(filename, "w") as outfile:
@@ -101,7 +103,7 @@ for r in resident:
                                          attributes = matches.group(3),
                                          oldformat = 0)]
 
-                line = subprocess.check_output([PUC, "-n", r, p, v, n])
+                line = subprocess.check_output([PUC, "-n", r, p, v, n]).decode('utf-8')
 
                 matches = re.match(r'^.*?:(.*?),(.*?),es256,(.*)', line, re.M)
                 with open(filename, "a") as outfile:
@@ -114,14 +116,14 @@ for r in resident:
                 print_test_case(filename, sshformat, credentials)
 
 # Mixed credentials
-print >> sys.stderr, "Mixed double credentials"
+print ("Mixed double credentials", file=sys.stderr)
 
 options = [("", ""), ("", "-P"), ("-P", ""), ("-P", "-P")]
 
 for p1, p2 in options:
     filename = "credentials/new_mixed_" + p1 +"1" + p2 + "2"
-    print >> sys.stderr, "Generating " + filename
-    line = subprocess.check_output([PUC, "-umyuser", p1])
+    print ("Generating " + filename, file=sys.stderr)
+    line = subprocess.check_output([PUC, "-u"+user, p1]).decode('utf-8')
 
     matches = re.match(r'^.*?:(.*?),(.*?),es256,(.*)', line, re.M)
     with open(filename, "w") as outfile:
@@ -131,7 +133,7 @@ for p1, p2 in options:
                               attributes = matches.group(3),
                               oldformat = 0)]
 
-    line = subprocess.check_output([PUC, "-n", p2])
+    line = subprocess.check_output([PUC, "-n", p2]).decode('utf-8')
 
     matches = re.match(r'^.*?:(.*?),(.*?),es256,(.*)', line, re.M)
     with open(filename, "a") as outfile:
