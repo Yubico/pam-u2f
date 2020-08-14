@@ -25,7 +25,7 @@ int main(int argc, const char **argv) {
   cfg_t cfg;
 
   memset(&cfg, 0, sizeof(cfg_t));
-  cfg.auth_file = "credentials/ssh_credential";
+  cfg.auth_file = "credentials/ssh_credential.cred";
   cfg.debug = 1;
   cfg.debug_file = stderr;
   cfg.max_devs = 24;
@@ -33,8 +33,15 @@ int main(int argc, const char **argv) {
 
   device_t dev[24];
   unsigned n_devs;
+  char *username;
 
-  rc = get_devices_from_authfile(&cfg, "" /* not used for SSH format */, dev,
+  username = secure_getenv("USER");
+  if (username == NULL) {
+    username = secure_getenv("LOGNAME");
+  }
+  assert(username != NULL);
+
+  rc = get_devices_from_authfile(&cfg, username /* not used for SSH format */, dev,
                                  &n_devs);
   assert(rc == 1);
   assert(n_devs == 1);
@@ -54,9 +61,9 @@ int main(int argc, const char **argv) {
   free(dev[0].publicKey);
   memset(dev, 0, sizeof(dev_t));
 
-  cfg.auth_file = "credentials/new_";
+  cfg.auth_file = "credentials/new_.cred";
   cfg.sshformat = 0;
-  rc = get_devices_from_authfile(&cfg, "myuser", dev, &n_devs);
+  rc = get_devices_from_authfile(&cfg, username, dev, &n_devs);
   assert(rc == 1);
   assert(n_devs == 1);
 
@@ -78,9 +85,9 @@ int main(int argc, const char **argv) {
 
   memset(dev, 0, sizeof(dev_t) * 1);
 
-  cfg.auth_file = "credentials/new_-V";
+  cfg.auth_file = "credentials/new_-V.cred";
   cfg.sshformat = 0;
-  rc = get_devices_from_authfile(&cfg, "myuser", dev, &n_devs);
+  rc = get_devices_from_authfile(&cfg, username, dev, &n_devs);
   assert(rc == 1);
   assert(n_devs == 1);
 
@@ -102,9 +109,9 @@ int main(int argc, const char **argv) {
 
   memset(dev, 0, sizeof(dev_t) * 1);
 
-  cfg.auth_file = "credentials/new_-N";
+  cfg.auth_file = "credentials/new_-N.cred";
   cfg.sshformat = 0;
-  rc = get_devices_from_authfile(&cfg, "myuser", dev, &n_devs);
+  rc = get_devices_from_authfile(&cfg, username, dev, &n_devs);
   assert(rc == 1);
   assert(n_devs == 1);
 
@@ -127,9 +134,9 @@ int main(int argc, const char **argv) {
 
   memset(dev, 0, sizeof(dev_t) * 1);
 
-  cfg.auth_file = "credentials/new_-V-N";
+  cfg.auth_file = "credentials/new_-V-N.cred";
   cfg.sshformat = 0;
-  rc = get_devices_from_authfile(&cfg, "myuser", dev, &n_devs);
+  rc = get_devices_from_authfile(&cfg, username, dev, &n_devs);
   assert(rc == 1);
   assert(n_devs == 1);
 
@@ -151,9 +158,9 @@ int main(int argc, const char **argv) {
 
   memset(dev, 0, sizeof(dev_t) * 1);
 
-  cfg.auth_file = "credentials/new_-P";
+  cfg.auth_file = "credentials/new_-P.cred";
   cfg.sshformat = 0;
-  rc = get_devices_from_authfile(&cfg, "myuser", dev, &n_devs);
+  rc = get_devices_from_authfile(&cfg, username, dev, &n_devs);
   assert(rc == 1);
   assert(n_devs == 1);
 
@@ -175,9 +182,9 @@ int main(int argc, const char **argv) {
 
   memset(dev, 0, sizeof(dev_t) * 1);
 
-  cfg.auth_file = "credentials/new_-P-V";
+  cfg.auth_file = "credentials/new_-P-V.cred";
   cfg.sshformat = 0;
-  rc = get_devices_from_authfile(&cfg, "myuser", dev, &n_devs);
+  rc = get_devices_from_authfile(&cfg, username, dev, &n_devs);
   assert(rc == 1);
   assert(n_devs == 1);
 
@@ -198,9 +205,9 @@ int main(int argc, const char **argv) {
 
   memset(dev, 0, sizeof(dev_t) * 1);
 
-  cfg.auth_file = "credentials/new_-P-N";
+  cfg.auth_file = "credentials/new_-P-N.cred";
   cfg.sshformat = 0;
-  rc = get_devices_from_authfile(&cfg, "myuser", dev, &n_devs);
+  rc = get_devices_from_authfile(&cfg, username, dev, &n_devs);
   assert(rc == 1);
   assert(n_devs == 1);
 
@@ -222,9 +229,9 @@ int main(int argc, const char **argv) {
 
   memset(dev, 0, sizeof(dev_t) * 1);
 
-  cfg.auth_file = "credentials/new_-P-V-N";
+  cfg.auth_file = "credentials/new_-P-V-N.cred";
   cfg.sshformat = 0;
-  rc = get_devices_from_authfile(&cfg, "myuser", dev, &n_devs);
+  rc = get_devices_from_authfile(&cfg, username, dev, &n_devs);
   assert(rc == 1);
   assert(n_devs == 1);
 
@@ -246,9 +253,9 @@ int main(int argc, const char **argv) {
 
   memset(dev, 0, sizeof(dev_t) * 1);
 
-  cfg.auth_file = "credentials/new_-r";
+  cfg.auth_file = "credentials/new_-r.cred";
   cfg.sshformat = 0;
-  rc = get_devices_from_authfile(&cfg, "myuser", dev, &n_devs);
+  rc = get_devices_from_authfile(&cfg, username, dev, &n_devs);
   assert(rc == 1);
   assert(n_devs == 1);
 
@@ -268,9 +275,9 @@ int main(int argc, const char **argv) {
 
   memset(dev, 0, sizeof(dev_t) * 1);
 
-  cfg.auth_file = "credentials/new_-r-V";
+  cfg.auth_file = "credentials/new_-r-V.cred";
   cfg.sshformat = 0;
-  rc = get_devices_from_authfile(&cfg, "myuser", dev, &n_devs);
+  rc = get_devices_from_authfile(&cfg, username, dev, &n_devs);
   assert(rc == 1);
   assert(n_devs == 1);
 
@@ -290,9 +297,9 @@ int main(int argc, const char **argv) {
 
   memset(dev, 0, sizeof(dev_t) * 1);
 
-  cfg.auth_file = "credentials/new_-r-N";
+  cfg.auth_file = "credentials/new_-r-N.cred";
   cfg.sshformat = 0;
-  rc = get_devices_from_authfile(&cfg, "myuser", dev, &n_devs);
+  rc = get_devices_from_authfile(&cfg, username, dev, &n_devs);
   assert(rc == 1);
   assert(n_devs == 1);
 
@@ -311,9 +318,9 @@ int main(int argc, const char **argv) {
 
   memset(dev, 0, sizeof(dev_t) * 1);
 
-  cfg.auth_file = "credentials/new_-r-V-N";
+  cfg.auth_file = "credentials/new_-r-V-N.cred";
   cfg.sshformat = 0;
-  rc = get_devices_from_authfile(&cfg, "myuser", dev, &n_devs);
+  rc = get_devices_from_authfile(&cfg, username, dev, &n_devs);
   assert(rc == 1);
   assert(n_devs == 1);
 
@@ -332,9 +339,9 @@ int main(int argc, const char **argv) {
 
   memset(dev, 0, sizeof(dev_t) * 1);
 
-  cfg.auth_file = "credentials/new_-r-P";
+  cfg.auth_file = "credentials/new_-r-P.cred";
   cfg.sshformat = 0;
-  rc = get_devices_from_authfile(&cfg, "myuser", dev, &n_devs);
+  rc = get_devices_from_authfile(&cfg, username, dev, &n_devs);
   assert(rc == 1);
   assert(n_devs == 1);
 
@@ -353,9 +360,9 @@ int main(int argc, const char **argv) {
 
   memset(dev, 0, sizeof(dev_t) * 1);
 
-  cfg.auth_file = "credentials/new_-r-P-V";
+  cfg.auth_file = "credentials/new_-r-P-V.cred";
   cfg.sshformat = 0;
-  rc = get_devices_from_authfile(&cfg, "myuser", dev, &n_devs);
+  rc = get_devices_from_authfile(&cfg, username, dev, &n_devs);
   assert(rc == 1);
   assert(n_devs == 1);
 
@@ -374,9 +381,9 @@ int main(int argc, const char **argv) {
 
   memset(dev, 0, sizeof(dev_t) * 1);
 
-  cfg.auth_file = "credentials/new_-r-P-N";
+  cfg.auth_file = "credentials/new_-r-P-N.cred";
   cfg.sshformat = 0;
-  rc = get_devices_from_authfile(&cfg, "myuser", dev, &n_devs);
+  rc = get_devices_from_authfile(&cfg, username, dev, &n_devs);
   assert(rc == 1);
   assert(n_devs == 1);
 
@@ -395,9 +402,9 @@ int main(int argc, const char **argv) {
 
   memset(dev, 0, sizeof(dev_t) * 1);
 
-  cfg.auth_file = "credentials/new_-r-P-V-N";
+  cfg.auth_file = "credentials/new_-r-P-V-N.cred";
   cfg.sshformat = 0;
-  rc = get_devices_from_authfile(&cfg, "myuser", dev, &n_devs);
+  rc = get_devices_from_authfile(&cfg, username, dev, &n_devs);
   assert(rc == 1);
   assert(n_devs == 1);
 
@@ -417,9 +424,9 @@ int main(int argc, const char **argv) {
 
   memset(dev, 0, sizeof(dev_t) * 1);
 
-  cfg.auth_file = "credentials/new_double_";
+  cfg.auth_file = "credentials/new_double_.cred";
   cfg.sshformat = 0;
-  rc = get_devices_from_authfile(&cfg, "myuser", dev, &n_devs);
+  rc = get_devices_from_authfile(&cfg, username, dev, &n_devs);
   assert(rc == 1);
   assert(n_devs == 2);
 
@@ -455,9 +462,9 @@ int main(int argc, const char **argv) {
 
   memset(dev, 0, sizeof(dev_t) * 2);
 
-  cfg.auth_file = "credentials/new_double_-V";
+  cfg.auth_file = "credentials/new_double_-V.cred";
   cfg.sshformat = 0;
-  rc = get_devices_from_authfile(&cfg, "myuser", dev, &n_devs);
+  rc = get_devices_from_authfile(&cfg, username, dev, &n_devs);
   assert(rc == 1);
   assert(n_devs == 2);
 
@@ -494,9 +501,9 @@ int main(int argc, const char **argv) {
 
   memset(dev, 0, sizeof(dev_t) * 2);
 
-  cfg.auth_file = "credentials/new_double_-N";
+  cfg.auth_file = "credentials/new_double_-N.cred";
   cfg.sshformat = 0;
-  rc = get_devices_from_authfile(&cfg, "myuser", dev, &n_devs);
+  rc = get_devices_from_authfile(&cfg, username, dev, &n_devs);
   assert(rc == 1);
   assert(n_devs == 2);
 
@@ -533,9 +540,9 @@ int main(int argc, const char **argv) {
 
   memset(dev, 0, sizeof(dev_t) * 2);
 
-  cfg.auth_file = "credentials/new_double_-V-N";
+  cfg.auth_file = "credentials/new_double_-V-N.cred";
   cfg.sshformat = 0;
-  rc = get_devices_from_authfile(&cfg, "myuser", dev, &n_devs);
+  rc = get_devices_from_authfile(&cfg, username, dev, &n_devs);
   assert(rc == 1);
   assert(n_devs == 2);
 
@@ -571,9 +578,9 @@ int main(int argc, const char **argv) {
 
   memset(dev, 0, sizeof(dev_t) * 2);
 
-  cfg.auth_file = "credentials/new_double_-P";
+  cfg.auth_file = "credentials/new_double_-P.cred";
   cfg.sshformat = 0;
-  rc = get_devices_from_authfile(&cfg, "myuser", dev, &n_devs);
+  rc = get_devices_from_authfile(&cfg, username, dev, &n_devs);
   assert(rc == 1);
   assert(n_devs == 2);
 
@@ -611,9 +618,9 @@ int main(int argc, const char **argv) {
 
   memset(dev, 0, sizeof(dev_t) * 2);
 
-  cfg.auth_file = "credentials/new_double_-P-V";
+  cfg.auth_file = "credentials/new_double_-P-V.cred";
   cfg.sshformat = 0;
-  rc = get_devices_from_authfile(&cfg, "myuser", dev, &n_devs);
+  rc = get_devices_from_authfile(&cfg, username, dev, &n_devs);
   assert(rc == 1);
   assert(n_devs == 2);
 
@@ -650,9 +657,9 @@ int main(int argc, const char **argv) {
 
   memset(dev, 0, sizeof(dev_t) * 2);
 
-  cfg.auth_file = "credentials/new_double_-P-N";
+  cfg.auth_file = "credentials/new_double_-P-N.cred";
   cfg.sshformat = 0;
-  rc = get_devices_from_authfile(&cfg, "myuser", dev, &n_devs);
+  rc = get_devices_from_authfile(&cfg, username, dev, &n_devs);
   assert(rc == 1);
   assert(n_devs == 2);
 
@@ -689,9 +696,9 @@ int main(int argc, const char **argv) {
 
   memset(dev, 0, sizeof(dev_t) * 2);
 
-  cfg.auth_file = "credentials/new_double_-P-V-N";
+  cfg.auth_file = "credentials/new_double_-P-V-N.cred";
   cfg.sshformat = 0;
-  rc = get_devices_from_authfile(&cfg, "myuser", dev, &n_devs);
+  rc = get_devices_from_authfile(&cfg, username, dev, &n_devs);
   assert(rc == 1);
   assert(n_devs == 2);
 
@@ -728,9 +735,9 @@ int main(int argc, const char **argv) {
 
   memset(dev, 0, sizeof(dev_t) * 2);
 
-  cfg.auth_file = "credentials/new_double_-r";
+  cfg.auth_file = "credentials/new_double_-r.cred";
   cfg.sshformat = 0;
-  rc = get_devices_from_authfile(&cfg, "myuser", dev, &n_devs);
+  rc = get_devices_from_authfile(&cfg, username, dev, &n_devs);
   assert(rc == 1);
   assert(n_devs == 2);
 
@@ -762,9 +769,9 @@ int main(int argc, const char **argv) {
 
   memset(dev, 0, sizeof(dev_t) * 2);
 
-  cfg.auth_file = "credentials/new_double_-r-V";
+  cfg.auth_file = "credentials/new_double_-r-V.cred";
   cfg.sshformat = 0;
-  rc = get_devices_from_authfile(&cfg, "myuser", dev, &n_devs);
+  rc = get_devices_from_authfile(&cfg, username, dev, &n_devs);
   assert(rc == 1);
   assert(n_devs == 2);
 
@@ -797,9 +804,9 @@ int main(int argc, const char **argv) {
 
   memset(dev, 0, sizeof(dev_t) * 2);
 
-  cfg.auth_file = "credentials/new_double_-r-N";
+  cfg.auth_file = "credentials/new_double_-r-N.cred";
   cfg.sshformat = 0;
-  rc = get_devices_from_authfile(&cfg, "myuser", dev, &n_devs);
+  rc = get_devices_from_authfile(&cfg, username, dev, &n_devs);
   assert(rc == 1);
   assert(n_devs == 2);
 
@@ -832,9 +839,9 @@ int main(int argc, const char **argv) {
 
   memset(dev, 0, sizeof(dev_t) * 2);
 
-  cfg.auth_file = "credentials/new_double_-r-V-N";
+  cfg.auth_file = "credentials/new_double_-r-V-N.cred";
   cfg.sshformat = 0;
-  rc = get_devices_from_authfile(&cfg, "myuser", dev, &n_devs);
+  rc = get_devices_from_authfile(&cfg, username, dev, &n_devs);
   assert(rc == 1);
   assert(n_devs == 2);
 
@@ -866,9 +873,9 @@ int main(int argc, const char **argv) {
 
   memset(dev, 0, sizeof(dev_t) * 2);
 
-  cfg.auth_file = "credentials/new_double_-r-P";
+  cfg.auth_file = "credentials/new_double_-r-P.cred";
   cfg.sshformat = 0;
-  rc = get_devices_from_authfile(&cfg, "myuser", dev, &n_devs);
+  rc = get_devices_from_authfile(&cfg, username, dev, &n_devs);
   assert(rc == 1);
   assert(n_devs == 2);
 
@@ -901,9 +908,9 @@ int main(int argc, const char **argv) {
 
   memset(dev, 0, sizeof(dev_t) * 2);
 
-  cfg.auth_file = "credentials/new_double_-r-P-V";
+  cfg.auth_file = "credentials/new_double_-r-P-V.cred";
   cfg.sshformat = 0;
-  rc = get_devices_from_authfile(&cfg, "myuser", dev, &n_devs);
+  rc = get_devices_from_authfile(&cfg, username, dev, &n_devs);
   assert(rc == 1);
   assert(n_devs == 2);
 
@@ -935,9 +942,9 @@ int main(int argc, const char **argv) {
 
   memset(dev, 0, sizeof(dev_t) * 2);
 
-  cfg.auth_file = "credentials/new_double_-r-P-N";
+  cfg.auth_file = "credentials/new_double_-r-P-N.cred";
   cfg.sshformat = 0;
-  rc = get_devices_from_authfile(&cfg, "myuser", dev, &n_devs);
+  rc = get_devices_from_authfile(&cfg, username, dev, &n_devs);
   assert(rc == 1);
   assert(n_devs == 2);
 
@@ -969,9 +976,9 @@ int main(int argc, const char **argv) {
 
   memset(dev, 0, sizeof(dev_t) * 2);
 
-  cfg.auth_file = "credentials/new_double_-r-P-V-N";
+  cfg.auth_file = "credentials/new_double_-r-P-V-N.cred";
   cfg.sshformat = 0;
-  rc = get_devices_from_authfile(&cfg, "myuser", dev, &n_devs);
+  rc = get_devices_from_authfile(&cfg, username, dev, &n_devs);
   assert(rc == 1);
   assert(n_devs == 2);
 
@@ -1006,9 +1013,9 @@ int main(int argc, const char **argv) {
 
   memset(dev, 0, sizeof(dev_t) * 2);
 
-  cfg.auth_file = "credentials/new_mixed_12";
+  cfg.auth_file = "credentials/new_mixed_12.cred";
   cfg.sshformat = 0;
-  rc = get_devices_from_authfile(&cfg, "myuser", dev, &n_devs);
+  rc = get_devices_from_authfile(&cfg, username, dev, &n_devs);
   assert(rc == 1);
   assert(n_devs == 2);
 
@@ -1045,9 +1052,9 @@ int main(int argc, const char **argv) {
 
   memset(dev, 0, sizeof(dev_t) * 2);
 
-  cfg.auth_file = "credentials/new_mixed_1-P2";
+  cfg.auth_file = "credentials/new_mixed_1-P2.cred";
   cfg.sshformat = 0;
-  rc = get_devices_from_authfile(&cfg, "myuser", dev, &n_devs);
+  rc = get_devices_from_authfile(&cfg, username, dev, &n_devs);
   assert(rc == 1);
   assert(n_devs == 2);
 
@@ -1084,9 +1091,9 @@ int main(int argc, const char **argv) {
 
   memset(dev, 0, sizeof(dev_t) * 2);
 
-  cfg.auth_file = "credentials/new_mixed_-P12";
+  cfg.auth_file = "credentials/new_mixed_-P12.cred";
   cfg.sshformat = 0;
-  rc = get_devices_from_authfile(&cfg, "myuser", dev, &n_devs);
+  rc = get_devices_from_authfile(&cfg, username, dev, &n_devs);
   assert(rc == 1);
   assert(n_devs == 2);
 
@@ -1122,9 +1129,9 @@ int main(int argc, const char **argv) {
 
   memset(dev, 0, sizeof(dev_t) * 2);
 
-  cfg.auth_file = "credentials/new_mixed_-P1-P2";
+  cfg.auth_file = "credentials/new_mixed_-P1-P2.cred";
   cfg.sshformat = 0;
-  rc = get_devices_from_authfile(&cfg, "myuser", dev, &n_devs);
+  rc = get_devices_from_authfile(&cfg, username, dev, &n_devs);
   assert(rc == 1);
   assert(n_devs == 2);
 
@@ -1160,10 +1167,10 @@ int main(int argc, const char **argv) {
 
   memset(dev, 0, sizeof(dev_t) * 2);
 
-  cfg.auth_file = "credentials/old_credential";
+  cfg.auth_file = "credentials/old_credential.cred";
   cfg.sshformat = 0;
 
-  rc = get_devices_from_authfile(&cfg, "myuser", dev, &n_devs);
+  rc = get_devices_from_authfile(&cfg, username, dev, &n_devs);
   assert(rc == 1);
   assert(n_devs == 1);
   assert(strcmp(dev[0].coseType, "es256") == 0);

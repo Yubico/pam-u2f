@@ -4,6 +4,7 @@
 *.o
 *.trs
 *~
+*.cred
 .deps
 .libs
 ChangeLog
@@ -41,3 +42,4 @@ pamu2fcfg/cmdline.c
 pamu2fcfg/cmdline.h
 pamu2fcfg/pamu2fcfg
 man/pamu2fcfg.1
+tests/get_devices
