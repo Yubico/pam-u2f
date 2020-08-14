@@ -41,8 +41,8 @@ int main(int argc, const char **argv) {
   }
   assert(username != NULL);
 
-  rc = get_devices_from_authfile(&cfg, username /* not used for SSH format */, dev,
-                                 &n_devs);
+  rc = get_devices_from_authfile(&cfg, username /* not used for SSH format */,
+                                 dev, &n_devs);
   assert(rc == 1);
   assert(n_devs == 1);
   assert(strcmp(dev[0].coseType, "es256") == 0);
