@@ -11,7 +11,8 @@ pamu2fcfg - Configuration tool for the U2F PAM module.
 *pamu2fcfg* [_OPTION_]...
 
 == DESCRIPTION
-Perform a U2F registration procedure using a connected U2F token and output a configuration line that can be used with the U2F PAM module.
+Perform a U2F registration procedure using a connected U2F token and
+output a configuration line that can be used with the U2F PAM module.
 
 == OPTIONS
 *-d*, *--debug*::
@@ -31,6 +32,10 @@ Generate a resident credential. Defaults to off.
 
 *-t*, *--type*=_STRING_::
 COSE type to use during registration (ES256 or RS256). Defaults to ES256.
+
+*-P*, *--no-user-presence*::
+Allow using the credential without ensuring the user's presence.
+Defaults to off.
 
 *-N*, *--pin-verification*::
 Require PIN verification during authentication. Defaults to off.
