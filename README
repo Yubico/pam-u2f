@@ -304,9 +304,9 @@ To generate SSH credentials OpenSSH version 8.2 or later is required.
 It is then possible to generate a credential file with:
 
 [source, bash]
----
+----
 $ ssh-keygen -t ecdsa-sk -f ./credential.ssh
----
+----
 
 Note that passphrase protected credentials are currently not supported.
 
