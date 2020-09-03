@@ -19,7 +19,7 @@ In addition, https://developers.yubico.com/libfido2['libfido2'] (>=
 1.2.0) is needed. Versions of this project up to 1.0.8 used
 `libu2f-host` and libu2f-server`.
 
-  Debian:  apt install autoconf automake libtool pkg-config libfido2-dev --no-install-recommends
+  Ubuntu:  apt install autoconf automake libtool pkg-config libfido2-dev --no-install-recommends
 
 If you downloaded a tarball, build it as follows.
 
@@ -49,7 +49,7 @@ $ cd pam-u2f
 `autoconf`, `automake`, `libtool`, and `libpam` must be installed.
 `AsciiDoc` and `xsltproc` are used to generate the manpages.
 
-  Debian:  apt install autoconf automake libtool libpam-dev libfido2-dev asciidoc xsltproc libxml2-utils docbook-xml --no-install-recommends
+  Ubuntu:  apt install autoconf automake libtool libpam-dev libfido2-dev asciidoc xsltproc libxml2-utils docbook-xml --no-install-recommends
 
 Generate the build system using:
 
