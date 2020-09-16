@@ -120,7 +120,7 @@ the authenticator's default behaviour.
 *sshformat*::
 Use credentials produced by versions of OpenSSH that have support for
 FIDO devices. It is not possible to mix native credentials and SSH
-credentials. Once this option is enable all credentials will be parsed
+credentials. Once this option is enabled all credentials will be parsed
 as SSH.
 
 == EXAMPLES
