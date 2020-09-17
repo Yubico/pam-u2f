@@ -7,7 +7,7 @@ bin_PROGRAMS = pamu2fcfg
 
 pamu2fcfg_SOURCES = pamu2fcfg.c
 pamu2fcfg_SOURCES += cmdline.ggo cmdline.c cmdline.h
-pamu2fcfg_SOURCES += readpassphrase.c readpassphrase.h
+pamu2fcfg_SOURCES += readpassphrase.c _readpassphrase.h
 pamu2fcfg_SOURCES += ../util.c ../b64.c ../explicit_bzero.c
 pamu2fcfg_LDADD = $(LIBFIDO2_LIBS) $(LIBCRYPTO_LIBS)
 
