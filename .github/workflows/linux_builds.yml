@@ -1,0 +1,31 @@
+name: linux
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-20.04]
+        cc: [gcc-10, clang-10]
+    steps:
+    - uses: actions/checkout@v1
+    - name: Dependencies
+      env:
+        CC: ${{ matrix.cc }}
+      run: |
+        sudo apt -q update
+        sudo apt install -q -y autoconf automake libtool pkg-config \
+          libfido2-dev libpam-dev gengetopt
+        if [ "${CC%-*}" == "clang" ]; then
+          sudo apt install -q -y ${CC%-*}-tools-${CC#clang-}
+        else
+          sudo apt install -q -y "${CC}"
+        fi
+    - name: Build
+      env:
+        CC: ${{ matrix.cc }}
+      run: |
+        /bin/bash -eux build-aux/ci/build-linux.sh
