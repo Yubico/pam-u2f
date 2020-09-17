@@ -2,6 +2,8 @@ Copyright (c) 2014-2020 Yubico AB - See COPYING
 
 pam-u2f NEWS -- History of user-visible changes.          -*- outline -*-
 
+* Version 1.1.1 (unreleased)
+
 * Version 1.1.0 (released 2020-09-17)
  ** Add support to FIDO2 (move from libu2f-host+libu2f-server to libfido2).
  ** Add support to User Verification
