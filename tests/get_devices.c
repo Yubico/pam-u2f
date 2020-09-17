@@ -1186,5 +1186,10 @@ int main(int argc, const char **argv) {
     0);
   assert(dev[0].old_format == 1);
 
+  free(dev[0].coseType);
+  free(dev[0].attributes);
+  free(dev[0].keyHandle);
+  free(dev[0].publicKey);
+
   return 0;
 }
