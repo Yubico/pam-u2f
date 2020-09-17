@@ -203,6 +203,14 @@ static int parse_native_format(const cfg_t *cfg, const char *username,
 
         s_token = strtok_r(s_credential, ",", &credsaveptr);
 
+        if (!s_token) {
+          if (cfg->debug) {
+            D(cfg->debug_file,
+              "Unable to retrieve keyHandle for device %d", i + 1);
+          }
+          return retval;
+        }
+
         if (cfg->debug) {
           D(cfg->debug_file, "KeyHandle for device number %d: %s", i + 1,
             s_token);
