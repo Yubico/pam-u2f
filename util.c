@@ -1122,7 +1122,7 @@ static int get_authenticators(const cfg_t *cfg, const fido_dev_info_t *devlist,
     }
   }
 
-  if (kh == NULL && j != 0)
+  if (j != 0)
     return (1);
   else {
     if (cfg->debug)
