@@ -30,6 +30,20 @@ AS_IF([test "$enable_man" = "yes"],
 )
 AM_CONDITIONAL([ENABLE_MAN], [test "$enable_man" = "yes"])
 
+AC_CACHE_CHECK([for clang],
+        _cv_clang,[
+        AC_TRY_COMPILE([], [
+                #ifdef __clang__
+                #else
+                #error "NOT CLANG"
+                #endif
+                return 0;
+        ],
+        [_cv_clang=yes],
+        [_cv_clang=no],
+        [])
+])
+AM_CONDITIONAL([COMPILER_CLANG], [test "$_cv_clang" = yes])
 
 AC_CHECK_HEADERS([security/pam_appl.h], [],
   [AC_MSG_ERROR([[PAM header files not found, install libpam-dev.]])])
@@ -135,6 +149,10 @@ AC_CONFIG_FILES([tests/credentials/new_-V.cred])
 AC_CONFIG_FILES([tests/credentials/old_credential.cred])
 AC_CONFIG_FILES([tests/credentials/ssh_credential.cred])
 
+# Are we running with clang
+if test "$_cv_clang" = "yes"; then
+   AC_CONFIG_FILES([fuzz/Makefile])
+fi
 AC_OUTPUT
 
 
