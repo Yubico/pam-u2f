@@ -323,3 +323,27 @@ authentication against them is attempted sequentially as they are defined
 in the configuration file of the module. If during an authentication
 attempt a connected device is removed or a new device is plugged in,
 the authentication restarts from the top of the list.
+
+SELinux Note
+------------
+
+Due to an issue with Red Hat Linux, and possibly with other
+distributions that enable SELinux by default, a system configured to
+use pam-u2f may end up in a situation where access to the credentials
+file is denied. If the `nouserok` option is also set, this will result
+in a successful authentication within the module.
+
+In order to correctly update the security context the command
+`fixfiles onboot` should be used on existing installations
+
+Moreover, to allow read access to an authfile the command
+
+[source, bash]
+----
+# chcon -R -t auth_home_t /path/to/authfile
+----
+
+should be used.
+
+For more information see
+https://access.redhat.com/security/cve/CVE-2020-24612[HERE].

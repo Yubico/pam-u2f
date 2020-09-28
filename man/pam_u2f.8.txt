@@ -141,6 +141,9 @@ impossibility of logging into the system. The partition is decrypted
 after login and the mapping file can not be accessed.
 
 == NOTES
+
+*Nodetect*
+
 The "nodetect" option should be used with caution. pam_u2f checks that
 a key configured for the user is inserted before performing the full
 tactile authentication. This detection is done by sending a
@@ -171,6 +174,26 @@ versions of libu2f-host and for hypothetical tokens that do not
 tolerate the double authentication. Detection is performed, and
 likewise "nodetect" honored, regardless of whether "cue" is also
 specified.
+
+*SELinux*
+
+Due to an issue with Red Hat Linux, and possibly with other
+distributions that enable SELinux by default, a system configured to
+use pam-u2f may end up in a situation where access to the credentials
+file is denied. If the `nouserok` option is also set, this will result
+in a successful authentication within the module.
+
+In order to correctly update the security context the command
+*fixfiles onboot* should be used on existing installations
+
+Moreover, to allow read access to an authfile the command
+
+  # chcon -R -t auth_home_t /path/to/authfile
+
+should be used.
+
+For more information see
+https://access.redhat.com/security/cve/CVE-2020-24612.
 
 == BUGS
 Report pam-u2f bugs in the issue tracker: https://github.com/Yubico/pam-u2f/issues
