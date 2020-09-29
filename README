@@ -327,20 +327,22 @@ the authentication restarts from the top of the list.
 SELinux Note
 ------------
 
-Due to an issue with Red Hat Linux, and possibly with other
-distributions that enable SELinux by default, a system configured to
-use pam-u2f may end up in a situation where access to the credentials
-file is denied. If the `nouserok` option is also set, this will result
-in a successful authentication within the module.
+Due to an issue with Fedora Linux, and possibly with other
+distributions that use SELinux, a system configured with pam-u2f may
+end up in a situation where access to the credentials file is denied.
+If the `nouserok` option is also set, this will result in a successful
+authentication within the module, without using the FIDO
+authenticator.
 
 In order to correctly update the security context the command
 `fixfiles onboot` should be used on existing installations
 
-Moreover, to allow read access to an authfile the command
+Moreover, to allow read access to an authfile or directory placed in a
+non-standard location, the command
 
 [source, bash]
 ----
-# chcon -R -t auth_home_t /path/to/authfile
+# chcon -R -t auth_home_t /path/to/target
 ----
 
 should be used.
