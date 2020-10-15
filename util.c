@@ -9,6 +9,7 @@
 #include <openssl/ec.h>
 #include <openssl/obj_mac.h>
 
+#include <limits.h>
 #include <stdlib.h>
 #include <fcntl.h>
 #include <sys/stat.h>
