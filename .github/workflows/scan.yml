@@ -9,7 +9,7 @@ on:
 env:
   SCAN_IMG:
     yubico-yes-docker-local.jfrog.io/static-code-analysis/c:v1
-  COMPILE_DEPS: "libfido2-dev"
+  COMPILE_DEPS: "libfido2-dev xsltproc"
   SECRET: ${{ secrets.ARTIFACTORY_READER_TOKEN }}
 
 jobs:
