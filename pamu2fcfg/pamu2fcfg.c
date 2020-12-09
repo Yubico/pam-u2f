@@ -285,10 +285,18 @@ int main(int argc, char *argv[]) {
     exit(EXIT_FAILURE);
   }
 
-  r = fido_cred_verify(cred);
-  if (r != FIDO_OK) {
-    fprintf(stderr, "error: fido_cred_verify (%d) %s\n", r, fido_strerr(r));
-    exit(EXIT_FAILURE);
+  if (fido_cred_x5c_ptr(cred) == NULL) {
+    r = fido_cred_verify_self(cred);
+    if (r != FIDO_OK) {
+      fprintf(stderr, "error: fido_cred_verify_self (%d) %s\n", r, fido_strerr(r));
+      exit(EXIT_FAILURE);
+    }
+  } else {
+    r = fido_cred_verify(cred);
+    if (r != FIDO_OK) {
+      fprintf(stderr, "error: fido_cred_verify (%d) %s\n", r, fido_strerr(r));
+      exit(EXIT_FAILURE);
+    }
   }
 
   kh = fido_cred_id_ptr(cred);
