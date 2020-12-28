@@ -108,7 +108,7 @@ keyHandles and user keys. The format is
 second_keyHandle,second_public_key:...` the default location of the
 file is $XDG_CONFIG_HOME/Yubico/u2f_keys. If the environment variable
 is not set, $HOME/.config/Yubico/u2f_keys is used. (more on
-<<files,Authorization Mapping Files>>). An individual (per user) file
+<<authMappingFiles,Authorization Mapping Files>>). An individual (per user) file
 may be configured, see <<individualAuth>>.
 
 authpending_file=file::
@@ -200,7 +200,7 @@ FIDO devices. It is not possible to mix native credentials and SSH
 credentials. Once this option is enabled all credentials will be parsed
 as SSH.
 
-[[files]]
+[[authMappingFiles]]
 Authorization Mapping Files
 ---------------------------
 
