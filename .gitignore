@@ -6,6 +6,7 @@
 *~
 *.cred
 .deps
+.dirstamp
 .libs
 ChangeLog
 INSTALL

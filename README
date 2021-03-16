@@ -17,9 +17,14 @@ to achieve portability and ease of use.
 
 In addition, https://developers.yubico.com/libfido2['libfido2'] (>=
 1.3.0) is needed. Versions of this project up to 1.0.8 used
-`libu2f-host` and `libu2f-server`.
+`libu2f-host` and `libu2f-server`. On Ubuntu, the necessary dependencies can be
+installed using
 
-  Ubuntu:  apt install autoconf automake libtool pkg-config libfido2-dev --no-install-recommends
+[source]
+----
+# apt install --no-install-recommends autoconf automake libtool pkg-config \
+    libfido2-dev libpam-dev libssl-dev
+----
 
 If you downloaded a tarball, build it as follows.
 
@@ -46,10 +51,16 @@ This will create a directory 'pam-u2f'. Enter the directory:
 $ cd pam-u2f
 ----
 
-`autoconf`, `automake`, `libtool`, and `libpam` must be installed.
-`AsciiDoc` and `xsltproc` are used to generate the manpages.
+`autoconf`, `automake`, `gengetopt`, `libtool`, and `libpam` must be installed.
+`AsciiDoc` and `xsltproc` are used to generate the manpages. On Ubuntu, the
+necessary dependencies can be installed using
 
-  Ubuntu:  apt install autoconf automake libtool libpam-dev libfido2-dev asciidoc xsltproc libxml2-utils docbook-xml --no-install-recommends
+[source]
+----
+# apt install --no-install-recommends autoconf automake libtool gengetopt \
+    pkg-config libfido2-dev libpam-dev libssl-dev asciidoc xsltproc \
+    libxml2-utils docbook-xml
+----
 
 Generate the build system using:
 
