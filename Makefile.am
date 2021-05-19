@@ -2,6 +2,10 @@
 
 SUBDIRS = . pamu2fcfg tests
 
+if COMPILER_CLANG
+SUBDIRS += fuzz
+endif
+
 ACLOCAL_AMFLAGS = -I m4
 
 AM_CFLAGS = $(CWFLAGS)

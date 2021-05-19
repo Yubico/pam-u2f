@@ -106,6 +106,7 @@ AC_CONFIG_FILES([
   Makefile
   pamu2fcfg/Makefile
   tests/Makefile
+  fuzz/Makefile
 ])
 
 creduser=$(whoami)
@@ -148,11 +149,6 @@ AC_CONFIG_FILES([tests/credentials/new_-V-N.cred])
 AC_CONFIG_FILES([tests/credentials/new_-V.cred])
 AC_CONFIG_FILES([tests/credentials/old_credential.cred])
 AC_CONFIG_FILES([tests/credentials/ssh_credential.cred])
-
-# Are we running with clang
-if test "$_cv_clang" = "yes"; then
-   AC_CONFIG_FILES([fuzz/Makefile])
-fi
 AC_OUTPUT
 
 
