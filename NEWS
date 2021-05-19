@@ -2,6 +2,8 @@ Copyright (c) 2014-2021 Yubico AB - See COPYING
 
 pam-u2f NEWS -- History of user-visible changes.          -*- outline -*-
 
+* Version 1.1.2 (unreleased)
+
 * Version 1.1.1 (released 2021-05-19)
 ** Fix an issue where PIN authentication could be bypassed (CVE-2021-31924).
 ** Fix an issue with nodetect and non-resident credentials.
