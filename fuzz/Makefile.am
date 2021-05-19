@@ -12,3 +12,5 @@ fuzz_format_parsers_LDFLAGS = -Wl,--wrap=strdup -Wl,--wrap=calloc
 fuzz_format_parsers_LDFLAGS+= -fsanitize=fuzzer,address,signed-integer-overflow
 
 bin_PROGRAMS = fuzz_format_parsers
+
+EXTRA_DIST = coverage.sh make_seed.py
