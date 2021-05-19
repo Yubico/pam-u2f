@@ -1401,6 +1401,14 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
           pin = NULL;
         }
         if (r == FIDO_OK) {
+          if (pin_verification == FIDO_OPT_TRUE ||
+              user_verification == FIDO_OPT_TRUE) {
+            r = fido_assert_set_uv(assert, FIDO_OPT_TRUE);
+            if (r != FIDO_OK) {
+              D(cfg->debug_file, "Failed to set UV");
+              goto out;
+            }
+          }
           r = fido_assert_verify(assert, 0, cose_type,
                                  cose_type == COSE_ES256
                                    ? (const void *) es256_pk
