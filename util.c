@@ -1379,8 +1379,13 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
           goto out;
         }
 
-        if (pin_verification == FIDO_OPT_TRUE)
+        if (pin_verification == FIDO_OPT_TRUE) {
           pin = converse(pamh, PAM_PROMPT_ECHO_OFF, "Please enter the PIN: ");
+          if (pin == NULL) {
+            D(cfg->debug_file, "converse() returned NULL");
+            goto out;
+          }
+        }
         if (user_presence == FIDO_OPT_TRUE ||
             user_verification == FIDO_OPT_TRUE) {
           if (cfg->manual == 0 && cfg->cue && !cued) {
