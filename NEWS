@@ -1,8 +1,13 @@
-Copyright (c) 2014-2020 Yubico AB - See COPYING
+Copyright (c) 2014-2021 Yubico AB - See COPYING
 
 pam-u2f NEWS -- History of user-visible changes.          -*- outline -*-
 
-* Version 1.1.1 (unreleased)
+* Version 1.1.1 (released 2021-05-19)
+** Fix an issue where PIN authentication could be bypassed (CVE-2021-31924).
+** Fix an issue with nodetect and non-resident credentials.
+** Fix build issues with musl libc.
+** Add support for self-attestation in pamu2fcfg.
+** Fix minor bugs found by fuzzing.
 
 * Version 1.1.0 (released 2020-09-17)
  ** Add support to FIDO2 (move from libu2f-host+libu2f-server to libfido2).
