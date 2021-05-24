@@ -1,8 +1,9 @@
 Pluggable Authentication Module (PAM) Universal 2nd Factor (U2F)
 ================================================================
 
-image:https://travis-ci.org/Yubico/pam-u2f.svg?branch=master["Build Status", link="https://travis-ci.org/Yubico/pam-u2f"]
-image:https://scan.coverity.com/projects/5711/badge.svg["Coverity Status", link=https://scan.coverity.com/projects/5711]
+image:https://github.com/yubico/pam-u2f/workflows/linux/badge.svg["Linux Build Status (github actions)", link="https://github.com/Yubico/pam-u2f/actions"]
+image:https://github.com/yubico/pam-u2f/workflows/macos/badge.svg["macOS Build Status (github actions)", link="https://github.com/Yubico/pam-u2f/actions"]
+image:https://github.com/yubico/pam-u2f/workflows/fuzzer/badge.svg["Fuzz Status (github actions)", link="https://github.com/Yubico/pam-u2f/actions"]
 
 This module implements PAM over U2F and FIDO2, providing an easy way to integrate the
 YubiKey (or other U2F/FIDO2 compliant authenticators) into your existing
