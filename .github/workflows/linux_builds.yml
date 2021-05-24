@@ -23,6 +23,9 @@ jobs:
       if: ${{ matrix.os == 'ubuntu-18.04' }}
       run: |
         sudo add-apt-repository -y ppa:yubico/stable
+        # FIXME: workaround for libfido2 1.7.0 pkg-config file
+        sudo apt -qq update
+        sudo apt -q install -y libcbor-dev libz-dev
     - name: Dependencies
       env:
         CC: ${{ matrix.cc }}
