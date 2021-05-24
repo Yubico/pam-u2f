@@ -36,13 +36,13 @@ procedure. If no value is specified, the same value used for origin is
 taken ("pam://$HOSTNAME" if also origin is not specified).
 
 *authfile*=_file_::
-Set the location of the file that holds the
-mappings of user names to keyHandles and user keys. The format is
-username:keyHandle1,public_key1:keyHandle2,public_key2:... the default
-location of the file is $XDG_CONFIG_HOME/Yubico/u2f_keys. If the
-environment variable is not set, $HOME/.config/Yubico/u2f_keys is
-used. An individual (per user) file may be configured relative to the
-users' home dirs, i.e. ".ssh/u2f_keys".
+Set the location of the file that holds the mappings of user
+names to keyHandles and user keys. An individual (per user)
+file may be configured relative to the users' home dirs, e.g.
+".ssh/u2f_keys". If not specified, the location defaults to
+$XDG_CONFIG_HOME/Yubico/u2f_keys. If $XDG_CONFIG_HOME is not set,
+$HOME/.config/Yubico/u2f_keys is used. The authfile format is
+username:keyHandle1,public_key1:keyHandle2,public_key2:...
 
 *authpending_file*=_file_::
 Set the location of the file that is used for touch request
