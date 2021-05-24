@@ -19,6 +19,10 @@ jobs:
             cc: clang-10
     steps:
     - uses: actions/checkout@v1
+    - name: Setup
+      if: ${{ matrix.os == 'ubuntu-18.04' }}
+      run: |
+        sudo add-apt-repository -y ppa:yubico/stable
     - name: Dependencies
       env:
         CC: ${{ matrix.cc }}
