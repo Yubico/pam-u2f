@@ -6,5 +6,5 @@ BUILDROOT="$(git rev-parse --show-toplevel)"
 pushd "$BUILDROOT" &>/dev/null
   ./autogen.sh
   ./configure --disable-silent-rules --disable-man
-  make check
+  make -j $(nproc) check
 popd &>/dev/null

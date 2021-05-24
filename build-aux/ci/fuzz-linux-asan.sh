@@ -4,8 +4,8 @@ ${CC} --version
 
 ./autogen.sh
 ./configure --disable-silent-rules --disable-man CFLAGS="-fsanitize=address,signed-integer-overflow"
-make
-make -C fuzz
+make -j $(nproc)
+make -j $(nproc) -C fuzz
 
 curl --retry 4 -s -o corpus.tgz https://storage.googleapis.com/kroppkaka/corpus/pam-u2f.corpus.tgz
 tar xzf corpus.tgz
