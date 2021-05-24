@@ -2,7 +2,7 @@
 
 SUBDIRS = . pamu2fcfg tests
 
-if COMPILER_CLANG
+if WITH_FUZZ
 SUBDIRS += fuzz
 endif
 

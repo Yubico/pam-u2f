@@ -43,7 +43,9 @@ AC_CACHE_CHECK([for clang],
         [_cv_clang=no],
         [])
 ])
-AM_CONDITIONAL([COMPILER_CLANG], [test "$_cv_clang" = yes])
+
+AX_CHECK_LINK_FLAG([-Wl,--wrap=strdup], [has_wrap=yes])
+AM_CONDITIONAL([WITH_FUZZ], [test "$has_wrap" = "yes" -a "$_cv_clang" = "yes"])
 
 AC_CHECK_HEADERS([security/pam_appl.h], [],
   [AC_MSG_ERROR([[PAM header files not found, install libpam-dev.]])])
