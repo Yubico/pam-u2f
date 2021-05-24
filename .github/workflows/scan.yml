@@ -9,7 +9,8 @@ on:
 env:
   SCAN_IMG:
     yubico-yes-docker-local.jfrog.io/static-code-analysis/c:v1
-  COMPILE_DEPS: "libfido2-dev xsltproc"
+  # FIXME: workaround for libfido2 1.7.0 pkg-config file (libcbor-dev, libz-dev)
+  COMPILE_DEPS: "libfido2-dev xsltproc libcbor-dev libz-dev"
   SECRET: ${{ secrets.ARTIFACTORY_READER_TOKEN }}
 
 jobs:
