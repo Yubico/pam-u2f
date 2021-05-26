@@ -150,7 +150,6 @@ static int parse_native_format(const cfg_t *cfg, const char *username,
   unsigned i;
   int retval;
 
-  retval = -2;
   while (fgets(buf, (int) (DEVSIZE * (cfg->max_devs - 1)), opwfile)) {
     char *saveptr = NULL;
     size_t len = strlen(buf);
