@@ -148,7 +148,6 @@ static int parse_native_format(const cfg_t *cfg, const char *username,
 
   char *s_user, *s_token, *s_credential;
   unsigned i;
-  int retval;
 
   while (fgets(buf, (int) (DEVSIZE * (cfg->max_devs - 1)), opwfile)) {
     char *saveptr = NULL;
@@ -163,8 +162,6 @@ static int parse_native_format(const cfg_t *cfg, const char *username,
     if (s_user && strcmp(username, s_user) == 0) {
       if (cfg->debug)
         D(cfg->debug_file, "Matched user: %s", s_user);
-
-      retval = -1; // We found at least one line for the user
 
       // only keep last line for this user
       for (i = 0; i < *n_devs; i++) {
@@ -208,7 +205,7 @@ static int parse_native_format(const cfg_t *cfg, const char *username,
             D(cfg->debug_file,
               "Unable to retrieve keyHandle for device %d", i + 1);
           }
-          return retval;
+          return -1;
         }
 
         if (cfg->debug) {
@@ -223,7 +220,7 @@ static int parse_native_format(const cfg_t *cfg, const char *username,
             D(cfg->debug_file,
               "Unable to allocate memory for keyHandle number %d", i);
           }
-          return retval;
+          return -1;
         }
 
         if (!strcmp(devices[i].keyHandle, "*") && cfg->debug) {
@@ -236,7 +233,7 @@ static int parse_native_format(const cfg_t *cfg, const char *username,
           if (cfg->debug) {
             D(cfg->debug_file, "Unable to retrieve publicKey number %d", i + 1);
           }
-          return retval;
+          return -1;
         }
 
         if (cfg->debug) {
@@ -251,7 +248,7 @@ static int parse_native_format(const cfg_t *cfg, const char *username,
             D(cfg->debug_file,
               "Unable to allocate memory for publicKey number %d", i);
           }
-          return retval;
+          return -1;
         }
 
         s_token = strtok_r(NULL, ",", &credsaveptr);
@@ -276,7 +273,7 @@ static int parse_native_format(const cfg_t *cfg, const char *username,
             D(cfg->debug_file,
               "Unable to allocate memory for COSE type number %d", i);
           }
-          return retval;
+          return -1;
         }
 
         s_token = strtok_r(NULL, ",", &credsaveptr);
@@ -303,7 +300,7 @@ static int parse_native_format(const cfg_t *cfg, const char *username,
             D(cfg->debug_file,
               "Unable to allocate memory for attributes number %d", i);
           }
-          return retval;
+          return -1;
         }
 
         if (devices[i].old_format) {
@@ -315,7 +312,7 @@ static int parse_native_format(const cfg_t *cfg, const char *username,
               D(cfg->debug_file,
                 "Unable to allocate memory for keyHandle number %d", i);
             }
-            return retval;
+            return -1;
           }
         }
 
