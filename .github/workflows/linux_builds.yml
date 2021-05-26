@@ -42,4 +42,4 @@ jobs:
       env:
         CC: ${{ matrix.cc }}
       run: |
-        /bin/bash -eux build-aux/ci/build-linux.sh
+        /bin/bash -eux build-aux/ci/build-linux-${CC%-*}.sh
