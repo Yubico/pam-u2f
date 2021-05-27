@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
   fido_dev_info_t *devlist = NULL;
   fido_dev_t *dev = NULL;
   const fido_dev_info_t *di = NULL;
-  size_t ndevs;
+  size_t ndevs = 0;
   int cose_type;
   fido_opt_t resident_key;
   int user_presence;
@@ -47,8 +47,8 @@ int main(int argc, char *argv[]) {
   char *origin = NULL;
   char *appid = NULL;
   char *user = NULL;
-  char *b64_kh;
-  char *b64_pk;
+  char *b64_kh = NULL;
+  char *b64_pk = NULL;
   struct passwd *passwd;
   const unsigned char *kh = NULL;
   size_t kh_len;
@@ -57,13 +57,15 @@ int main(int argc, char *argv[]) {
   unsigned char userid[32];
   unsigned char challenge[32];
 
+  /* NOTE: initializes args_info. on error, frees args_info and calls exit() */
   if (cmdline_parser(argc, argv, &args_info) != 0)
-    exit(EXIT_FAILURE);
+    goto err;
 
   if (args_info.help_given) {
     cmdline_parser_print_help();
     printf("\nReport bugs at <https://github.com/Yubico/pam-u2f>.\n");
-    exit(EXIT_SUCCESS);
+    exit_code = EXIT_SUCCESS;
+    goto err;
   }
 
   fido_init(args_info.debug_flag ? FIDO_DEBUG : 0);
@@ -71,12 +73,12 @@ int main(int argc, char *argv[]) {
   cred = fido_cred_new();
   if (!cred) {
     fprintf(stderr, "fido_cred_new failed\n");
-    exit(EXIT_FAILURE);
+    goto err;
   }
 
   if (!random_bytes(challenge, sizeof(challenge))) {
     fprintf(stderr, "random_bytes failed\n");
-    exit(EXIT_FAILURE);
+    goto err;
   }
 
   if (args_info.type_given) {
@@ -86,7 +88,7 @@ int main(int argc, char *argv[]) {
       cose_type = COSE_RS256;
     else {
       fprintf(stderr, "Unknown COSE type '%s'.\n", args_info.type_arg);
-      exit(EXIT_FAILURE);
+      goto err;
     }
   } else
     cose_type = COSE_ES256;
@@ -94,14 +96,14 @@ int main(int argc, char *argv[]) {
   r = fido_cred_set_type(cred, cose_type);
   if (r != FIDO_OK) {
     fprintf(stderr, "error: fido_cred_set_type (%d): %s\n", r, fido_strerr(r));
-    exit(EXIT_FAILURE);
+    goto err;
   }
 
   r = fido_cred_set_clientdata_hash(cred, challenge, sizeof(challenge));
   if (r != FIDO_OK) {
     fprintf(stderr, "error: fido_cred_set_clientdata_hash (%d): %s\n", r,
             fido_strerr(r));
-    exit(EXIT_FAILURE);
+    goto err;
   }
 
   if (args_info.origin_given)
@@ -109,12 +111,12 @@ int main(int argc, char *argv[]) {
   else {
     if (!strcpy(buf, PAM_PREFIX)) {
       fprintf(stderr, "strcpy failed\n");
-      exit(EXIT_FAILURE);
+      goto err;
     }
     if (gethostname(buf + strlen(PAM_PREFIX), BUFSIZE - strlen(PAM_PREFIX)) ==
         -1) {
       perror("gethostname");
-      exit(EXIT_FAILURE);
+      goto err;
     }
     origin = buf;
   }
@@ -134,7 +136,7 @@ int main(int argc, char *argv[]) {
   r = fido_cred_set_rp(cred, origin, appid);
   if (r != FIDO_OK) {
     fprintf(stderr, "error: fido_cred_set_rp (%d) %s\n", r, fido_strerr(r));
-    exit(EXIT_FAILURE);
+    goto err;
   }
 
   if (args_info.username_given)
@@ -143,14 +145,14 @@ int main(int argc, char *argv[]) {
     passwd = getpwuid(getuid());
     if (passwd == NULL) {
       perror("getpwuid");
-      exit(EXIT_FAILURE);
+      goto err;
     }
     user = passwd->pw_name;
   }
 
   if (!random_bytes(userid, sizeof(userid))) {
     fprintf(stderr, "random_bytes failed\n");
-    exit(EXIT_FAILURE);
+    goto err;
   }
 
   if (args_info.verbose_given) {
@@ -164,7 +166,7 @@ int main(int argc, char *argv[]) {
   r = fido_cred_set_user(cred, userid, sizeof(userid), user, user, NULL);
   if (r != FIDO_OK) {
     fprintf(stderr, "error: fido_cred_set_user (%d) %s\n", r, fido_strerr(r));
-    exit(EXIT_FAILURE);
+    goto err;
   }
 
   if (args_info.resident_given)
@@ -190,26 +192,26 @@ int main(int argc, char *argv[]) {
   r = fido_cred_set_rk(cred, resident_key);
   if (r != FIDO_OK) {
     fprintf(stderr, "error: fido_cred_set_rk (%d) %s\n", r, fido_strerr(r));
-    exit(EXIT_FAILURE);
+    goto err;
   }
 
   r = fido_cred_set_uv(cred, FIDO_OPT_OMIT);
   if (r != FIDO_OK) {
     fprintf(stderr, "error: fido_cred_set_uv (%d) %s\n", r, fido_strerr(r));
-    exit(EXIT_FAILURE);
+    goto err;
   }
 
   devlist = fido_dev_info_new(64);
   if (!devlist) {
     fprintf(stderr, "error: fido_dev_info_new failed\n");
-    exit(EXIT_FAILURE);
+    goto err;
   }
 
   r = fido_dev_info_manifest(devlist, 64, &ndevs);
   if (r != FIDO_OK) {
     fprintf(stderr, "Unable to discover device(s), %s (%d)\n", fido_strerr(r),
             r);
-    exit(EXIT_FAILURE);
+    goto err;
   }
 
   if (ndevs == 0) {
@@ -225,7 +227,7 @@ int main(int argc, char *argv[]) {
       if (r != FIDO_OK) {
         fprintf(stderr, "\nUnable to discover device(s), %s (%d)",
                 fido_strerr(r), r);
-        exit(EXIT_FAILURE);
+        goto err;
       }
 
       if (ndevs != 0) {
@@ -238,26 +240,26 @@ int main(int argc, char *argv[]) {
   if (ndevs == 0) {
     fprintf(stderr, "\rNo device found. Aborting.                              "
                     "           \n");
-    exit(EXIT_FAILURE);
+    goto err;
   }
 
   /* XXX loop over every device? */
   dev = fido_dev_new();
   if (!dev) {
     fprintf(stderr, "fido_dev_new failed\n");
-    exit(EXIT_FAILURE);
+    goto err;
   }
 
   di = fido_dev_info_ptr(devlist, 0);
   if (!di) {
     fprintf(stderr, "error: fido_dev_info_ptr returned NULL\n");
-    exit(EXIT_FAILURE);
+    goto err;
   }
 
   r = fido_dev_open(dev, fido_dev_info_path(di));
   if (r != FIDO_OK) {
     fprintf(stderr, "error: fido_dev_open (%d) %s\n", r, fido_strerr(r));
-    exit(EXIT_FAILURE);
+    goto err;
   }
 
   r = fido_dev_make_cred(dev, cred, NULL);
@@ -266,11 +268,11 @@ int main(int argc, char *argv[]) {
                  "Enter PIN for %s: ", fido_dev_info_path(di));
     if (n < 0 || (size_t) n >= sizeof(prompt)) {
       fprintf(stderr, "error: snprintf prompt");
-      exit(EXIT_FAILURE);
+      goto err;
     }
     if (!readpassphrase(prompt, pin, sizeof(pin), RPP_ECHO_OFF)) {
       fprintf(stderr, "error: failed to read pin");
-      exit(EXIT_FAILURE);
+      goto err;
     }
     r = fido_dev_make_cred(dev, cred, pin);
   }
@@ -278,55 +280,55 @@ int main(int argc, char *argv[]) {
 
   if (r != FIDO_OK) {
     fprintf(stderr, "error: fido_dev_make_cred (%d) %s\n", r, fido_strerr(r));
-    exit(EXIT_FAILURE);
+    goto err;
   }
 
   if (fido_cred_x5c_ptr(cred) == NULL) {
     r = fido_cred_verify_self(cred);
     if (r != FIDO_OK) {
       fprintf(stderr, "error: fido_cred_verify_self (%d) %s\n", r, fido_strerr(r));
-      exit(EXIT_FAILURE);
+      goto err;
     }
   } else {
     r = fido_cred_verify(cred);
     if (r != FIDO_OK) {
       fprintf(stderr, "error: fido_cred_verify (%d) %s\n", r, fido_strerr(r));
-      exit(EXIT_FAILURE);
+      goto err;
     }
   }
 
   kh = fido_cred_id_ptr(cred);
   if (!kh) {
     fprintf(stderr, "error: fido_cred_id_ptr returned NULL\n");
-    exit(EXIT_FAILURE);
+    goto err;
   }
 
   kh_len = fido_cred_id_len(cred);
   if (kh_len == 0) {
     fprintf(stderr, "error: fido_cred_id_len returned 0\n");
-    exit(EXIT_FAILURE);
+    goto err;
   }
 
   pk = (const unsigned char *) fido_cred_pubkey_ptr(cred);
   if (!pk) {
     fprintf(stderr, "error: fido_cred_pubkey_ptr returned NULL\n");
-    exit(EXIT_FAILURE);
+    goto err;
   }
 
   pk_len = fido_cred_pubkey_len(cred);
   if (pk_len == 0) {
     fprintf(stderr, "error: fido_cred_pubkey_len returned 0\n");
-    exit(EXIT_FAILURE);
+    goto err;
   }
 
   if (!b64_encode(kh, kh_len, &b64_kh)) {
     fprintf(stderr, "error: failed to encode key handle\n");
-    exit(EXIT_FAILURE);
+    goto err;
   }
 
   if (!b64_encode(pk, pk_len, &b64_pk)) {
     fprintf(stderr, "error: failed to encode public key\n");
-    exit(EXIT_FAILURE);
+    goto err;
   }
 
   if (!args_info.nouser_given)
@@ -340,6 +342,7 @@ int main(int argc, char *argv[]) {
 
   exit_code = EXIT_SUCCESS;
 
+err:
   fido_dev_info_free(&devlist, ndevs);
   fido_cred_free(&cred);
   fido_dev_free(&dev);
