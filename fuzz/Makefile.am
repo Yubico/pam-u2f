@@ -1,6 +1,6 @@
 # Copyright (C) 2020 Yubico AB - See COPYING
 
-AM_CFLAG = ${(WARN_FLAGS)
+AM_CFLAGS = $(CWFLAGS) $(CSFLAGS)
 AM_CPPFLAGS = $(LIBFIDO2_CFLAGS) $(LIBCRYPTO_CFLAGS) -I$(srcdir)/..
 AM_CPPFLAGS+=-fsanitize=fuzzer,address,signed-integer-overflow 
 AM_CPPFLAGS+=-fno-sanitize-recover=all
