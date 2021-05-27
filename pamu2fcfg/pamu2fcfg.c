@@ -343,6 +343,8 @@ int main(int argc, char *argv[]) {
   exit_code = EXIT_SUCCESS;
 
 err:
+  if (dev != NULL)
+    fido_dev_close(dev);
   fido_dev_info_free(&devlist, ndevs);
   fido_cred_free(&cred);
   fido_dev_free(&dev);
