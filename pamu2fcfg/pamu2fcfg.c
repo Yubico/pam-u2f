@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2018 Yubico AB - See COPYING
+ * Copyright (C) 2014-2021 Yubico AB - See COPYING
  */
 
 #define BUFSIZE 1024
