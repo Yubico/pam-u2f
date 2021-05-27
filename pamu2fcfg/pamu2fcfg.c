@@ -32,8 +32,6 @@ int main(int argc, char *argv[]) {
   char buf[BUFSIZE];
   char prompt[BUFSIZE];
   char pin[BUFSIZE];
-  char *p;
-  char *response;
   fido_cred_t *cred = NULL;
   fido_dev_info_t *devlist = NULL;
   fido_dev_t *dev = NULL;
@@ -59,7 +57,6 @@ int main(int argc, char *argv[]) {
   unsigned char userid[32];
   unsigned char challenge[32];
   unsigned i;
-  unsigned max_index = 0;
 
   if (cmdline_parser(argc, argv, &args_info) != 0)
     exit(EXIT_FAILURE);
