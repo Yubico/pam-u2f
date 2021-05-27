@@ -56,7 +56,6 @@ int main(int argc, char *argv[]) {
   size_t pk_len;
   unsigned char userid[32];
   unsigned char challenge[32];
-  unsigned i;
 
   if (cmdline_parser(argc, argv, &args_info) != 0)
     exit(EXIT_FAILURE);
@@ -214,7 +213,7 @@ int main(int argc, char *argv[]) {
   }
 
   if (ndevs == 0) {
-    for (i = 0; i < TIMEOUT; i += FREQUENCY) {
+    for (int i = 0; i < TIMEOUT; i += FREQUENCY) {
       fprintf(stderr,
               "\rNo U2F device available, please insert one now, you "
               "have %2d seconds",
