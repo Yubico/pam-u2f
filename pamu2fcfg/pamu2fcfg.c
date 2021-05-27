@@ -352,5 +352,7 @@ err:
   free(b64_kh);
   free(b64_pk);
 
+  cmdline_parser_free(&args_info);
+
   exit(exit_code);
 }
