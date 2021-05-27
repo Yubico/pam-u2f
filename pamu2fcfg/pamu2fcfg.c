@@ -26,6 +26,70 @@
 #include <readpassphrase.h>
 #endif
 
+static int print_authfile_line(const struct gengetopt_args_info *const args,
+                               const fido_cred_t *const cred) {
+  const unsigned char *kh = NULL;
+  const unsigned char *pk = NULL;
+  const char *user = NULL;
+  char *b64_kh = NULL;
+  char *b64_pk = NULL;
+  size_t kh_len;
+  size_t pk_len;
+  int ok = -1;
+
+  if ((kh = fido_cred_id_ptr(cred)) == NULL) {
+    fprintf(stderr, "error: fido_cred_id_ptr returned NULL\n");
+    goto err;
+  }
+
+  if ((kh_len = fido_cred_id_len(cred)) == 0) {
+    fprintf(stderr, "error: fido_cred_id_len returned 0\n");
+    goto err;
+  }
+
+  if ((pk = fido_cred_pubkey_ptr(cred)) == NULL) {
+    fprintf(stderr, "error: fido_cred_pubkey_ptr returned NULL\n");
+    goto err;
+  }
+
+  if ((pk_len = fido_cred_pubkey_len(cred)) == 0) {
+    fprintf(stderr, "error: fido_cred_pubkey_len returned 0\n");
+    goto err;
+  }
+
+  if (!b64_encode(kh, kh_len, &b64_kh)) {
+    fprintf(stderr, "error: failed to encode key handle\n");
+    goto err;
+  }
+
+  if (!b64_encode(pk, pk_len, &b64_pk)) {
+    fprintf(stderr, "error: failed to encode public key\n");
+    goto err;
+  }
+
+  if (!args->nouser_given) {
+    if ((user = fido_cred_user_name(cred)) == NULL) {
+      fprintf(stderr, "error: fido_cred_user_name returned NULL\n");
+      goto err;
+    }
+    printf("%s", user);
+  }
+
+  printf(":%s,%s,%s,%s%s%s", args->resident_given ? "*" : b64_kh, b64_pk,
+         fido_cred_type(cred) == COSE_ES256 ? "es256" : "rs256",
+         !args->no_user_presence_given ? "+presence" : "",
+         args->user_verification_given ? "+verification" : "",
+         args->pin_verification_given ? "+pin" : "");
+
+  ok = 0;
+
+err:
+  free(b64_kh);
+  free(b64_pk);
+
+  return ok;
+}
+
 int main(int argc, char *argv[]) {
   int exit_code = EXIT_FAILURE;
   struct gengetopt_args_info args_info;
@@ -39,21 +103,12 @@ int main(int argc, char *argv[]) {
   size_t ndevs = 0;
   int cose_type;
   fido_opt_t resident_key;
-  int user_presence;
-  int user_verification;
-  int pin_verification;
   int r;
   int n;
   char *origin = NULL;
   char *appid = NULL;
   char *user = NULL;
-  char *b64_kh = NULL;
-  char *b64_pk = NULL;
   struct passwd *passwd;
-  const unsigned char *kh = NULL;
-  size_t kh_len;
-  const unsigned char *pk = NULL;
-  size_t pk_len;
   unsigned char userid[32];
   unsigned char challenge[32];
 
@@ -174,21 +229,6 @@ int main(int argc, char *argv[]) {
   else
     resident_key = FIDO_OPT_OMIT;
 
-  if (args_info.no_user_presence_given)
-    user_presence = 0;
-  else
-    user_presence = 1;
-
-  if (args_info.user_verification_given)
-    user_verification = 1;
-  else
-    user_verification = 0;
-
-  if (args_info.pin_verification_given)
-    pin_verification = 1;
-  else
-    pin_verification = 0;
-
   r = fido_cred_set_rk(cred, resident_key);
   if (r != FIDO_OK) {
     fprintf(stderr, "error: fido_cred_set_rk (%d) %s\n", r, fido_strerr(r));
@@ -297,48 +337,8 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  kh = fido_cred_id_ptr(cred);
-  if (!kh) {
-    fprintf(stderr, "error: fido_cred_id_ptr returned NULL\n");
+  if (print_authfile_line(&args_info, cred) != 0)
     goto err;
-  }
-
-  kh_len = fido_cred_id_len(cred);
-  if (kh_len == 0) {
-    fprintf(stderr, "error: fido_cred_id_len returned 0\n");
-    goto err;
-  }
-
-  pk = (const unsigned char *) fido_cred_pubkey_ptr(cred);
-  if (!pk) {
-    fprintf(stderr, "error: fido_cred_pubkey_ptr returned NULL\n");
-    goto err;
-  }
-
-  pk_len = fido_cred_pubkey_len(cred);
-  if (pk_len == 0) {
-    fprintf(stderr, "error: fido_cred_pubkey_len returned 0\n");
-    goto err;
-  }
-
-  if (!b64_encode(kh, kh_len, &b64_kh)) {
-    fprintf(stderr, "error: failed to encode key handle\n");
-    goto err;
-  }
-
-  if (!b64_encode(pk, pk_len, &b64_pk)) {
-    fprintf(stderr, "error: failed to encode public key\n");
-    goto err;
-  }
-
-  if (!args_info.nouser_given)
-    printf("%s", user);
-
-  printf(":%s,%s,%s,%s%s%s", resident_key == FIDO_OPT_TRUE ? "*" : b64_kh,
-         b64_pk, cose_type == COSE_ES256 ? "es256" : "rs256",
-         user_presence ? "+presence" : "",
-         user_verification ? "+verification" : "",
-         pin_verification ? "+pin" : "");
 
   exit_code = EXIT_SUCCESS;
 
@@ -348,9 +348,6 @@ err:
   fido_dev_info_free(&devlist, ndevs);
   fido_cred_free(&cred);
   fido_dev_free(&dev);
-
-  free(b64_kh);
-  free(b64_pk);
 
   cmdline_parser_free(&args_info);
 
