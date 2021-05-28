@@ -26,6 +26,30 @@
 #include <readpassphrase.h>
 #endif
 
+static int verify_cred(const fido_cred_t *const cred) {
+  int r;
+
+  if (cred == NULL) {
+    fprintf(stderr, "%s: args\n", __func__);
+    return -1;
+  }
+
+  if (fido_cred_x5c_ptr(cred) == NULL) {
+    if ((r = fido_cred_verify_self(cred)) != FIDO_OK) {
+      fprintf(stderr, "error: fido_cred_verify_self (%d) %s\n", r,
+              fido_strerr(r));
+      return -1;
+    }
+  } else {
+    if ((r = fido_cred_verify(cred)) != FIDO_OK) {
+      fprintf(stderr, "error: fido_cred_verify (%d) %s\n", r, fido_strerr(r));
+      return -1;
+    }
+  }
+
+  return 0;
+}
+
 static int print_authfile_line(const struct gengetopt_args_info *const args,
                                const fido_cred_t *const cred) {
   const unsigned char *kh = NULL;
@@ -323,21 +347,7 @@ int main(int argc, char *argv[]) {
     goto err;
   }
 
-  if (fido_cred_x5c_ptr(cred) == NULL) {
-    r = fido_cred_verify_self(cred);
-    if (r != FIDO_OK) {
-      fprintf(stderr, "error: fido_cred_verify_self (%d) %s\n", r, fido_strerr(r));
-      goto err;
-    }
-  } else {
-    r = fido_cred_verify(cred);
-    if (r != FIDO_OK) {
-      fprintf(stderr, "error: fido_cred_verify (%d) %s\n", r, fido_strerr(r));
-      goto err;
-    }
-  }
-
-  if (print_authfile_line(&args_info, cred) != 0)
+  if (verify_cred(cred) != 0 || print_authfile_line(&args_info, cred) != 0)
     goto err;
 
   exit_code = EXIT_SUCCESS;
