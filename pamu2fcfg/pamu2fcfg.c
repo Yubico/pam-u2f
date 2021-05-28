@@ -26,6 +26,41 @@
 #include <readpassphrase.h>
 #endif
 
+static int make_cred(const char *path, fido_dev_t *dev, fido_cred_t *cred) {
+  char prompt[BUFSIZE];
+  char pin[BUFSIZE];
+  int n;
+  int r;
+
+  if (path == NULL || dev == NULL || cred == NULL) {
+    fprintf(stderr, "%s: args\n", __func__);
+    return -1;
+  }
+
+  r = fido_dev_make_cred(dev, cred, NULL);
+  if (r == FIDO_ERR_PIN_REQUIRED) {
+    n = snprintf(prompt, sizeof(prompt), "Enter PIN for %s: ", path);
+    if (n < 0 || (size_t) n >= sizeof(prompt)) {
+      fprintf(stderr, "error: snprintf prompt");
+      return -1;
+    }
+    if (!readpassphrase(prompt, pin, sizeof(pin), RPP_ECHO_OFF)) {
+      fprintf(stderr, "error: failed to read pin");
+      explicit_bzero(pin, sizeof(pin));
+      return -1;
+    }
+    r = fido_dev_make_cred(dev, cred, pin);
+  }
+  explicit_bzero(pin, sizeof(pin));
+
+  if (r != FIDO_OK) {
+    fprintf(stderr, "error: fido_dev_make_cred (%d) %s\n", r, fido_strerr(r));
+    return -1;
+  }
+
+  return 0;
+}
+
 static int verify_cred(const fido_cred_t *const cred) {
   int r;
 
@@ -118,17 +153,15 @@ int main(int argc, char *argv[]) {
   int exit_code = EXIT_FAILURE;
   struct gengetopt_args_info args_info;
   char buf[BUFSIZE];
-  char prompt[BUFSIZE];
-  char pin[BUFSIZE];
   fido_cred_t *cred = NULL;
   fido_dev_info_t *devlist = NULL;
   fido_dev_t *dev = NULL;
   const fido_dev_info_t *di = NULL;
+  const char *path = NULL;
   size_t ndevs = 0;
   int cose_type;
   fido_opt_t resident_key;
   int r;
-  int n;
   char *origin = NULL;
   char *appid = NULL;
   char *user = NULL;
@@ -320,34 +353,19 @@ int main(int argc, char *argv[]) {
     goto err;
   }
 
-  r = fido_dev_open(dev, fido_dev_info_path(di));
+  if ((path = fido_dev_info_path(di)) == NULL) {
+    fprintf(stderr, "error: fido_dev_path returned NULL\n");
+    goto err;
+  }
+
+  r = fido_dev_open(dev, path);
   if (r != FIDO_OK) {
     fprintf(stderr, "error: fido_dev_open (%d) %s\n", r, fido_strerr(r));
     goto err;
   }
 
-  r = fido_dev_make_cred(dev, cred, NULL);
-  if (r == FIDO_ERR_PIN_REQUIRED) {
-    n = snprintf(prompt, sizeof(prompt),
-                 "Enter PIN for %s: ", fido_dev_info_path(di));
-    if (n < 0 || (size_t) n >= sizeof(prompt)) {
-      fprintf(stderr, "error: snprintf prompt");
-      goto err;
-    }
-    if (!readpassphrase(prompt, pin, sizeof(pin), RPP_ECHO_OFF)) {
-      fprintf(stderr, "error: failed to read pin");
-      goto err;
-    }
-    r = fido_dev_make_cred(dev, cred, pin);
-  }
-  explicit_bzero(pin, sizeof(pin));
-
-  if (r != FIDO_OK) {
-    fprintf(stderr, "error: fido_dev_make_cred (%d) %s\n", r, fido_strerr(r));
-    goto err;
-  }
-
-  if (verify_cred(cred) != 0 || print_authfile_line(&args_info, cred) != 0)
+  if (make_cred(path, dev, cred) != 0 || verify_cred(cred) != 0 ||
+      print_authfile_line(&args_info, cred) != 0)
     goto err;
 
   exit_code = EXIT_SUCCESS;
