@@ -26,6 +26,13 @@ installed using
 # apt install --no-install-recommends autoconf automake libtool pkg-config \
     libfido2-dev libpam-dev libssl-dev
 ----
+To install dependencies on Fedora:
+[source]
+----
+# dnf -y install pam-devel libfido2 libfido2-devel asciidoc gengetopt \
+    openssl-devel
+----
+
 
 If you downloaded a tarball, build it as follows.
 
