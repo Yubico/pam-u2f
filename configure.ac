@@ -85,24 +85,27 @@ AC_CHECK_FUNCS([secure_getenv strlcpy readpassphrase explicit_bzero memset_s])
 CFLAGS=$am_save_CFLAGS
 LIBS=$am_save_LIBS
 
+# Make clang emit errors for unknown warnings to make the AX_CHECK_COMPILE_FLAG
+# macro behave as intended, excluding unsupported flags.
+AX_CHECK_COMPILE_FLAG([-Werror=unknown-warning-option], [check_extra_flags="-Werror=unknown-warning-option"])
 
 AC_ARG_VAR([CWFLAGS], [Warning flags])
-AX_CHECK_COMPILE_FLAG([-Wall], [CWFLAGS="-Wall"])
-AX_CHECK_COMPILE_FLAG([-Wextra], [CWFLAGS="$CWFLAGS -Wextra"])
-AX_CHECK_COMPILE_FLAG([-Wconversion], [CWFLAGS="$CWFLAGS -Wconversion"])
+AX_CHECK_COMPILE_FLAG([-Wall], [CWFLAGS="-Wall"], [], [$check_extra_flags])
+AX_CHECK_COMPILE_FLAG([-Wextra], [CWFLAGS="$CWFLAGS -Wextra"], [], [$check_extra_flags])
+AX_CHECK_COMPILE_FLAG([-Wconversion], [CWFLAGS="$CWFLAGS -Wconversion"], [], [$check_extra_flags])
 # Because pam headers are doing sign-conversion, see PAM_MODUTIL_DEF_PRIVS in pam_modutil.h
-AX_CHECK_COMPILE_FLAG([-Wconversion], [CWFLAGS="$CWFLAGS -Wno-sign-conversion"])
-AX_CHECK_COMPILE_FLAG([-Wpedantic], [CWFLAGS="$CWFLAGS -Wpedantic"])
-AX_CHECK_COMPILE_FLAG([-Wformat=2], [CWFLAGS="$CWFLAGS -Wformat=2"])
-AX_CHECK_COMPILE_FLAG([-Wstrict-prototypes], [CWFLAGS="$CWFLAGS -Wstrict-prototypes"])
-AX_CHECK_COMPILE_FLAG([-Wmissing-declarations], [CWFLAGS="$CWFLAGS -Wmissing-declarations"])
-AX_CHECK_COMPILE_FLAG([-Wmissing-prototypes], [CWFLAGS="$CWFLAGS -Wmissing-prototypes"])
-AX_CHECK_COMPILE_FLAG([-Wnull-dereference], [CWFLAGS="$CWFLAGS -Wnull-dereference"])
-AX_CHECK_COMPILE_FLAG([-Wshadow], [CWFLAGS="$CWFLAGS -Wshadow"])
-AX_CHECK_COMPILE_FLAG([-Wpointer-arith], [CWFLAGS="$CWFLAGS -Wpointer-arith"])
+AX_CHECK_COMPILE_FLAG([-Wconversion], [CWFLAGS="$CWFLAGS -Wno-sign-conversion"], [], [$check_extra_flags])
+AX_CHECK_COMPILE_FLAG([-Wpedantic], [CWFLAGS="$CWFLAGS -Wpedantic"], [], [$check_extra_flags])
+AX_CHECK_COMPILE_FLAG([-Wformat=2], [CWFLAGS="$CWFLAGS -Wformat=2"], [], [$check_extra_flags])
+AX_CHECK_COMPILE_FLAG([-Wstrict-prototypes], [CWFLAGS="$CWFLAGS -Wstrict-prototypes"], [], [$check_extra_flags])
+AX_CHECK_COMPILE_FLAG([-Wmissing-declarations], [CWFLAGS="$CWFLAGS -Wmissing-declarations"], [], [$check_extra_flags])
+AX_CHECK_COMPILE_FLAG([-Wmissing-prototypes], [CWFLAGS="$CWFLAGS -Wmissing-prototypes"], [], [$check_extra_flags])
+AX_CHECK_COMPILE_FLAG([-Wnull-dereference], [CWFLAGS="$CWFLAGS -Wnull-dereference"], [], [$check_extra_flags])
+AX_CHECK_COMPILE_FLAG([-Wshadow], [CWFLAGS="$CWFLAGS -Wshadow"], [], [$check_extra_flags])
+AX_CHECK_COMPILE_FLAG([-Wpointer-arith], [CWFLAGS="$CWFLAGS -Wpointer-arith"], [], [$check_extra_flags])
 
 AC_ARG_VAR([CSFLAGS], [Warning suppression flags])
-AX_CHECK_COMPILE_FLAG([-Wno-unused-but-set-variable], [CSFLAGS="-Wno-unused-but-set-variable"])
+AX_CHECK_COMPILE_FLAG([-Wno-unused-but-set-variable], [CSFLAGS="-Wno-unused-but-set-variable"], [], [$check_extra_flags])
 
 AC_CONFIG_FILES([
   Makefile
