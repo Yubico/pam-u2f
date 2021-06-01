@@ -26,6 +26,139 @@
 #include <readpassphrase.h>
 #endif
 
+static fido_cred_t *prepare_cred(const struct gengetopt_args_info *const args) {
+  fido_cred_t *cred = NULL;
+  fido_opt_t resident_key;
+  char *origin = NULL;
+  char *appid = NULL;
+  char *user = NULL;
+  struct passwd *passwd;
+  unsigned char userid[32];
+  unsigned char cdh[32];
+  char buf[BUFSIZE];
+  int cose_type;
+  int ok = -1;
+  int r;
+
+  if ((cred = fido_cred_new()) == NULL) {
+    fprintf(stderr, "fido_cred_new failed\n");
+    goto err;
+  }
+
+  cose_type = COSE_ES256; /* default */
+  if (args->type_given) {
+    if (!strcasecmp(args->type_arg, "es256")) {
+      cose_type = COSE_ES256;
+    } else if (!strcasecmp(args->type_arg, "rs256")) {
+      cose_type = COSE_RS256;
+    } else {
+      fprintf(stderr, "Unknown COSE type '%s'.\n", args->type_arg);
+      goto err;
+    }
+  }
+
+  if ((r = fido_cred_set_type(cred, cose_type)) != FIDO_OK) {
+    fprintf(stderr, "error: fido_cred_set_type (%d): %s\n", r, fido_strerr(r));
+    goto err;
+  }
+
+  if (!random_bytes(cdh, sizeof(cdh))) {
+    fprintf(stderr, "random_bytes failed\n");
+    goto err;
+  }
+
+  if ((r = fido_cred_set_clientdata_hash(cred, cdh, sizeof(cdh))) != FIDO_OK) {
+    fprintf(stderr, "error: fido_cred_set_clientdata_hash (%d): %s\n", r,
+            fido_strerr(r));
+    goto err;
+  }
+
+  if (args->origin_given) {
+    origin = args->origin_arg;
+  } else {
+    if (!strcpy(buf, PAM_PREFIX)) {
+      fprintf(stderr, "strcpy failed\n");
+      goto err;
+    }
+    if (gethostname(buf + strlen(PAM_PREFIX), BUFSIZE - strlen(PAM_PREFIX)) ==
+        -1) {
+      perror("gethostname");
+      goto err;
+    }
+    origin = buf;
+  }
+
+  if (args->appid_given) {
+    appid = args->appid_arg;
+  } else {
+    appid = origin;
+  }
+
+  if (args->verbose_given) {
+    fprintf(stderr, "Setting origin to %s\n", origin);
+    fprintf(stderr, "Setting appid to %s\n", appid);
+  }
+
+  if ((r = fido_cred_set_rp(cred, origin, appid)) != FIDO_OK) {
+    fprintf(stderr, "error: fido_cred_set_rp (%d) %s\n", r, fido_strerr(r));
+    goto err;
+  }
+
+  if (args->username_given) {
+    user = args->username_arg;
+  } else {
+    if ((passwd = getpwuid(getuid())) == NULL) {
+      perror("getpwuid");
+      goto err;
+    }
+    user = passwd->pw_name;
+  }
+
+  if (!random_bytes(userid, sizeof(userid))) {
+    fprintf(stderr, "random_bytes failed\n");
+    goto err;
+  }
+
+  if (args->verbose_given) {
+    fprintf(stderr, "Setting user to %s\n", user);
+    fprintf(stderr, "Setting user id to ");
+    for (size_t i = 0; i < sizeof(userid); i++)
+      fprintf(stderr, "%02x", userid[i]);
+    fprintf(stderr, "\n");
+  }
+
+  if ((r = fido_cred_set_user(cred, userid, sizeof(userid), user, user,
+                              NULL)) != FIDO_OK) {
+    fprintf(stderr, "error: fido_cred_set_user (%d) %s\n", r, fido_strerr(r));
+    goto err;
+  }
+
+  if (args->resident_given) {
+    resident_key = FIDO_OPT_TRUE;
+  } else {
+    resident_key = FIDO_OPT_OMIT;
+  }
+
+  if ((r = fido_cred_set_rk(cred, resident_key)) != FIDO_OK) {
+    fprintf(stderr, "error: fido_cred_set_rk (%d) %s\n", r, fido_strerr(r));
+    goto err;
+  }
+
+  if ((r = fido_cred_set_uv(cred, FIDO_OPT_OMIT)) != FIDO_OK) {
+    fprintf(stderr, "error: fido_cred_set_uv (%d) %s\n", r, fido_strerr(r));
+    goto err;
+  }
+
+  ok = 0;
+
+err:
+  if (ok != 0) {
+    fido_cred_free(&cred);
+  }
+
+  return cred;
+}
+
 static int make_cred(const char *path, fido_dev_t *dev, fido_cred_t *cred) {
   char prompt[BUFSIZE];
   char pin[BUFSIZE];
@@ -152,22 +285,13 @@ err:
 int main(int argc, char *argv[]) {
   int exit_code = EXIT_FAILURE;
   struct gengetopt_args_info args_info;
-  char buf[BUFSIZE];
   fido_cred_t *cred = NULL;
   fido_dev_info_t *devlist = NULL;
   fido_dev_t *dev = NULL;
   const fido_dev_info_t *di = NULL;
   const char *path = NULL;
   size_t ndevs = 0;
-  int cose_type;
-  fido_opt_t resident_key;
   int r;
-  char *origin = NULL;
-  char *appid = NULL;
-  char *user = NULL;
-  struct passwd *passwd;
-  unsigned char userid[32];
-  unsigned char challenge[32];
 
   /* NOTE: initializes args_info. on error, frees args_info and calls exit() */
   if (cmdline_parser(argc, argv, &args_info) != 0)
@@ -182,121 +306,8 @@ int main(int argc, char *argv[]) {
 
   fido_init(args_info.debug_flag ? FIDO_DEBUG : 0);
 
-  cred = fido_cred_new();
-  if (!cred) {
-    fprintf(stderr, "fido_cred_new failed\n");
+  if ((cred = prepare_cred(&args_info)) == NULL)
     goto err;
-  }
-
-  if (!random_bytes(challenge, sizeof(challenge))) {
-    fprintf(stderr, "random_bytes failed\n");
-    goto err;
-  }
-
-  if (args_info.type_given) {
-    if (!strcasecmp(args_info.type_arg, "es256"))
-      cose_type = COSE_ES256;
-    else if (!strcasecmp(args_info.type_arg, "rs256"))
-      cose_type = COSE_RS256;
-    else {
-      fprintf(stderr, "Unknown COSE type '%s'.\n", args_info.type_arg);
-      goto err;
-    }
-  } else
-    cose_type = COSE_ES256;
-
-  r = fido_cred_set_type(cred, cose_type);
-  if (r != FIDO_OK) {
-    fprintf(stderr, "error: fido_cred_set_type (%d): %s\n", r, fido_strerr(r));
-    goto err;
-  }
-
-  r = fido_cred_set_clientdata_hash(cred, challenge, sizeof(challenge));
-  if (r != FIDO_OK) {
-    fprintf(stderr, "error: fido_cred_set_clientdata_hash (%d): %s\n", r,
-            fido_strerr(r));
-    goto err;
-  }
-
-  if (args_info.origin_given)
-    origin = args_info.origin_arg;
-  else {
-    if (!strcpy(buf, PAM_PREFIX)) {
-      fprintf(stderr, "strcpy failed\n");
-      goto err;
-    }
-    if (gethostname(buf + strlen(PAM_PREFIX), BUFSIZE - strlen(PAM_PREFIX)) ==
-        -1) {
-      perror("gethostname");
-      goto err;
-    }
-    origin = buf;
-  }
-
-  if (args_info.verbose_given)
-    fprintf(stderr, "Setting origin to %s\n", origin);
-
-  if (args_info.appid_given)
-    appid = args_info.appid_arg;
-  else {
-    appid = origin;
-  }
-
-  if (args_info.verbose_given)
-    fprintf(stderr, "Setting appid to %s\n", appid);
-
-  r = fido_cred_set_rp(cred, origin, appid);
-  if (r != FIDO_OK) {
-    fprintf(stderr, "error: fido_cred_set_rp (%d) %s\n", r, fido_strerr(r));
-    goto err;
-  }
-
-  if (args_info.username_given)
-    user = args_info.username_arg;
-  else {
-    passwd = getpwuid(getuid());
-    if (passwd == NULL) {
-      perror("getpwuid");
-      goto err;
-    }
-    user = passwd->pw_name;
-  }
-
-  if (!random_bytes(userid, sizeof(userid))) {
-    fprintf(stderr, "random_bytes failed\n");
-    goto err;
-  }
-
-  if (args_info.verbose_given) {
-    fprintf(stderr, "Setting user to %s\n", user);
-    fprintf(stderr, "Setting user id to ");
-    for (size_t i = 0; i < sizeof(userid); i++)
-      fprintf(stderr, "%02x", userid[i]);
-    fprintf(stderr, "\n");
-  }
-
-  r = fido_cred_set_user(cred, userid, sizeof(userid), user, user, NULL);
-  if (r != FIDO_OK) {
-    fprintf(stderr, "error: fido_cred_set_user (%d) %s\n", r, fido_strerr(r));
-    goto err;
-  }
-
-  if (args_info.resident_given)
-    resident_key = FIDO_OPT_TRUE;
-  else
-    resident_key = FIDO_OPT_OMIT;
-
-  r = fido_cred_set_rk(cred, resident_key);
-  if (r != FIDO_OK) {
-    fprintf(stderr, "error: fido_cred_set_rk (%d) %s\n", r, fido_strerr(r));
-    goto err;
-  }
-
-  r = fido_cred_set_uv(cred, FIDO_OPT_OMIT);
-  if (r != FIDO_OK) {
-    fprintf(stderr, "error: fido_cred_set_uv (%d) %s\n", r, fido_strerr(r));
-    goto err;
-  }
 
   devlist = fido_dev_info_new(64);
   if (!devlist) {
