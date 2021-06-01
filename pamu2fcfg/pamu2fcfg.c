@@ -20,11 +20,8 @@
 #include "b64.h"
 #include "cmdline.h"
 #include "util.h"
-#ifndef HAVE_READPASSPHRASE
-#include "_readpassphrase.h"
-#else
-#include <readpassphrase.h>
-#endif
+
+#include "openbsd-compat.h"
 
 static fido_cred_t *prepare_cred(const struct gengetopt_args_info *const args) {
   fido_cred_t *cred = NULL;
