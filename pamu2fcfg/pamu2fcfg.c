@@ -26,15 +26,15 @@
 static fido_cred_t *prepare_cred(const struct gengetopt_args_info *const args) {
   fido_cred_t *cred = NULL;
   fido_opt_t resident_key;
-  char *origin = NULL;
   char *appid = NULL;
   char *user = NULL;
   struct passwd *passwd;
   unsigned char userid[32];
   unsigned char cdh[32];
-  char buf[BUFSIZE];
+  char origin[BUFSIZE];
   int cose_type;
   int ok = -1;
+  size_t n;
   int r;
 
   if ((cred = fido_cred_new()) == NULL) {
@@ -71,18 +71,19 @@ static fido_cred_t *prepare_cred(const struct gengetopt_args_info *const args) {
   }
 
   if (args->origin_given) {
-    origin = args->origin_arg;
-  } else {
-    if (!strcpy(buf, PAM_PREFIX)) {
-      fprintf(stderr, "strcpy failed\n");
+    if (strlcpy(origin, args->origin_arg, sizeof(origin)) >= sizeof(origin)) {
+      fprintf(stderr, "error: strlcpy failed\n");
       goto err;
     }
-    if (gethostname(buf + strlen(PAM_PREFIX), BUFSIZE - strlen(PAM_PREFIX)) ==
-        -1) {
+  } else {
+    if ((n = strlcpy(origin, PAM_PREFIX, sizeof(origin))) >= sizeof(origin)) {
+      fprintf(stderr, "error: strlcpy failed\n");
+      goto err;
+    }
+    if (gethostname(origin + n, sizeof(origin) - n) == -1) {
       perror("gethostname");
       goto err;
     }
-    origin = buf;
   }
 
   if (args->appid_given) {
