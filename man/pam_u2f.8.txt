@@ -42,7 +42,7 @@ file may be configured relative to the users' home dirs, e.g.
 ".ssh/u2f_keys". If not specified, the location defaults to
 $XDG_CONFIG_HOME/Yubico/u2f_keys. If $XDG_CONFIG_HOME is not set,
 $HOME/.config/Yubico/u2f_keys is used. The authfile format is
-username:keyHandle1,public_key1:keyHandle2,public_key2:...
+<username>:<KeyHandle1>,<UserKey1>,<CoseType1>,<Options1>:<KeyHandle2>,<UserKey2>,<CoseType2>,<Options2>:...
 
 *authpending_file*=_file_::
 Set the location of the file that is used for touch request

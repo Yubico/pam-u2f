@@ -243,8 +243,8 @@ name, and the information obtained during the registration procedure.
 
 The mappings should look like this, one per line:
 
- <username1>:<KeyHandle1>,<UserKey1>,<Options1>:<KeyHandle2>,<UserKey2>,<Options2>:...
- <username2>:<KeyHandle1>,<UserKey1>,<Options1>:<KeyHandle2>,<UserKey2>,<Options2>:...
+ <username1>:<KeyHandle1>,<UserKey1>,<CoseType1>,<Options1>:<KeyHandle2>,<UserKey2>,<CoseType2>,<Options2>:...
+ <username2>:<KeyHandle1>,<UserKey1>,<CoseType1>,<Options1>:<KeyHandle2>,<UserKey2>,<CoseType2>,<Options2>:...
 
 Now add `authfile=/etc/u2f_mappings` to your PAM configuration line,
 so it looks like:
@@ -273,7 +273,7 @@ not exhibiting the intended behaviour.
 
 The file must have only one line:
 
- <username>:<KeyHandle1>,<UserKey1>,<Options1>:<KeyHandle2>,<UserKey2>,<Options2>:...
+ <username>:<KeyHandle1>,<UserKey1>,<CoseType1>,<Options1>:<KeyHandle2>,<UserKey2>,<CoseType2>,<Options2>:...
 
 This is much the same concept as the SSH authorized_keys file.
 
