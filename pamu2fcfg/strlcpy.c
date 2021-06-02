@@ -18,6 +18,8 @@
 
 /* OPENBSD ORIGINAL: lib/libc/string/strlcpy.c */
 
+/* clang-format off */
+
 #include "openbsd-compat.h"
 
 #ifndef HAVE_STRLCPY
@@ -57,3 +59,4 @@ strlcpy(char *dst, const char *src, size_t siz)
 }
 
 #endif /* !HAVE_STRLCPY */
+/* clang-format  on */
