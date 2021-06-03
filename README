@@ -63,6 +63,14 @@ necessary dependencies can be installed using
     libxml2-utils docbook-xml
 ----
 
+On Fedora, the necessary dependencies can be installed using
+
+[source]
+----
+# dnf -y install autoconf automake libtool gengetopt libfido2-devel pam-devel \
+    openssl-devel asciidoc
+----
+
 Generate the build system using:
 
 [source, bash]
