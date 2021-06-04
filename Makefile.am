@@ -11,9 +11,8 @@ ACLOCAL_AMFLAGS = -I m4
 AM_CFLAGS = $(CWFLAGS) $(CSFLAGS)
 AM_CPPFLAGS = $(LIBFIDO2_CFLAGS) $(LIBCRYPTO_CFLAGS)
 
-libdir = $(PAMDIR)
-
-lib_LTLIBRARIES = pam_u2f.la
+pampluginexecdir = $(PAMDIR)
+pampluginexec_LTLIBRARIES = pam_u2f.la
 
 pam_u2f_la_SOURCES = pam-u2f.c
 pam_u2f_la_SOURCES += util.c util.h
@@ -43,8 +42,8 @@ endif
 # Release
 
 install-exec-hook:
-	rm -f $(PAMDIR)/pam_u2f.la
-	chmod -f 644 $(PAMDIR)/pam_u2f.so || true
+	rm -f $(DESTDIR)$(pampluginexecdir)/pam_u2f.la
+	chmod -f 644 $(DESTDIR)$(pampluginexecdir)/pam_u2f.so || true
 
 indent:
 	clang-format -i *.c *.h pamu2fcfg/*.c pamu2fcfg/*.h
