@@ -59,7 +59,7 @@ int main(int argc, const char **argv) {
   free(dev[0].attributes);
   free(dev[0].keyHandle);
   free(dev[0].publicKey);
-  memset(dev, 0, sizeof(device_t));
+  memset(dev, 0, sizeof(dev));
 
   cfg.auth_file = "credentials/new_.cred";
   cfg.sshformat = 0;
@@ -83,7 +83,7 @@ int main(int argc, const char **argv) {
   free(dev[0].keyHandle);
   free(dev[0].publicKey);
 
-  memset(dev, 0, sizeof(device_t) * 1);
+  memset(dev, 0, sizeof(dev));
 
   cfg.auth_file = "credentials/new_-V.cred";
   cfg.sshformat = 0;
@@ -107,7 +107,7 @@ int main(int argc, const char **argv) {
   free(dev[0].keyHandle);
   free(dev[0].publicKey);
 
-  memset(dev, 0, sizeof(device_t) * 1);
+  memset(dev, 0, sizeof(dev));
 
   cfg.auth_file = "credentials/new_-N.cred";
   cfg.sshformat = 0;
@@ -132,7 +132,7 @@ int main(int argc, const char **argv) {
   free(dev[0].keyHandle);
   free(dev[0].publicKey);
 
-  memset(dev, 0, sizeof(device_t) * 1);
+  memset(dev, 0, sizeof(dev));
 
   cfg.auth_file = "credentials/new_-V-N.cred";
   cfg.sshformat = 0;
@@ -156,7 +156,7 @@ int main(int argc, const char **argv) {
   free(dev[0].keyHandle);
   free(dev[0].publicKey);
 
-  memset(dev, 0, sizeof(device_t) * 1);
+  memset(dev, 0, sizeof(dev));
 
   cfg.auth_file = "credentials/new_-P.cred";
   cfg.sshformat = 0;
@@ -180,7 +180,7 @@ int main(int argc, const char **argv) {
   free(dev[0].keyHandle);
   free(dev[0].publicKey);
 
-  memset(dev, 0, sizeof(device_t) * 1);
+  memset(dev, 0, sizeof(dev));
 
   cfg.auth_file = "credentials/new_-P-V.cred";
   cfg.sshformat = 0;
@@ -203,7 +203,7 @@ int main(int argc, const char **argv) {
   free(dev[0].keyHandle);
   free(dev[0].publicKey);
 
-  memset(dev, 0, sizeof(device_t) * 1);
+  memset(dev, 0, sizeof(dev));
 
   cfg.auth_file = "credentials/new_-P-N.cred";
   cfg.sshformat = 0;
@@ -227,7 +227,7 @@ int main(int argc, const char **argv) {
   free(dev[0].keyHandle);
   free(dev[0].publicKey);
 
-  memset(dev, 0, sizeof(device_t) * 1);
+  memset(dev, 0, sizeof(dev));
 
   cfg.auth_file = "credentials/new_-P-V-N.cred";
   cfg.sshformat = 0;
@@ -251,7 +251,7 @@ int main(int argc, const char **argv) {
   free(dev[0].keyHandle);
   free(dev[0].publicKey);
 
-  memset(dev, 0, sizeof(device_t) * 1);
+  memset(dev, 0, sizeof(dev));
 
   cfg.auth_file = "credentials/new_-r.cred";
   cfg.sshformat = 0;
@@ -273,7 +273,7 @@ int main(int argc, const char **argv) {
   free(dev[0].keyHandle);
   free(dev[0].publicKey);
 
-  memset(dev, 0, sizeof(device_t) * 1);
+  memset(dev, 0, sizeof(dev));
 
   cfg.auth_file = "credentials/new_-r-V.cred";
   cfg.sshformat = 0;
@@ -295,7 +295,7 @@ int main(int argc, const char **argv) {
   free(dev[0].keyHandle);
   free(dev[0].publicKey);
 
-  memset(dev, 0, sizeof(device_t) * 1);
+  memset(dev, 0, sizeof(dev));
 
   cfg.auth_file = "credentials/new_-r-N.cred";
   cfg.sshformat = 0;
@@ -316,7 +316,7 @@ int main(int argc, const char **argv) {
   free(dev[0].keyHandle);
   free(dev[0].publicKey);
 
-  memset(dev, 0, sizeof(device_t) * 1);
+  memset(dev, 0, sizeof(dev));
 
   cfg.auth_file = "credentials/new_-r-V-N.cred";
   cfg.sshformat = 0;
@@ -337,7 +337,7 @@ int main(int argc, const char **argv) {
   free(dev[0].keyHandle);
   free(dev[0].publicKey);
 
-  memset(dev, 0, sizeof(device_t) * 1);
+  memset(dev, 0, sizeof(dev));
 
   cfg.auth_file = "credentials/new_-r-P.cred";
   cfg.sshformat = 0;
@@ -358,7 +358,7 @@ int main(int argc, const char **argv) {
   free(dev[0].keyHandle);
   free(dev[0].publicKey);
 
-  memset(dev, 0, sizeof(device_t) * 1);
+  memset(dev, 0, sizeof(dev));
 
   cfg.auth_file = "credentials/new_-r-P-V.cred";
   cfg.sshformat = 0;
@@ -379,7 +379,7 @@ int main(int argc, const char **argv) {
   free(dev[0].keyHandle);
   free(dev[0].publicKey);
 
-  memset(dev, 0, sizeof(device_t) * 1);
+  memset(dev, 0, sizeof(dev));
 
   cfg.auth_file = "credentials/new_-r-P-N.cred";
   cfg.sshformat = 0;
@@ -400,7 +400,7 @@ int main(int argc, const char **argv) {
   free(dev[0].keyHandle);
   free(dev[0].publicKey);
 
-  memset(dev, 0, sizeof(device_t) * 1);
+  memset(dev, 0, sizeof(dev));
 
   cfg.auth_file = "credentials/new_-r-P-V-N.cred";
   cfg.sshformat = 0;
@@ -422,7 +422,7 @@ int main(int argc, const char **argv) {
   free(dev[0].keyHandle);
   free(dev[0].publicKey);
 
-  memset(dev, 0, sizeof(device_t) * 1);
+  memset(dev, 0, sizeof(dev));
 
   cfg.auth_file = "credentials/new_double_.cred";
   cfg.sshformat = 0;
@@ -460,7 +460,7 @@ int main(int argc, const char **argv) {
   free(dev[1].keyHandle);
   free(dev[1].publicKey);
 
-  memset(dev, 0, sizeof(device_t) * 2);
+  memset(dev, 0, sizeof(dev));
 
   cfg.auth_file = "credentials/new_double_-V.cred";
   cfg.sshformat = 0;
@@ -499,7 +499,7 @@ int main(int argc, const char **argv) {
   free(dev[1].keyHandle);
   free(dev[1].publicKey);
 
-  memset(dev, 0, sizeof(device_t) * 2);
+  memset(dev, 0, sizeof(dev));
 
   cfg.auth_file = "credentials/new_double_-N.cred";
   cfg.sshformat = 0;
@@ -538,7 +538,7 @@ int main(int argc, const char **argv) {
   free(dev[1].keyHandle);
   free(dev[1].publicKey);
 
-  memset(dev, 0, sizeof(device_t) * 2);
+  memset(dev, 0, sizeof(dev));
 
   cfg.auth_file = "credentials/new_double_-V-N.cred";
   cfg.sshformat = 0;
@@ -576,7 +576,7 @@ int main(int argc, const char **argv) {
   free(dev[1].keyHandle);
   free(dev[1].publicKey);
 
-  memset(dev, 0, sizeof(device_t) * 2);
+  memset(dev, 0, sizeof(dev));
 
   cfg.auth_file = "credentials/new_double_-P.cred";
   cfg.sshformat = 0;
@@ -616,7 +616,7 @@ int main(int argc, const char **argv) {
   free(dev[1].keyHandle);
   free(dev[1].publicKey);
 
-  memset(dev, 0, sizeof(device_t) * 2);
+  memset(dev, 0, sizeof(dev));
 
   cfg.auth_file = "credentials/new_double_-P-V.cred";
   cfg.sshformat = 0;
@@ -655,7 +655,7 @@ int main(int argc, const char **argv) {
   free(dev[1].keyHandle);
   free(dev[1].publicKey);
 
-  memset(dev, 0, sizeof(device_t) * 2);
+  memset(dev, 0, sizeof(dev));
 
   cfg.auth_file = "credentials/new_double_-P-N.cred";
   cfg.sshformat = 0;
@@ -694,7 +694,7 @@ int main(int argc, const char **argv) {
   free(dev[1].keyHandle);
   free(dev[1].publicKey);
 
-  memset(dev, 0, sizeof(device_t) * 2);
+  memset(dev, 0, sizeof(dev));
 
   cfg.auth_file = "credentials/new_double_-P-V-N.cred";
   cfg.sshformat = 0;
@@ -733,7 +733,7 @@ int main(int argc, const char **argv) {
   free(dev[1].keyHandle);
   free(dev[1].publicKey);
 
-  memset(dev, 0, sizeof(device_t) * 2);
+  memset(dev, 0, sizeof(dev));
 
   cfg.auth_file = "credentials/new_double_-r.cred";
   cfg.sshformat = 0;
@@ -767,7 +767,7 @@ int main(int argc, const char **argv) {
   free(dev[1].keyHandle);
   free(dev[1].publicKey);
 
-  memset(dev, 0, sizeof(device_t) * 2);
+  memset(dev, 0, sizeof(dev));
 
   cfg.auth_file = "credentials/new_double_-r-V.cred";
   cfg.sshformat = 0;
@@ -802,7 +802,7 @@ int main(int argc, const char **argv) {
   free(dev[1].keyHandle);
   free(dev[1].publicKey);
 
-  memset(dev, 0, sizeof(device_t) * 2);
+  memset(dev, 0, sizeof(dev));
 
   cfg.auth_file = "credentials/new_double_-r-N.cred";
   cfg.sshformat = 0;
@@ -837,7 +837,7 @@ int main(int argc, const char **argv) {
   free(dev[1].keyHandle);
   free(dev[1].publicKey);
 
-  memset(dev, 0, sizeof(device_t) * 2);
+  memset(dev, 0, sizeof(dev));
 
   cfg.auth_file = "credentials/new_double_-r-V-N.cred";
   cfg.sshformat = 0;
@@ -871,7 +871,7 @@ int main(int argc, const char **argv) {
   free(dev[1].keyHandle);
   free(dev[1].publicKey);
 
-  memset(dev, 0, sizeof(device_t) * 2);
+  memset(dev, 0, sizeof(dev));
 
   cfg.auth_file = "credentials/new_double_-r-P.cred";
   cfg.sshformat = 0;
@@ -906,7 +906,7 @@ int main(int argc, const char **argv) {
   free(dev[1].keyHandle);
   free(dev[1].publicKey);
 
-  memset(dev, 0, sizeof(device_t) * 2);
+  memset(dev, 0, sizeof(dev));
 
   cfg.auth_file = "credentials/new_double_-r-P-V.cred";
   cfg.sshformat = 0;
@@ -940,7 +940,7 @@ int main(int argc, const char **argv) {
   free(dev[1].keyHandle);
   free(dev[1].publicKey);
 
-  memset(dev, 0, sizeof(device_t) * 2);
+  memset(dev, 0, sizeof(dev));
 
   cfg.auth_file = "credentials/new_double_-r-P-N.cred";
   cfg.sshformat = 0;
@@ -974,7 +974,7 @@ int main(int argc, const char **argv) {
   free(dev[1].keyHandle);
   free(dev[1].publicKey);
 
-  memset(dev, 0, sizeof(device_t) * 2);
+  memset(dev, 0, sizeof(dev));
 
   cfg.auth_file = "credentials/new_double_-r-P-V-N.cred";
   cfg.sshformat = 0;
@@ -1011,7 +1011,7 @@ int main(int argc, const char **argv) {
   free(dev[1].keyHandle);
   free(dev[1].publicKey);
 
-  memset(dev, 0, sizeof(device_t) * 2);
+  memset(dev, 0, sizeof(dev));
 
   cfg.auth_file = "credentials/new_mixed_12.cred";
   cfg.sshformat = 0;
@@ -1050,7 +1050,7 @@ int main(int argc, const char **argv) {
   free(dev[1].keyHandle);
   free(dev[1].publicKey);
 
-  memset(dev, 0, sizeof(device_t) * 2);
+  memset(dev, 0, sizeof(dev));
 
   cfg.auth_file = "credentials/new_mixed_1-P2.cred";
   cfg.sshformat = 0;
@@ -1089,7 +1089,7 @@ int main(int argc, const char **argv) {
   free(dev[1].keyHandle);
   free(dev[1].publicKey);
 
-  memset(dev, 0, sizeof(device_t) * 2);
+  memset(dev, 0, sizeof(dev));
 
   cfg.auth_file = "credentials/new_mixed_-P12.cred";
   cfg.sshformat = 0;
@@ -1127,7 +1127,7 @@ int main(int argc, const char **argv) {
   free(dev[1].keyHandle);
   free(dev[1].publicKey);
 
-  memset(dev, 0, sizeof(device_t) * 2);
+  memset(dev, 0, sizeof(dev));
 
   cfg.auth_file = "credentials/new_mixed_-P1-P2.cred";
   cfg.sshformat = 0;
@@ -1165,7 +1165,7 @@ int main(int argc, const char **argv) {
   free(dev[1].keyHandle);
   free(dev[1].publicKey);
 
-  memset(dev, 0, sizeof(device_t) * 2);
+  memset(dev, 0, sizeof(dev));
 
   cfg.auth_file = "credentials/old_credential.cred";
   cfg.sshformat = 0;

@@ -44,7 +44,7 @@ def print_test_case(filename, sshformat, credentials):
   free(dev[{i}].publicKey);
 """
     end = """
-  memset(dev, 0, sizeof(device_t) * {devices});
+  memset(dev, 0, sizeof(dev));
 """
 
     code = ""
@@ -55,7 +55,7 @@ def print_test_case(filename, sshformat, credentials):
         code += checks.format(i = c, kh = v.keyhandle, pk = v.pubkey, attr = v.attributes, old = v.oldformat)
         free_block += free.format(i = c)
 
-    code += free_block + end.format(devices = len(credentials))
+    code += free_block + end
 
     print(code)
 
