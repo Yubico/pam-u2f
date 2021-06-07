@@ -3,7 +3,7 @@
 ${CC} --version
 
 ./autogen.sh
-./configure --disable-silent-rules --disable-man CFLAGS="-fsanitize=address,signed-integer-overflow"
+./configure --enable-fuzzing --disable-silent-rules --disable-man CFLAGS="-fsanitize=address,signed-integer-overflow"
 make -j $(nproc)
 make -j $(nproc) -C fuzz
 

@@ -30,22 +30,10 @@ AS_IF([test "$enable_man" = "yes"],
 )
 AM_CONDITIONAL([ENABLE_MAN], [test "$enable_man" = "yes"])
 
-AC_CACHE_CHECK([for clang],
-        _cv_clang,[
-        AC_TRY_COMPILE([], [
-                #ifdef __clang__
-                #else
-                #error "NOT CLANG"
-                #endif
-                return 0;
-        ],
-        [_cv_clang=yes],
-        [_cv_clang=no],
-        [])
-])
-
-AX_CHECK_LINK_FLAG([-Wl,--wrap=strdup], [has_wrap=yes])
-AM_CONDITIONAL([WITH_FUZZ], [test "$has_wrap" = "yes" -a "$_cv_clang" = "yes"])
+AC_ARG_ENABLE([fuzzing],
+  [AS_HELP_STRING([--enable-fuzzing], [Enable fuzzing targets])]
+)
+AM_CONDITIONAL([ENABLE_FUZZING], [test "$enable_fuzzing" = "yes"])
 
 AC_CHECK_HEADERS([security/pam_appl.h], [],
   [AC_MSG_ERROR([[PAM header files not found, install libpam-dev.]])])

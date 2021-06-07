@@ -2,7 +2,7 @@
 
 SUBDIRS = . pamu2fcfg tests
 
-if WITH_FUZZ
+if ENABLE_FUZZING
 SUBDIRS += fuzz
 endif
 
