@@ -109,13 +109,15 @@ static char *normal_b64(const char *websafe_b64) {
   return (b64);
 }
 
-static es256_pk_t *translate_old_format_pubkey(const unsigned char *pk,
-                                               size_t pk_len) {
-  es256_pk_t *es256_pk = NULL;
+static int translate_old_format_pubkey(es256_pk_t *es256_pk,
+                                       const unsigned char *pk, size_t pk_len) {
   EC_KEY *ec = NULL;
   EC_POINT *q = NULL;
   const EC_GROUP *g = NULL;
-  int ok = 0;
+  int r = FIDO_ERR_INTERNAL;
+
+  if (es256_pk == NULL)
+    goto fail;
 
   if ((ec = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1)) == NULL ||
       (g = EC_KEY_get0_group(ec)) == NULL)
@@ -126,20 +128,15 @@ static es256_pk_t *translate_old_format_pubkey(const unsigned char *pk,
       !EC_KEY_set_public_key(ec, q))
     goto fail;
 
-  es256_pk = es256_pk_new();
-  if (es256_pk == NULL || es256_pk_from_EC_KEY(es256_pk, ec) < 0)
-    goto fail;
+  r = es256_pk_from_EC_KEY(es256_pk, ec);
 
-  ok = 1;
 fail:
   if (ec != NULL)
     EC_KEY_free(ec);
   if (q != NULL)
     EC_POINT_free(q);
-  if (!ok)
-    es256_pk_free(&es256_pk);
 
-  return (es256_pk);
+  return r;
 }
 
 static int parse_native_format(const cfg_t *cfg, const char *username,
@@ -1258,17 +1255,13 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
 
     if (!strcmp(devices[i].coseType, "es256")) {
       if (devices[i].old_format) {
-        es256_pk = translate_old_format_pubkey(pk, pk_len);
-        if (es256_pk == NULL) {
-          if (cfg->debug)
-            D(cfg->debug_file, "Failed to convert ES256 public key");
-        }
+        r = translate_old_format_pubkey(es256_pk, pk, pk_len);
       } else {
         r = es256_pk_from_ptr(es256_pk, pk, pk_len);
-        if (r != FIDO_OK) {
-          if (cfg->debug)
-            D(cfg->debug_file, "Failed to convert ES256 public key");
-        }
+      }
+      if (r != FIDO_OK) {
+        if (cfg->debug)
+          D(cfg->debug_file, "Failed to convert ES256 public key");
       }
       cose_type = COSE_ES256;
     } else if (!strcmp(devices[i].coseType, "rs256")) {
