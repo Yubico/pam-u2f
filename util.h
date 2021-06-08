@@ -34,7 +34,6 @@
 
 typedef struct {
   unsigned max_devs;
-  const char *client_key;
   int manual;
   int debug;
   int nouserok;
