@@ -38,6 +38,12 @@
 #define SSH_SK_USER_VERIFICATION_REQD 0x04
 #define SSH_SK_RESIDENT_KEY 0x20
 
+struct opts {
+  fido_opt_t up;
+  fido_opt_t uv;
+  fido_opt_t pin;
+};
+
 static int hex_decode(const char *ascii_hex, unsigned char **blob,
                       size_t *blob_len) {
   *blob = NULL;
@@ -1125,6 +1131,54 @@ static int get_authenticators(const cfg_t *cfg, const fido_dev_info_t *devlist,
   }
 }
 
+static void init_opts(struct opts *opts) {
+  opts->up = FIDO_OPT_FALSE;
+  opts->uv = FIDO_OPT_OMIT;
+  opts->pin = FIDO_OPT_FALSE;
+}
+
+static void parse_opts(const cfg_t *cfg, const char *attr, struct opts *opts) {
+  if (cfg->userpresence == 1 || strstr(attr, "+presence")) {
+    opts->up = FIDO_OPT_TRUE;
+  } else if (cfg->userpresence == 0) {
+    opts->up = FIDO_OPT_FALSE;
+  } else {
+    opts->up = FIDO_OPT_OMIT;
+  }
+
+  if (cfg->userverification == 1 || strstr(attr, "+verification")) {
+    opts->uv = FIDO_OPT_TRUE;
+  } else if (cfg->userverification == 0)
+    opts->uv = FIDO_OPT_FALSE;
+  else {
+    opts->uv = FIDO_OPT_OMIT;
+  }
+
+  if (cfg->pinverification == 1 || strstr(attr, "+pin")) {
+    opts->pin = FIDO_OPT_TRUE;
+  } else if (cfg->pinverification == 0) {
+    opts->pin = FIDO_OPT_FALSE;
+  } else {
+    opts->pin = FIDO_OPT_OMIT;
+  }
+}
+
+static int set_opts(const cfg_t *cfg, const struct opts *opts,
+                    fido_assert_t *assert) {
+  if (fido_assert_set_up(assert, opts->up) != FIDO_OK) {
+    if (cfg->debug)
+      D(cfg->debug_file, "Failed to set UP");
+    return 0;
+  }
+  if (fido_assert_set_uv(assert, opts->uv) != FIDO_OK) {
+    if (cfg->debug)
+      D(cfg->debug_file, "Failed to set UV");
+    return 0;
+  }
+
+  return 1;
+}
+
 static int set_cdh(const cfg_t *cfg, fido_assert_t *assert) {
   unsigned char cdh[32];
   int r;
@@ -1148,8 +1202,7 @@ static int set_cdh(const cfg_t *cfg, fido_assert_t *assert) {
 static int is_resident(const char *kh) { return strcmp(kh, "*") == 0; }
 
 static fido_assert_t *prepare_assert(const cfg_t *cfg, const char *origin,
-                                     const char *kh, const fido_opt_t up,
-                                     const fido_opt_t uv) {
+                                     const char *kh, const struct opts *opts) {
   fido_assert_t *assert = NULL;
   unsigned char *buf = NULL;
   size_t buf_len;
@@ -1190,17 +1243,9 @@ static fido_assert_t *prepare_assert(const cfg_t *cfg, const char *origin,
     }
   }
 
-  r = fido_assert_set_up(assert, up);
-  if (r != FIDO_OK) {
+  if (!set_opts(cfg, opts, assert)) {
     if (cfg->debug)
-      D(cfg->debug_file, "Failed to set UP");
-    goto err;
-  }
-
-  r = fido_assert_set_uv(assert, uv);
-  if (r != FIDO_OK) {
-    if (cfg->debug)
-      D(cfg->debug_file, "Failed to set UV");
+      D(cfg->debug_file, "Failed to set assert options");
     goto err;
   }
 
@@ -1237,11 +1282,10 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
   size_t pk_len;
   unsigned char *pk = NULL;
   unsigned i = 0;
-  fido_opt_t user_presence = FIDO_OPT_OMIT;
-  fido_opt_t user_verification = FIDO_OPT_OMIT;
-  fido_opt_t pin_verification = FIDO_OPT_OMIT;
+  struct opts opts;
   char *pin = NULL;
 
+  init_opts(&opts);
   fido_init(cfg->debug ? FIDO_DEBUG : 0);
 
   devlist = fido_dev_info_new(64);
@@ -1297,8 +1341,8 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
       D(cfg->debug_file, "Attempting authentication with device number %d",
         i + 1);
 
-    assert = prepare_assert(cfg, cfg->origin, devices[i].keyHandle,
-                            FIDO_OPT_FALSE, FIDO_OPT_OMIT);
+    init_opts(&opts); /* used during authenticator discovery */
+    assert = prepare_assert(cfg, cfg->origin, devices[i].keyHandle, &opts);
     if (assert == NULL) {
       if (cfg->debug)
         D(cfg->debug_file, "Failed to prepare assert");
@@ -1343,42 +1387,15 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
       goto out;
     }
 
-    if (cfg->userpresence == 1 || strstr(devices[i].attributes, "+presence"))
-      user_presence = FIDO_OPT_TRUE;
-    else if (cfg->userpresence == 0)
-      user_presence = FIDO_OPT_FALSE;
-    else
-      user_presence = FIDO_OPT_OMIT;
-
-    if (cfg->userverification == 1 ||
-        strstr(devices[i].attributes, "+verification"))
-      user_verification = FIDO_OPT_TRUE;
-    else if (cfg->userverification == 0)
-      user_verification = FIDO_OPT_FALSE;
-    else
-      user_verification = FIDO_OPT_OMIT;
-
-    if (cfg->pinverification == 1 || strstr(devices[i].attributes, "+pin")) {
-      pin_verification = FIDO_OPT_TRUE;
-    } else if (cfg->pinverification == 0)
-      pin_verification = FIDO_OPT_FALSE;
-    else
-      pin_verification = FIDO_OPT_OMIT;
+    /* options used during authentication */
+    parse_opts(cfg, devices[i].attributes, &opts);
 
     if (get_authenticators(cfg, devlist, ndevs, assert,
                            is_resident(devices[i].keyHandle), authlist)) {
       for (size_t j = 0; authlist[j] != NULL; j++) {
-        r = fido_assert_set_up(assert, user_presence);
-        if (r != FIDO_OK) {
+        if (!set_opts(cfg, &opts, assert)) {
           if (cfg->debug)
-            D(cfg->debug_file, "Failed to reset UP");
-          goto out;
-        }
-
-        r = fido_assert_set_uv(assert, user_verification);
-        if (r != FIDO_OK) {
-          if (cfg->debug)
-            D(cfg->debug_file, "Failed to reset UV");
+            D(cfg->debug_file, "Failed to set assert options");
           goto out;
         }
 
@@ -1388,15 +1405,14 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
           goto out;
         }
 
-        if (pin_verification == FIDO_OPT_TRUE) {
+        if (opts.pin == FIDO_OPT_TRUE) {
           pin = converse(pamh, PAM_PROMPT_ECHO_OFF, "Please enter the PIN: ");
           if (pin == NULL) {
             D(cfg->debug_file, "converse() returned NULL");
             goto out;
           }
         }
-        if (user_presence == FIDO_OPT_TRUE ||
-            user_verification == FIDO_OPT_TRUE) {
+        if (opts.up == FIDO_OPT_TRUE || opts.uv == FIDO_OPT_TRUE) {
           if (cfg->manual == 0 && cfg->cue && !cued) {
             cued = 1;
             converse(pamh, PAM_TEXT_INFO,
@@ -1410,8 +1426,7 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
           pin = NULL;
         }
         if (r == FIDO_OK) {
-          if (pin_verification == FIDO_OPT_TRUE ||
-              user_verification == FIDO_OPT_TRUE) {
+          if (opts.pin == FIDO_OPT_TRUE || opts.uv == FIDO_OPT_TRUE) {
             r = fido_assert_set_uv(assert, FIDO_OPT_TRUE);
             if (r != FIDO_OK) {
               D(cfg->debug_file, "Failed to set UV");
@@ -1516,9 +1531,9 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
   int n;
   int r;
   unsigned i = 0;
-  fido_opt_t user_presence = FIDO_OPT_OMIT;
-  fido_opt_t user_verification = FIDO_OPT_OMIT;
+  struct opts opts;
 
+  init_opts(&opts);
   memset(assert, 0, sizeof(assert));
   memset(es256_pk, 0, sizeof(es256_pk));
   memset(rs256_pk, 0, sizeof(rs256_pk));
@@ -1527,13 +1542,9 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
 
   for (i = 0; i < n_devs; ++i) {
 
-    if (strstr(devices[i].attributes, "+presence"))
-      user_presence = FIDO_OPT_TRUE;
-    if (strstr(devices[i].attributes, "+verification"))
-      user_verification = FIDO_OPT_TRUE;
-
-    assert[i] = prepare_assert(cfg, cfg->origin, devices[i].keyHandle,
-                            user_presence, user_verification);
+    /* options used during authentication */
+    parse_opts(cfg, devices[i].attributes, &opts);
+    assert[i] = prepare_assert(cfg, cfg->origin, devices[i].keyHandle, &opts);
     if (assert[i] == NULL) {
       if (cfg->debug)
         D(cfg->debug_file, "Failed to prepare assert");
