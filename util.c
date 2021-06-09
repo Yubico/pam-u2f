@@ -1056,7 +1056,7 @@ void free_devices(device_t *devices, const unsigned n_devs) {
 
 static int get_authenticators(const cfg_t *cfg, const fido_dev_info_t *devlist,
                               size_t devlist_len, fido_assert_t *assert,
-                              const void *kh, fido_dev_t **authlist) {
+                              const int rk, fido_dev_t **authlist) {
   const fido_dev_info_t *di = NULL;
   fido_dev_t *dev = NULL;
   int r;
@@ -1096,7 +1096,7 @@ static int get_authenticators(const cfg_t *cfg, const fido_dev_info_t *devlist,
       continue;
     }
 
-    if (kh == NULL || cfg->nodetect) {
+    if (rk || cfg->nodetect) {
       /* resident credential or nodetect: try all authenticators */
       authlist[j++] = dev;
     } else {
@@ -1125,6 +1125,102 @@ static int get_authenticators(const cfg_t *cfg, const fido_dev_info_t *devlist,
   }
 }
 
+static int set_cdh(const cfg_t *cfg, fido_assert_t *assert) {
+  unsigned char cdh[32];
+  int r;
+
+  if (!random_bytes(cdh, sizeof(cdh))) {
+    if (cfg->debug)
+      D(cfg->debug_file, "Failed to generate challenge");
+    return 0;
+  }
+
+  r = fido_assert_set_clientdata_hash(assert, cdh, sizeof(cdh));
+  if (r != FIDO_OK) {
+    if (cfg->debug)
+      D(cfg->debug_file, "Unable to set challenge: %s (%d)", fido_strerr(r), r);
+    return 0;
+  }
+
+  return 1;
+}
+
+static int is_resident(const char *kh) { return strcmp(kh, "*") == 0; }
+
+static fido_assert_t *prepare_assert(const cfg_t *cfg, const char *origin,
+                                     const char *kh, const fido_opt_t up,
+                                     const fido_opt_t uv) {
+  fido_assert_t *assert = NULL;
+  unsigned char *buf = NULL;
+  size_t buf_len;
+  int ok = 0;
+  int r;
+
+  if ((assert = fido_assert_new()) == NULL) {
+    if (cfg->debug)
+      D(cfg->debug_file, "Unable to allocate assertion");
+    goto err;
+  }
+
+  r = fido_assert_set_rp(assert, origin);
+  if (r != FIDO_OK) {
+    if (cfg->debug)
+      D(cfg->debug_file, "Unable to set origin: %s (%d)", fido_strerr(r), r);
+    goto err;
+  }
+
+  if (is_resident(kh)) {
+    if (cfg->debug)
+      D(cfg->debug_file, "Credential is resident");
+  } else {
+    if (cfg->debug)
+      D(cfg->debug_file, "Key handle: %s", kh);
+    if (!b64_decode(kh, (void **) &buf, &buf_len)) {
+      if (cfg->debug)
+        D(cfg->debug_file, "Failed to decode key handle");
+      goto err;
+    }
+
+    r = fido_assert_allow_cred(assert, buf, buf_len);
+    if (r != FIDO_OK) {
+      if (cfg->debug)
+        D(cfg->debug_file, "Unable to set keyHandle: %s (%d)", fido_strerr(r),
+          r);
+      goto err;
+    }
+  }
+
+  r = fido_assert_set_up(assert, up);
+  if (r != FIDO_OK) {
+    if (cfg->debug)
+      D(cfg->debug_file, "Failed to set UP");
+    goto err;
+  }
+
+  r = fido_assert_set_uv(assert, uv);
+  if (r != FIDO_OK) {
+    if (cfg->debug)
+      D(cfg->debug_file, "Failed to set UV");
+    goto err;
+  }
+
+  if (!set_cdh(cfg, assert)) {
+    if (cfg->debug)
+      D(cfg->debug_file, "Failed to set client data hash");
+    goto err;
+  }
+
+  ok = 1;
+
+err:
+  if (!ok)
+    fido_assert_free(&assert);
+
+  free(buf);
+
+  return assert;
+}
+
 int do_authentication(const cfg_t *cfg, const device_t *devices,
                       const unsigned n_devs, pam_handle_t *pamh) {
   es256_pk_t *es256_pk = NULL;
@@ -1136,12 +1232,9 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
   int r;
   int retval = -2;
   int cose_type;
-  size_t kh_len;
   size_t ndevs = 0;
   size_t ndevs_prev = 0;
   size_t pk_len;
-  unsigned char challenge[32];
-  unsigned char *kh = NULL;
   unsigned char *pk = NULL;
   unsigned i = 0;
   fido_opt_t user_presence = FIDO_OPT_OMIT;
@@ -1204,39 +1297,12 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
       D(cfg->debug_file, "Attempting authentication with device number %d",
         i + 1);
 
-    assert = fido_assert_new();
-    if (!assert) {
+    assert = prepare_assert(cfg, cfg->origin, devices[i].keyHandle,
+                            FIDO_OPT_FALSE, FIDO_OPT_OMIT);
+    if (assert == NULL) {
       if (cfg->debug)
-        D(cfg->debug_file, "Unable to allocate assertion");
+        D(cfg->debug_file, "Failed to prepare assert");
       goto out;
-    }
-
-    r = fido_assert_set_rp(assert, cfg->origin);
-    if (r != FIDO_OK) {
-      if (cfg->debug)
-        D(cfg->debug_file, "Unable to set origin: %s (%d)", fido_strerr(r), r);
-      goto out;
-    }
-
-    if (!strcmp(devices[i].keyHandle, "*")) {
-      if (cfg->debug)
-        D(cfg->debug_file, "Credential is resident");
-    } else {
-      if (cfg->debug)
-        D(cfg->debug_file, "Key handle: %s", devices[i].keyHandle);
-      if (!b64_decode(devices[i].keyHandle, (void **) &kh, &kh_len)) {
-        if (cfg->debug)
-          D(cfg->debug_file, "Failed to decode key handle");
-        goto out;
-      }
-
-      r = fido_assert_allow_cred(assert, kh, kh_len);
-      if (r != FIDO_OK) {
-        if (cfg->debug)
-          D(cfg->debug_file, "Unable to set keyHandle: %s (%d)", fido_strerr(r),
-            r);
-        goto out;
-      }
     }
 
     if (devices[i].old_format) {
@@ -1299,45 +1365,8 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
     else
       pin_verification = FIDO_OPT_OMIT;
 
-    r = fido_assert_set_up(assert, FIDO_OPT_FALSE);
-    if (r != FIDO_OK) {
-      if (cfg->debug)
-        D(cfg->debug_file, "Failed to set UP");
-      goto out;
-    }
-
-    r = fido_assert_set_uv(assert, FIDO_OPT_OMIT);
-    if (r != FIDO_OK) {
-      if (cfg->debug)
-        D(cfg->debug_file, "Failed to set UV");
-      goto out;
-    }
-
-    if (!random_bytes(challenge, sizeof(challenge))) {
-      if (cfg->debug)
-        D(cfg->debug_file, "Failed to generate challenge");
-      goto out;
-    }
-
-    if (cfg->debug) {
-      char *b64_challenge;
-      if (!b64_encode(challenge, sizeof(challenge), &b64_challenge)) {
-        D(cfg->debug_file, "Failed to encode challenge");
-      } else {
-        D(cfg->debug_file, "Challenge: %s", b64_challenge);
-        free(b64_challenge);
-      }
-    }
-
-    r = fido_assert_set_clientdata_hash(assert, challenge, sizeof(challenge));
-    if (r != FIDO_OK) {
-      if (cfg->debug)
-        D(cfg->debug_file, "Unable to set challenge: %s( %d)", fido_strerr(r),
-          r);
-      goto out;
-    }
-
-    if (get_authenticators(cfg, devlist, ndevs, assert, kh, authlist)) {
+    if (get_authenticators(cfg, devlist, ndevs, assert,
+                           is_resident(devices[i].keyHandle), authlist)) {
       for (size_t j = 0; authlist[j] != NULL; j++) {
         r = fido_assert_set_up(assert, user_presence);
         if (r != FIDO_OK) {
@@ -1353,18 +1382,9 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
           goto out;
         }
 
-        if (!random_bytes(challenge, sizeof(challenge))) {
+        if (!set_cdh(cfg, assert)) {
           if (cfg->debug)
-            D(cfg->debug_file, "Failed to regenerate challenge");
-          goto out;
-        }
-
-        r =
-          fido_assert_set_clientdata_hash(assert, challenge, sizeof(challenge));
-        if (r != FIDO_OK) {
-          if (cfg->debug)
-            D(cfg->debug_file, "Unable to reset challenge: %s( %d)",
-              fido_strerr(r), r);
+            D(cfg->debug_file, "Failed to reset client data hash");
           goto out;
         }
 
@@ -1441,10 +1461,7 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
       i = 0;
     }
 
-    free(kh);
     free(pk);
-
-    kh = NULL;
     pk = NULL;
 
     for (size_t j = 0; authlist[j] != NULL; j++) {
@@ -1469,7 +1486,6 @@ out:
     free(authlist);
   }
 
-  free(kh);
   free(pk);
 
   return retval;
@@ -1482,8 +1498,6 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
   fido_assert_t *assert[n_devs];
   es256_pk_t *es256_pk[n_devs];
   rs256_pk_t *rs256_pk[n_devs];
-  unsigned char challenge[32];
-  unsigned char *kh = NULL;
   unsigned char *pk = NULL;
   unsigned char *authdata = NULL;
   unsigned char *sig = NULL;
@@ -1494,7 +1508,6 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
   char *b64_sig = NULL;
   char prompt[MAX_PROMPT_LEN];
   char buf[MAX_PROMPT_LEN];
-  size_t kh_len;
   size_t pk_len;
   size_t authdata_len;
   size_t sig_len;
@@ -1514,64 +1527,22 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
 
   for (i = 0; i < n_devs; ++i) {
 
-    assert[i] = fido_assert_new();
-    if (!assert[i]) {
-      if (cfg->debug)
-        D(cfg->debug_file, "Unable to allocate assertion %u", i);
-      goto out;
-    }
-
-    r = fido_assert_set_rp(assert[i], cfg->origin);
-    if (r != FIDO_OK) {
-      if (cfg->debug)
-        D(cfg->debug_file, "Unable to set origin: %s (%d)", fido_strerr(r), r);
-      goto out;
-    }
-
     if (strstr(devices[i].attributes, "+presence"))
       user_presence = FIDO_OPT_TRUE;
     if (strstr(devices[i].attributes, "+verification"))
       user_verification = FIDO_OPT_TRUE;
 
-    r = fido_assert_set_up(assert[i], user_presence);
-    if (r != FIDO_OK) {
+    assert[i] = prepare_assert(cfg, cfg->origin, devices[i].keyHandle,
+                            user_presence, user_verification);
+    if (assert[i] == NULL) {
       if (cfg->debug)
-        D(cfg->debug_file, "Unable to set UP: %s (%d)", fido_strerr(r), r);
-      goto out;
-    }
-
-    r = fido_assert_set_uv(assert[i], user_verification);
-    if (r != FIDO_OK) {
-      if (cfg->debug)
-        D(cfg->debug_file, "Unable to set UV: %s (%d)", fido_strerr(r), r);
+        D(cfg->debug_file, "Failed to prepare assert");
       goto out;
     }
 
     if (cfg->debug)
       D(cfg->debug_file, "Attempting authentication with device number %d",
         i + 1);
-
-    if (!strcmp(devices[i].keyHandle, "*")) {
-      if (cfg->debug)
-        D(cfg->debug_file, "Credential is resident");
-    } else {
-      if (!b64_decode(devices[i].keyHandle, (void **) &kh, &kh_len)) {
-        if (cfg->debug)
-          D(cfg->debug_file, "Failed to decode key handle");
-        goto out;
-      }
-
-      r = fido_assert_allow_cred(assert[i], kh, kh_len);
-      if (r != FIDO_OK) {
-        if (cfg->debug)
-          D(cfg->debug_file, "Unable to set keyHandle: %s (%d)", fido_strerr(r),
-            r);
-        goto out;
-      }
-
-      free(kh);
-      kh = NULL;
-    }
 
     if (devices[i].old_format) {
       if (!hex_decode(devices[i].publicKey, &pk, &pk_len)) {
@@ -1622,21 +1593,9 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
     free(pk);
     pk = NULL;
 
-    if (!random_bytes(challenge, sizeof(challenge))) {
-      if (cfg->debug)
-        D(cfg->debug_file, "Failed to generate challenge");
-      goto out;
-    }
-
-    r =
-      fido_assert_set_clientdata_hash(assert[i], challenge, sizeof(challenge));
-    if (r != FIDO_OK) {
-      if (cfg->debug)
-        D(cfg->debug_file, "Failed to set challenge");
-      goto out;
-    }
-
-    if (!b64_encode(challenge, sizeof(challenge), &b64_challenge)) {
+    if (!b64_encode(fido_assert_clientdata_hash_ptr(assert[i]),
+                    fido_assert_clientdata_hash_len(assert[i]),
+                    &b64_challenge)) {
       if (cfg->debug)
         D(cfg->debug_file, "Failed to encode challenge");
       goto out;
@@ -1754,7 +1713,6 @@ out:
     rs256_pk_free(&rs256_pk[i]);
   }
 
-  free(kh);
   free(pk);
   free(b64_challenge);
   free(b64_cdh);
