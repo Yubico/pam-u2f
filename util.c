@@ -44,6 +44,11 @@ struct opts {
   fido_opt_t pin;
 };
 
+struct pk {
+  void *ptr;
+  int type;
+};
+
 static int hex_decode(const char *ascii_hex, unsigned char **blob,
                       size_t *blob_len) {
   *blob = NULL;
@@ -1266,27 +1271,117 @@ err:
   return assert;
 }
 
+static void reset_pk(struct pk *pk) {
+  if (pk->type == COSE_ES256) {
+    es256_pk_free((es256_pk_t **) &pk->ptr);
+  } else if (pk->type == COSE_RS256) {
+    rs256_pk_free((rs256_pk_t **) &pk->ptr);
+  }
+  memset(pk, 0, sizeof(*pk));
+}
+
+
+static int cose_type(const char *str, int *type) {
+  if (strcmp(str, "es256") == 0) {
+    *type = COSE_ES256;
+  } else if (strcmp(str, "rs256") == 0) {
+    *type = COSE_RS256;
+  } else {
+    *type = 0;
+    return 0;
+  }
+
+  return 1;
+}
+
+static int parse_pk(const cfg_t *cfg, int old, const char *type, const char *pk,
+                    struct pk *out) {
+  unsigned char *buf = NULL;
+  size_t buf_len;
+  int ok = 0;
+  int r;
+
+  reset_pk(out);
+
+  if (old) {
+    if (!hex_decode(pk, &buf, &buf_len)) {
+      if (cfg->debug)
+        D(cfg->debug_file, "Failed to decode public key");
+      goto err;
+    }
+  } else {
+    if (!b64_decode(pk, (void **) &buf, &buf_len)) {
+      if (cfg->debug)
+        D(cfg->debug_file, "Failed to decode public key");
+      goto err;
+    }
+  }
+
+  if (!cose_type(type, &out->type)) {
+    if (cfg->debug)
+      D(cfg->debug_file, "Unknown COSE type '%s'", type);
+    goto err;
+  }
+
+  // For backwards compatibility, failure to pack the public key is not
+  // returned as an error.  Instead, it is handled by fido_verify_assert().
+  if (out->type == COSE_ES256) {
+    if ((out->ptr = es256_pk_new()) == NULL) {
+      if (cfg->debug)
+        D(cfg->debug_file, "Failed to allocate ES256 public key");
+      goto err;
+    }
+    if (old) {
+      r = translate_old_format_pubkey(out->ptr, buf, buf_len);
+    } else {
+      r = es256_pk_from_ptr(out->ptr, buf, buf_len);
+    }
+    if (r != FIDO_OK) {
+      if (cfg->debug)
+        D(cfg->debug_file, "Failed to convert ES256 public key");
+    }
+  } else if (out->type == COSE_RS256) {
+    if ((out->ptr = rs256_pk_new()) == NULL) {
+      if (cfg->debug)
+        D(cfg->debug_file, "Failed to allocate RS256 public key");
+      goto err;
+    }
+    r = rs256_pk_from_ptr(out->ptr, buf, buf_len);
+    if (r != FIDO_OK) {
+      if (cfg->debug)
+        D(cfg->debug_file, "Failed to convert RS256 public key");
+    }
+  } else {
+    if (cfg->debug)
+      D(cfg->debug_file, "COSE type '%s' not handled", type);
+    goto err;
+  }
+
+  ok = 1;
+err:
+  free(buf);
+
+  return ok;
+}
+
 int do_authentication(const cfg_t *cfg, const device_t *devices,
                       const unsigned n_devs, pam_handle_t *pamh) {
-  es256_pk_t *es256_pk = NULL;
-  rs256_pk_t *rs256_pk = NULL;
   fido_assert_t *assert = NULL;
   fido_dev_info_t *devlist = NULL;
   fido_dev_t **authlist = NULL;
   int cued = 0;
   int r;
   int retval = -2;
-  int cose_type;
   size_t ndevs = 0;
   size_t ndevs_prev = 0;
-  size_t pk_len;
-  unsigned char *pk = NULL;
   unsigned i = 0;
   struct opts opts;
+  struct pk pk;
   char *pin = NULL;
 
   init_opts(&opts);
   fido_init(cfg->debug ? FIDO_DEBUG : 0);
+  memset(&pk, 0, sizeof(pk));
 
   devlist = fido_dev_info_new(64);
   if (!devlist) {
@@ -1307,20 +1402,6 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
 
   if (cfg->debug)
     D(cfg->debug_file, "Device max index is %u", ndevs);
-
-  es256_pk = es256_pk_new();
-  if (!es256_pk) {
-    if (cfg->debug)
-      D(cfg->debug_file, "Unable to allocate ES256 public key");
-    goto out;
-  }
-
-  rs256_pk = rs256_pk_new();
-  if (!rs256_pk) {
-    if (cfg->debug)
-      D(cfg->debug_file, "Unable to allocate RS256 public key");
-    goto out;
-  }
 
   authlist = calloc(64 + 1, sizeof(fido_dev_t *));
   if (!authlist) {
@@ -1349,41 +1430,10 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
       goto out;
     }
 
-    if (devices[i].old_format) {
-      if (!hex_decode(devices[i].publicKey, &pk, &pk_len)) {
-        if (cfg->debug)
-          D(cfg->debug_file, "Failed to decode public key");
-        goto out;
-      }
-    } else {
-      if (!b64_decode(devices[i].publicKey, (void **) &pk, &pk_len)) {
-        if (cfg->debug)
-          D(cfg->debug_file, "Failed to decode public key");
-        goto out;
-      }
-    }
-
-    if (!strcmp(devices[i].coseType, "es256")) {
-      if (devices[i].old_format) {
-        r = translate_old_format_pubkey(es256_pk, pk, pk_len);
-      } else {
-        r = es256_pk_from_ptr(es256_pk, pk, pk_len);
-      }
-      if (r != FIDO_OK) {
-        if (cfg->debug)
-          D(cfg->debug_file, "Failed to convert ES256 public key");
-      }
-      cose_type = COSE_ES256;
-    } else if (!strcmp(devices[i].coseType, "rs256")) {
-      r = rs256_pk_from_ptr(rs256_pk, pk, pk_len);
-      if (r != FIDO_OK) {
-        if (cfg->debug)
-          D(cfg->debug_file, "Failed to convert RS256 public key");
-      }
-      cose_type = COSE_RS256;
-    } else {
+    if (!parse_pk(cfg, devices[i].old_format, devices[i].coseType,
+                  devices[i].publicKey, &pk)) {
       if (cfg->debug)
-        D(cfg->debug_file, "Unknown COSE type '%s'", devices[i].coseType);
+        D(cfg->debug_file, "Failed to parse public key");
       goto out;
     }
 
@@ -1433,10 +1483,7 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
               goto out;
             }
           }
-          r = fido_assert_verify(assert, 0, cose_type,
-                                 cose_type == COSE_ES256
-                                   ? (const void *) es256_pk
-                                   : (const void *) rs256_pk);
+          r = fido_assert_verify(assert, 0, pk.type, pk.ptr);
           if (r == FIDO_OK) {
             retval = 1;
             goto out;
@@ -1476,9 +1523,6 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
       i = 0;
     }
 
-    free(pk);
-    pk = NULL;
-
     for (size_t j = 0; authlist[j] != NULL; j++) {
       fido_dev_close(authlist[j]);
       fido_dev_free(&authlist[j]);
@@ -1488,8 +1532,7 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
   }
 
 out:
-  es256_pk_free(&es256_pk);
-  rs256_pk_free(&rs256_pk);
+  reset_pk(&pk);
   fido_assert_free(&assert);
   fido_dev_info_free(&devlist, ndevs);
 
@@ -1500,8 +1543,6 @@ out:
     }
     free(authlist);
   }
-
-  free(pk);
 
   return retval;
 }
@@ -1574,14 +1615,10 @@ err:
 int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
                              const unsigned n_devs, pam_handle_t *pamh) {
   fido_assert_t *assert[n_devs];
-  es256_pk_t *es256_pk[n_devs];
-  rs256_pk_t *rs256_pk[n_devs];
-  unsigned char *pk = NULL;
+  struct pk pk[n_devs];
   char *b64_challenge = NULL;
   char prompt[MAX_PROMPT_LEN];
   char buf[MAX_PROMPT_LEN];
-  size_t pk_len;
-  int cose_type[n_devs];
   int retval = -2;
   int n;
   int r;
@@ -1590,13 +1627,11 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
 
   init_opts(&opts);
   memset(assert, 0, sizeof(assert));
-  memset(es256_pk, 0, sizeof(es256_pk));
-  memset(rs256_pk, 0, sizeof(rs256_pk));
+  memset(pk, 0, sizeof(pk));
 
   fido_init(cfg->debug ? FIDO_DEBUG : 0);
 
   for (i = 0; i < n_devs; ++i) {
-
     /* options used during authentication */
     parse_opts(cfg, devices[i].attributes, &opts);
     assert[i] = prepare_assert(cfg, cfg->origin, devices[i].keyHandle, &opts);
@@ -1610,54 +1645,12 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
       D(cfg->debug_file, "Attempting authentication with device number %d",
         i + 1);
 
-    if (devices[i].old_format) {
-      if (!hex_decode(devices[i].publicKey, &pk, &pk_len)) {
-        if (cfg->debug)
-          D(cfg->debug_file, "Failed to decode public key");
-        goto out;
-      }
-    } else {
-      if (!b64_decode(devices[i].publicKey, (void **) &pk, &pk_len)) {
-        if (cfg->debug)
-          D(cfg->debug_file, "Failed to decode public key");
-        goto out;
-      }
+    if (!parse_pk(cfg, devices[i].old_format, devices[i].coseType,
+                  devices[i].publicKey, &pk[i])) {
+      if (cfg->debug)
+        D(cfg->debug_file, "Unable to parse public key %u", i);
+      goto out;
     }
-
-    if (!strcmp(devices[i].coseType, "es256")) {
-      es256_pk[i] = es256_pk_new();
-      if (!es256_pk[i]) {
-        if (cfg->debug)
-          D(cfg->debug_file, "Unable to allocate key %u", i);
-        goto out;
-      }
-
-      if (es256_pk_from_ptr(es256_pk[i], pk, pk_len) != FIDO_OK) {
-        if (cfg->debug)
-          D(cfg->debug_file, "Failed to convert public key");
-        goto out;
-      }
-
-      cose_type[i] = COSE_ES256;
-    } else {
-      rs256_pk[i] = rs256_pk_new();
-      if (!rs256_pk[i]) {
-        if (cfg->debug)
-          D(cfg->debug_file, "Unable to allocate key %u", i);
-        goto out;
-      }
-
-      if (rs256_pk_from_ptr(rs256_pk[i], pk, pk_len) != FIDO_OK) {
-        if (cfg->debug)
-          D(cfg->debug_file, "Failed to convert public key");
-        goto out;
-      }
-
-      cose_type[i] = COSE_RS256;
-    }
-
-    free(pk);
-    pk = NULL;
 
     if (!b64_encode(fido_assert_clientdata_hash_ptr(assert[i]),
                     fido_assert_clientdata_hash_len(assert[i]),
@@ -1713,11 +1706,7 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
       goto out;
     }
 
-    if (cose_type[i] == COSE_ES256)
-      r = fido_assert_verify(assert[i], 0, COSE_ES256, es256_pk[i]);
-    else
-      r = fido_assert_verify(assert[i], 0, COSE_RS256, rs256_pk[i]);
-
+    r = fido_assert_verify(assert[i], 0, pk[i].type, pk[i].ptr);
     if (r == FIDO_OK) {
       retval = 1;
       break;
@@ -1727,11 +1716,9 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
 out:
   for (i = 0; i < n_devs; i++) {
     fido_assert_free(&assert[i]);
-    es256_pk_free(&es256_pk[i]);
-    rs256_pk_free(&rs256_pk[i]);
+    reset_pk(&pk[i]);
   }
 
-  free(pk);
   free(b64_challenge);
 
   return retval;
