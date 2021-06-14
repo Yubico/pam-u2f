@@ -145,6 +145,8 @@ fail:
   return r;
 }
 
+static int is_resident(const char *kh) { return strcmp(kh, "*") == 0; }
+
 static int parse_native_format(const cfg_t *cfg, const char *username,
                                char *buf, FILE *opwfile, device_t *devices,
                                unsigned *n_devs) {
@@ -226,7 +228,7 @@ static int parse_native_format(const cfg_t *cfg, const char *username,
           return -1;
         }
 
-        if (!strcmp(devices[i].keyHandle, "*") && cfg->debug) {
+        if (is_resident(devices[i].keyHandle) && cfg->debug) {
           D(cfg->debug_file, "Credential is resident");
         }
 
@@ -1198,8 +1200,6 @@ static int set_cdh(const cfg_t *cfg, fido_assert_t *assert) {
 
   return 1;
 }
-
-static int is_resident(const char *kh) { return strcmp(kh, "*") == 0; }
 
 static fido_assert_t *prepare_assert(const cfg_t *cfg, const char *origin,
                                      const char *kh, const struct opts *opts) {
