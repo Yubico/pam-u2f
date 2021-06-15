@@ -1508,24 +1508,79 @@ out:
 
 #define MAX_PROMPT_LEN (1024)
 
+static int manual_get_assert(const cfg_t *cfg, const char *prompt,
+                             pam_handle_t *pamh, fido_assert_t *assert) {
+  char *b64_cdh = NULL;
+  char *b64_rpid = NULL;
+  char *b64_authdata = NULL;
+  char *b64_sig = NULL;
+  unsigned char *authdata = NULL;
+  unsigned char *sig = NULL;
+  size_t authdata_len;
+  size_t sig_len;
+  int r;
+  int ok = 0;
+
+  b64_cdh = converse(pamh, PAM_PROMPT_ECHO_ON, prompt);
+  b64_rpid = converse(pamh, PAM_PROMPT_ECHO_ON, prompt);
+  b64_authdata = converse(pamh, PAM_PROMPT_ECHO_ON, prompt);
+  b64_sig = converse(pamh, PAM_PROMPT_ECHO_ON, prompt);
+
+  if (!b64_decode(b64_authdata, (void **) &authdata, &authdata_len)) {
+    if (cfg->debug)
+      D(cfg->debug_file, "Failed to decode authenticator data");
+    goto err;
+  }
+
+  if (!b64_decode(b64_sig, (void **) &sig, &sig_len)) {
+    if (cfg->debug)
+      D(cfg->debug_file, "Failed to decode signature");
+    goto err;
+  }
+
+  r = fido_assert_set_count(assert, 1);
+  if (r != FIDO_OK) {
+    if (cfg->debug)
+      D(cfg->debug_file, "Failed to set signature count of assertion");
+    goto err;
+  }
+
+  r = fido_assert_set_authdata(assert, 0, authdata, authdata_len);
+  if (r != FIDO_OK) {
+    if (cfg->debug)
+      D(cfg->debug_file, "Failed to set authdata of assertion");
+    goto err;
+  }
+
+  r = fido_assert_set_sig(assert, 0, sig, sig_len);
+  if (r != FIDO_OK) {
+    if (cfg->debug)
+      D(cfg->debug_file, "Failed to set signature of assertion");
+    goto err;
+  }
+
+  ok = 1;
+err:
+  free(b64_cdh);
+  free(b64_rpid);
+  free(b64_authdata);
+  free(b64_sig);
+  free(authdata);
+  free(sig);
+
+  return ok;
+}
+
 int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
                              const unsigned n_devs, pam_handle_t *pamh) {
   fido_assert_t *assert[n_devs];
   es256_pk_t *es256_pk[n_devs];
   rs256_pk_t *rs256_pk[n_devs];
   unsigned char *pk = NULL;
-  unsigned char *authdata = NULL;
-  unsigned char *sig = NULL;
   char *b64_challenge = NULL;
-  char *b64_cdh = NULL;
-  char *b64_rpid = NULL;
-  char *b64_authdata = NULL;
-  char *b64_sig = NULL;
   char prompt[MAX_PROMPT_LEN];
   char buf[MAX_PROMPT_LEN];
   size_t pk_len;
-  size_t authdata_len;
-  size_t sig_len;
   int cose_type[n_devs];
   int retval = -2;
   int n;
@@ -1652,59 +1707,11 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
       goto out;
     }
 
-    b64_cdh = converse(pamh, PAM_PROMPT_ECHO_ON, prompt);
-    b64_rpid = converse(pamh, PAM_PROMPT_ECHO_ON, prompt);
-    b64_authdata = converse(pamh, PAM_PROMPT_ECHO_ON, prompt);
-    b64_sig = converse(pamh, PAM_PROMPT_ECHO_ON, prompt);
-
-    if (!b64_decode(b64_authdata, (void **) &authdata, &authdata_len)) {
+    if (!manual_get_assert(cfg, prompt, pamh, assert[i])) {
       if (cfg->debug)
-        D(cfg->debug_file, "Failed to decode authenticator data");
+        D(cfg->debug_file, "Failed to get assert %u", i);
       goto out;
     }
-
-    if (!b64_decode(b64_sig, (void **) &sig, &sig_len)) {
-      if (cfg->debug)
-        D(cfg->debug_file, "Failed to decode signature");
-      goto out;
-    }
-
-    free(b64_cdh);
-    free(b64_rpid);
-    free(b64_authdata);
-    free(b64_sig);
-
-    b64_cdh = NULL;
-    b64_rpid = NULL;
-    b64_authdata = NULL;
-    b64_sig = NULL;
-
-    r = fido_assert_set_count(assert[i], 1);
-    if (r != FIDO_OK) {
-      if (cfg->debug)
-        D(cfg->debug_file, "Failed to set signature count of assertion %u", i);
-      goto out;
-    }
-
-    r = fido_assert_set_authdata(assert[i], 0, authdata, authdata_len);
-    if (r != FIDO_OK) {
-      if (cfg->debug)
-        D(cfg->debug_file, "Failed to set authdata of assertion %u", i);
-      goto out;
-    }
-
-    r = fido_assert_set_sig(assert[i], 0, sig, sig_len);
-    if (r != FIDO_OK) {
-      if (cfg->debug)
-        D(cfg->debug_file, "Failed to set signature of assertion %u", i);
-      goto out;
-    }
-
-    free(authdata);
-    free(sig);
-
-    authdata = NULL;
-    sig = NULL;
 
     if (cose_type[i] == COSE_ES256)
       r = fido_assert_verify(assert[i], 0, COSE_ES256, es256_pk[i]);
@@ -1726,12 +1733,6 @@ out:
 
   free(pk);
   free(b64_challenge);
-  free(b64_cdh);
-  free(b64_rpid);
-  free(b64_authdata);
-  free(b64_sig);
-  free(authdata);
-  free(sig);
 
   return retval;
 }
