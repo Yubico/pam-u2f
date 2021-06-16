@@ -218,6 +218,8 @@ static const char *cose_string(int type) {
       return "es256";
     case COSE_RS256:
       return "rs256";
+    case COSE_EDDSA:
+      return "eddsa";
     default:
       return "unknown";
   }

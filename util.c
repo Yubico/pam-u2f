@@ -5,6 +5,7 @@
 #include <fido.h>
 #include <fido/es256.h>
 #include <fido/rs256.h>
+#include <fido/eddsa.h>
 
 #include <openssl/ec.h>
 #include <openssl/obj_mac.h>
@@ -1276,16 +1277,19 @@ static void reset_pk(struct pk *pk) {
     es256_pk_free((es256_pk_t **) &pk->ptr);
   } else if (pk->type == COSE_RS256) {
     rs256_pk_free((rs256_pk_t **) &pk->ptr);
+  } else if (pk->type == COSE_EDDSA) {
+    eddsa_pk_free((eddsa_pk_t **) &pk->ptr);
   }
   memset(pk, 0, sizeof(*pk));
 }
-
 
 int cose_type(const char *str, int *type) {
   if (strcmp(str, "es256") == 0) {
     *type = COSE_ES256;
   } else if (strcmp(str, "rs256") == 0) {
     *type = COSE_RS256;
+  } else if (strcmp(str, "eddsa") == 0) {
+    *type = COSE_EDDSA;
   } else {
     *type = 0;
     return 0;
@@ -1350,6 +1354,17 @@ static int parse_pk(const cfg_t *cfg, int old, const char *type, const char *pk,
     if (r != FIDO_OK) {
       if (cfg->debug)
         D(cfg->debug_file, "Failed to convert RS256 public key");
+    }
+  } else if (out->type == COSE_EDDSA) {
+    if ((out->ptr = eddsa_pk_new()) == NULL) {
+      if (cfg->debug)
+        D(cfg->debug_file, "Failed to allocate EDDSA public key");
+      goto err;
+    }
+    r = eddsa_pk_from_ptr(out->ptr, buf, buf_len);
+    if (r != FIDO_OK) {
+      if (cfg->debug)
+        D(cfg->debug_file, "Failed to convert EDDSA public key");
     }
   } else {
     if (cfg->debug)
