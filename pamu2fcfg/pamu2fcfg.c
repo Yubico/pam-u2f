@@ -32,7 +32,7 @@ static fido_cred_t *prepare_cred(const struct gengetopt_args_info *const args) {
   unsigned char userid[32];
   unsigned char cdh[32];
   char origin[BUFSIZE];
-  int cose_type;
+  int type;
   int ok = -1;
   size_t n;
   int r;
@@ -42,19 +42,15 @@ static fido_cred_t *prepare_cred(const struct gengetopt_args_info *const args) {
     goto err;
   }
 
-  cose_type = COSE_ES256; /* default */
+  type = COSE_ES256; /* default */
   if (args->type_given) {
-    if (!strcasecmp(args->type_arg, "es256")) {
-      cose_type = COSE_ES256;
-    } else if (!strcasecmp(args->type_arg, "rs256")) {
-      cose_type = COSE_RS256;
-    } else {
+    if (!cose_type(args->type_arg, &type)) {
       fprintf(stderr, "Unknown COSE type '%s'.\n", args->type_arg);
       goto err;
     }
   }
 
-  if ((r = fido_cred_set_type(cred, cose_type)) != FIDO_OK) {
+  if ((r = fido_cred_set_type(cred, type)) != FIDO_OK) {
     fprintf(stderr, "error: fido_cred_set_type (%d): %s\n", r, fido_strerr(r));
     goto err;
   }
@@ -216,6 +212,17 @@ static int verify_cred(const fido_cred_t *const cred) {
   return 0;
 }
 
+static const char *cose_string(int type) {
+  switch (type) {
+    case COSE_ES256:
+      return "es256";
+    case COSE_RS256:
+      return "rs256";
+    default:
+      return "unknown";
+  }
+}
+
 static int print_authfile_line(const struct gengetopt_args_info *const args,
                                const fido_cred_t *const cred) {
   const unsigned char *kh = NULL;
@@ -266,7 +273,7 @@ static int print_authfile_line(const struct gengetopt_args_info *const args,
   }
 
   printf(":%s,%s,%s,%s%s%s", args->resident_given ? "*" : b64_kh, b64_pk,
-         fido_cred_type(cred) == COSE_ES256 ? "es256" : "rs256",
+         cose_string(fido_cred_type(cred)),
          !args->no_user_presence_given ? "+presence" : "",
          args->user_verification_given ? "+verification" : "",
          args->pin_verification_given ? "+pin" : "");

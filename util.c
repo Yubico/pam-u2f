@@ -1281,7 +1281,7 @@ static void reset_pk(struct pk *pk) {
 }
 
 
-static int cose_type(const char *str, int *type) {
+int cose_type(const char *str, int *type) {
   if (strcmp(str, "es256") == 0) {
     *type = COSE_ES256;
   } else if (strcmp(str, "rs256") == 0) {

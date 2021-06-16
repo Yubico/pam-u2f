@@ -75,6 +75,7 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
 char *converse(pam_handle_t *pamh, int echocode, const char *prompt);
 void _debug(FILE *, const char *, int, const char *, const char *, ...);
 int random_bytes(void *, size_t);
+int cose_type(const char *, int *);
 
 #if !defined(HAVE_EXPLICIT_BZERO)
 void explicit_bzero(void *, size_t);
