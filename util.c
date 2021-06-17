@@ -1139,11 +1139,11 @@ static void reset_pk(struct pk *pk) {
 }
 
 int cose_type(const char *str, int *type) {
-  if (strcmp(str, "es256") == 0) {
+  if (strcasecmp(str, "es256") == 0) {
     *type = COSE_ES256;
-  } else if (strcmp(str, "rs256") == 0) {
+  } else if (strcasecmp(str, "rs256") == 0) {
     *type = COSE_RS256;
-  } else if (strcmp(str, "eddsa") == 0) {
+  } else if (strcasecmp(str, "eddsa") == 0) {
     *type = COSE_EDDSA;
   } else {
     *type = 0;
