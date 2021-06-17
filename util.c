@@ -1130,6 +1130,19 @@ int cose_type(const char *str, int *type) {
   return 1;
 }
 
+const char *cose_string(int type) {
+  switch (type) {
+    case COSE_ES256:
+      return "es256";
+    case COSE_RS256:
+      return "rs256";
+    case COSE_EDDSA:
+      return "eddsa";
+    default:
+      return "unknown";
+  }
+}
+
 static int parse_pk(const cfg_t *cfg, int old, const char *type, const char *pk,
                     struct pk *out) {
   unsigned char *buf = NULL;

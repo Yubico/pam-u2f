@@ -212,19 +212,6 @@ static int verify_cred(const fido_cred_t *const cred) {
   return 0;
 }
 
-static const char *cose_string(int type) {
-  switch (type) {
-    case COSE_ES256:
-      return "es256";
-    case COSE_RS256:
-      return "rs256";
-    case COSE_EDDSA:
-      return "eddsa";
-    default:
-      return "unknown";
-  }
-}
-
 static int print_authfile_line(const struct gengetopt_args_info *const args,
                                const fido_cred_t *const cred) {
   const unsigned char *kh = NULL;
