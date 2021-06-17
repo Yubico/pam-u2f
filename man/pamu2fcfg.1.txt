@@ -31,7 +31,7 @@ Application ID to use during registration. Defaults to *origin*
 Generate a resident credential. Defaults to off.
 
 *-t*, *--type*=_STRING_::
-COSE type to use during registration (ES256 or RS256). Defaults to ES256.
+COSE type to use during registration (ES256, EDDSA, or RS256). Defaults to ES256.
 
 *-P*, *--no-user-presence*::
 Allow using the credential without ensuring the user's presence.

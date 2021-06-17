@@ -326,11 +326,12 @@ It is then possible to generate a credential file with:
 $ ssh-keygen -t ecdsa-sk -f ./credential.ssh
 ----
 
-Note that passphrase protected credentials are currently not supported.
+Supported key types are ecdsa-sk and ed25519-sk. Note that passphrase protected
+credentials are currently not supported.
 
-To use this credential the `authfile` parameter should be set to the
-path of the file `credential.ssh` (or use the default `id_ecdsa_sk`
-name and location) and the `sshformat` option should be set.
+To use this credential the `authfile` parameter should be set to the path of
+the file `credential.ssh` and the `sshformat` option should also be set. If the
+`authfile` parameter is not set, it defaults to `~/.ssh/id_ecdsa_sk`.
 
 [[devices]]
 Multiple Devices
