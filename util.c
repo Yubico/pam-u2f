@@ -34,8 +34,12 @@
 #define SSH_AUTH_MAGIC_LEN (sizeof(SSH_AUTH_MAGIC)) // AUTH_MAGIC includes \0
 #define SSH_ES256 "sk-ecdsa-sha2-nistp256@openssh.com"
 #define SSH_ES256_LEN (sizeof(SSH_ES256) - 1)
+#define SSH_ES256_POINT_LEN 65
 #define SSH_P256_NAME "nistp256"
 #define SSH_P256_NAME_LEN (sizeof(SSH_P256_NAME) - 1)
+#define SSH_EDDSA "sk-ssh-ed25519@openssh.com"
+#define SSH_EDDSA_LEN (sizeof(SSH_EDDSA) - 1)
+#define SSH_EDDSA_POINT_LEN 32
 #define SSH_SK_USER_PRESENCE_REQD 0x01
 #define SSH_SK_USER_VERIFICATION_REQD 0x04
 #define SSH_SK_RESIDENT_KEY 0x20
@@ -509,6 +513,8 @@ static int ssh_get_pubkey(const cfg_t *cfg, const unsigned char **buf,
   char *ssh_curve = NULL;
   const unsigned char *blob;
   size_t len;
+  int type;
+  size_t point_len;
   int ok = 0;
 
   *type_p = NULL;
@@ -522,11 +528,13 @@ static int ssh_get_pubkey(const cfg_t *cfg, const unsigned char **buf,
     goto err;
   }
 
-  // TODO(adma): Add support for eddsa
   if (len == SSH_ES256_LEN && memcmp(ssh_type, SSH_ES256, SSH_ES256_LEN) == 0) {
-    if (cfg->debug) {
-      D(cfg->debug_file, "keytype (%zu) \"%s\"", len, ssh_type);
-    }
+    type = COSE_ES256;
+    point_len = SSH_ES256_POINT_LEN;
+  } else if (len == SSH_EDDSA_LEN &&
+             memcmp(ssh_type, SSH_EDDSA, SSH_EDDSA_LEN) == 0) {
+    type = COSE_EDDSA;
+    point_len = SSH_EDDSA_POINT_LEN;
   } else {
     if (cfg->debug) {
       D(cfg->debug_file, "Unknown key type %s", ssh_type);
@@ -534,25 +542,30 @@ static int ssh_get_pubkey(const cfg_t *cfg, const unsigned char **buf,
     goto err;
   }
 
-  // curve name
-  if (!ssh_get_cstring(buf, size, &ssh_curve, &len)) {
-    if (cfg->debug) {
-      D(cfg->debug_file, "Malformed SSH key (curvename)");
-    }
-    goto err;
+  if (cfg->debug) {
+    D(cfg->debug_file, "keytype (%zu) \"%s\"", len, ssh_type);
   }
 
-  // TODO(adma): Add support for eddsa
-  if (len == SSH_P256_NAME_LEN &&
-      memcmp(ssh_curve, SSH_P256_NAME, SSH_P256_NAME_LEN) == 0) {
-    if (cfg->debug) {
-      D(cfg->debug_file, "curvename (%zu) \"%s\"", len, ssh_curve);
+  if (type == COSE_ES256) {
+    // curve name
+    if (!ssh_get_cstring(buf, size, &ssh_curve, &len)) {
+      if (cfg->debug) {
+        D(cfg->debug_file, "Malformed SSH key (curvename)");
+      }
+      goto err;
     }
-  } else {
-    if (cfg->debug) {
-      D(cfg->debug_file, "Unknown curve %s", ssh_curve);
+
+    if (len == SSH_P256_NAME_LEN &&
+        memcmp(ssh_curve, SSH_P256_NAME, SSH_P256_NAME_LEN) == 0) {
+      if (cfg->debug) {
+        D(cfg->debug_file, "curvename (%zu) \"%s\"", len, ssh_curve);
+      }
+    } else {
+      if (cfg->debug) {
+        D(cfg->debug_file, "Unknown curve %s", ssh_curve);
+      }
+      goto err;
     }
-    goto err;
   }
 
   // point
@@ -563,23 +576,34 @@ static int ssh_get_pubkey(const cfg_t *cfg, const unsigned char **buf,
     goto err;
   }
 
-  if (len != 65) { // TODO(adma): unmagify and add support for eddsa
+  if (len != point_len) {
     if (cfg->debug) {
-      D(cfg->debug_file, "Invalid point length, should be %d, found %zu", 65,
-        len);
+      D(cfg->debug_file, "Invalid point length, should be %zu, found %zu",
+        point_len, len);
     }
     goto err;
   }
 
-  // Skip the initial '04'
-  if (len == 0 || !b64_encode(blob + 1, len - 1, pubkey_p)) {
+  if (type == COSE_ES256) {
+    // Skip the initial '04'
+    if (len < 1) {
+      if (cfg->debug) {
+        D(cfg->debug_file, "Failed to skip initial '04'");
+      }
+      goto err;
+    }
+    blob++;
+    len--;
+  }
+
+  if (!b64_encode(blob, len, pubkey_p)) {
     if (cfg->debug) {
       D(cfg->debug_file, "Unable to allocate public key");
     }
     goto err;
   }
 
-  if ((*type_p = strdup("es256")) == NULL) {
+  if ((*type_p = strdup(cose_string(type))) == NULL) {
     if (cfg->debug) {
       D(cfg->debug_file, "Unable to allocate COSE type");
     }
@@ -587,7 +611,6 @@ static int ssh_get_pubkey(const cfg_t *cfg, const unsigned char **buf,
   }
 
   ok = 1;
-
 err:
   if (!ok) {
     free(*type_p);
