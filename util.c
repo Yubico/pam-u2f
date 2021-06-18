@@ -335,28 +335,17 @@ static int parse_native_format(const cfg_t *cfg, const char *username,
   return 1;
 }
 
-static int parse_ssh_format(const cfg_t *cfg, char *buf, size_t buf_size,
-                            FILE *opwfile, size_t opwfile_size,
-                            device_t *devices, unsigned *n_devs) {
-
+static int load_ssh_key(const cfg_t *cfg, char *buf, size_t buf_size,
+                        FILE *opwfile, size_t opwfile_size) {
   char *cp = buf;
   int ch;
-  int retval;
-  char *decoded;
-  char *decoded_initial = NULL;
-  size_t decoded_len;
-  unsigned len;
 
-  // The logic below is inspired by
-  // how ssh parses its own keys. See sshkey.c
-
-  retval = -2;
   if (opwfile_size > buf_size ||
       opwfile_size < SSH_HEADER_LEN + SSH_TRAILER_LEN) {
     if (cfg->debug) {
       D(cfg->debug_file, "Malformed SSH key (length)");
     }
-    goto out;
+    return 0;
   }
 
   // NOTE(adma): +1 for \0
@@ -366,7 +355,7 @@ static int parse_ssh_format(const cfg_t *cfg, char *buf, size_t buf_size,
     if (cfg->debug) {
       D(cfg->debug_file, "Malformed SSH key (header)");
     }
-    goto out;
+    return 0;
   }
 
   while (opwfile_size > 0 && buf_size > 1) {
@@ -375,7 +364,7 @@ static int parse_ssh_format(const cfg_t *cfg, char *buf, size_t buf_size,
       if (cfg->debug) {
         D(cfg->debug_file, "Unexpected authfile termination");
       }
-      goto out;
+      return 0;
     }
 
     opwfile_size--;
@@ -392,7 +381,7 @@ static int parse_ssh_format(const cfg_t *cfg, char *buf, size_t buf_size,
           if (cfg->debug) {
             D(cfg->debug_file, "Malformed SSH key (trailer)");
           }
-          return retval;
+          return 0;
         }
 
         *(cp) = '\0';
@@ -406,15 +395,30 @@ static int parse_ssh_format(const cfg_t *cfg, char *buf, size_t buf_size,
   if (cfg->debug) { // TODO(adma): too verbose? Delete?
     D(cfg->debug_file, "Credential is \"%s\"", buf);
   }
-  retval = -1;
 
-  decoded_len = strlen(buf);
-  if (b64_decode(buf, (void **) &decoded, &decoded_len) == 0) {
+  return 1;
+}
+
+static int parse_ssh_format(const cfg_t *cfg, char *buf, size_t buf_size,
+                            FILE *opwfile, size_t opwfile_size,
+                            device_t *devices, unsigned *n_devs) {
+
+  unsigned char *decoded;
+  unsigned char *decoded_initial = NULL;
+  size_t decoded_len;
+  unsigned len;
+
+  // The logic below is inspired by
+  // how ssh parses its own keys. See sshkey.c
+
+  if (!load_ssh_key(cfg, buf, buf_size, opwfile, opwfile_size) ||
+      !b64_decode(buf, (void **) &decoded, &decoded_len)) {
     if (cfg->debug) {
       D(cfg->debug_file, "Unable to decode credential");
     }
     goto out;
   }
+
   decoded_initial = decoded;
 
   // magic
@@ -915,7 +919,7 @@ out:
     decoded_initial = NULL;
   }
 
-  return retval;
+  return -1;
 }
 
 int get_devices_from_authfile(const cfg_t *cfg, const char *username,
