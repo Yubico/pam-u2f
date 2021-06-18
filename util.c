@@ -154,6 +154,14 @@ fail:
 
 static int is_resident(const char *kh) { return strcmp(kh, "*") == 0; }
 
+static void reset_device(device_t *device) {
+  free(device->keyHandle);
+  free(device->publicKey);
+  free(device->coseType);
+  free(device->attributes);
+  memset(device, 0, sizeof(*device));
+}
+
 static int parse_native_format(const cfg_t *cfg, const char *username,
                                char *buf, FILE *opwfile, device_t *devices,
                                unsigned *n_devs) {
@@ -177,15 +185,7 @@ static int parse_native_format(const cfg_t *cfg, const char *username,
 
       // only keep last line for this user
       for (i = 0; i < *n_devs; i++) {
-        free(devices[i].keyHandle);
-        free(devices[i].publicKey);
-        free(devices[i].coseType);
-        free(devices[i].attributes);
-        devices[i].keyHandle = NULL;
-        devices[i].publicKey = NULL;
-        devices[i].coseType = NULL;
-        devices[i].attributes = NULL;
-        devices[i].old_format = 0;
+        reset_device(&devices[i]);
       }
       *n_devs = 0;
 
@@ -204,11 +204,7 @@ static int parse_native_format(const cfg_t *cfg, const char *username,
           break;
         }
 
-        devices[i].keyHandle = NULL;
-        devices[i].publicKey = NULL;
-        devices[i].coseType = NULL;
-        devices[i].attributes = NULL;
-        devices[i].old_format = 0;
+        reset_device(&devices[i]);
 
         s_token = strtok_r(s_credential, ",", &credsaveptr);
 
@@ -618,11 +614,7 @@ static int parse_ssh_format(const cfg_t *cfg, char *buf, size_t buf_size,
 
   // The logic below is inspired by
   // how ssh parses its own keys. See sshkey.c
-  devices[0].keyHandle = NULL;
-  devices[0].publicKey = NULL;
-  devices[0].coseType = NULL;
-  devices[0].attributes = NULL;
-  devices[0].old_format = 0;
+  reset_device(&devices[0]);
 
   if (!load_ssh_key(cfg, buf, buf_size, opwfile, opwfile_size) ||
       !b64_decode(buf, (void **) &decoded_initial, &decoded_len)) {
@@ -765,25 +757,7 @@ static int parse_ssh_format(const cfg_t *cfg, char *buf, size_t buf_size,
   return 1;
 
 out:
-  if (devices[0].keyHandle) {
-    free(devices[0].keyHandle);
-    devices[0].keyHandle = NULL;
-  }
-
-  if (devices[0].publicKey) {
-    free(devices[0].publicKey);
-    devices[0].publicKey = NULL;
-  }
-
-  if (devices[0].coseType) {
-    free(devices[0].coseType);
-    devices[0].coseType = NULL;
-  }
-
-  if (devices[0].attributes) {
-    free(devices[0].attributes);
-    devices[0].attributes = NULL;
-  }
+  reset_device(&devices[0]);
 
   if (decoded_initial) {
     free(decoded_initial);
@@ -892,14 +866,7 @@ int get_devices_from_authfile(const cfg_t *cfg, const char *username,
 
 err:
   for (i = 0; i < *n_devs; i++) {
-    free(devices[i].keyHandle);
-    free(devices[i].publicKey);
-    free(devices[i].coseType);
-    free(devices[i].attributes);
-    devices[i].keyHandle = NULL;
-    devices[i].publicKey = NULL;
-    devices[i].coseType = NULL;
-    devices[i].attributes = NULL;
+    reset_device(&devices[i]);
   }
 
   *n_devs = 0;
@@ -926,17 +893,7 @@ void free_devices(device_t *devices, const unsigned n_devs) {
     return;
 
   for (i = 0; i < n_devs; i++) {
-    free(devices[i].keyHandle);
-    devices[i].keyHandle = NULL;
-
-    free(devices[i].publicKey);
-    devices[i].publicKey = NULL;
-
-    free(devices[i].coseType);
-    devices[i].coseType = NULL;
-
-    free(devices[i].attributes);
-    devices[i].attributes = NULL;
+    reset_device(&devices[i]);
   }
 
   free(devices);

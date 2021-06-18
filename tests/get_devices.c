@@ -32,6 +32,7 @@ int main(int argc, const char **argv) {
   cfg.sshformat = 1;
 
   device_t dev[24];
+  memset(dev, 0, sizeof(dev));
   unsigned n_devs;
   char *username;
 
