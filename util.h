@@ -73,9 +73,15 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
 int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
                              const unsigned n_devs, pam_handle_t *pamh);
 char *converse(pam_handle_t *pamh, int echocode, const char *prompt);
-void _debug(FILE *, const char *, int, const char *, const char *, ...);
 int random_bytes(void *, size_t);
 int cose_type(const char *, int *);
+
+#ifdef __GNUC__
+void _debug(FILE *, const char *, int, const char *, const char *, ...)
+  __attribute__((__format__(printf, 5, 6)));
+#else
+void _debug(FILE *, const char *, int, const char *, const char *, ...);
+#endif /* __GNUC__ */
 
 #if !defined(HAVE_EXPLICIT_BZERO)
 void explicit_bzero(void *, size_t);

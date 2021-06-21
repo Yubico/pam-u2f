@@ -1248,7 +1248,7 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
   ndevs_prev = ndevs;
 
   if (cfg->debug)
-    D(cfg->debug_file, "Device max index is %u", ndevs);
+    D(cfg->debug_file, "Device max index is %zu", ndevs);
 
   authlist = calloc(64 + 1, sizeof(fido_dev_t *));
   if (!authlist) {
