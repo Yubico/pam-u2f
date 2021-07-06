@@ -400,23 +400,26 @@ static int load_ssh_key(const cfg_t *cfg, char *buf, size_t buf_size,
   return 1;
 }
 
-static int ssh_get_u8(const unsigned char **buf, size_t *size, uint8_t *val) {
-  if (*size < sizeof(uint8_t))
+static int ssh_get(const unsigned char **buf, size_t *size, unsigned char *dst,
+                   size_t len) {
+  if (*size < len)
     return 0;
-  if (val != NULL)
-    *val = *((uint8_t *) *buf);
-  *buf += sizeof(uint8_t);
-  *size -= sizeof(uint8_t);
+  if (dst != NULL)
+    memcpy(dst, *buf, len);
+  *buf += len;
+  *size -= len;
   return 1;
 }
 
+static int ssh_get_u8(const unsigned char **buf, size_t *size, uint8_t *val) {
+  return ssh_get(buf, size, val, sizeof(*val));
+}
+
 static int ssh_get_u32(const unsigned char **buf, size_t *size, uint32_t *val) {
-  if (*size < sizeof(uint32_t))
+  if (!ssh_get(buf, size, (unsigned char *) val, sizeof(*val)))
     return 0;
   if (val != NULL)
-    *val = ntohl(*((uint32_t *) *buf));
-  *buf += sizeof(uint32_t);
-  *size -= sizeof(uint32_t);
+    *val = ntohl(*val);
   return 1;
 }
 
@@ -424,14 +427,14 @@ static int ssh_get_string_ref(const unsigned char **buf, size_t *size,
                               const unsigned char **ref, size_t *lenp) {
   uint32_t len;
 
-  if (!ssh_get_u32(buf, size, &len) || *size < len)
+  if (!ssh_get_u32(buf, size, &len))
+    return 0;
+  if (!ssh_get(buf, size, NULL, len))
     return 0;
   if (ref != NULL)
-    *ref = *buf;
+    *ref = *buf - len;
   if (lenp != NULL)
     *lenp = len;
-  *buf += len;
-  *size -= len;
   return 1;
 }
 
