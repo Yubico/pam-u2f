@@ -426,8 +426,10 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
 
   if (cfg->manual == 0) {
     if (cfg->interactive) {
-      converse(pamh, PAM_PROMPT_ECHO_ON,
-               cfg->prompt != NULL ? cfg->prompt : DEFAULT_PROMPT);
+      buf = converse(pamh, PAM_PROMPT_ECHO_ON,
+                     cfg->prompt != NULL ? cfg->prompt : DEFAULT_PROMPT);
+      free(buf);
+      buf = NULL;
     }
 
     retval = do_authentication(cfg, devices, n_devices, pamh);
