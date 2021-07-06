@@ -227,6 +227,10 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
     DBG("Maximum devices number not set. Using default (%d)", MAX_DEVS);
     cfg->max_devs = MAX_DEVS;
   }
+#if WITH_FUZZING
+  if (cfg->max_devs > 256)
+    cfg->max_devs = 256;
+#endif
 
   devices = calloc(cfg->max_devs, sizeof(device_t));
   if (!devices) {
