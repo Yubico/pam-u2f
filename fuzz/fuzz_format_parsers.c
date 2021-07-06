@@ -9,37 +9,12 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "fuzz/fuzz.h"
 #include "util.c"
 #include "b64.c"
 
-/* wrap some functions so we can let them fail some times to trigger error
- * paths. compile with -Wl,--wrap=strdup -Wl,--wrap=calloc to activate.
- * Note: idea taken from libfido2/fuzz/wrap.c
- */
-extern char *__wrap_strdup(const char *);
-extern char *__real_strdup(const char *);
-char *__wrap_strdup(const char *s) {
-  if (random() < (RAND_MAX / 100) / 4) { // fail 0.25% of the time
-    errno = ENOMEM;
-    return NULL;
-  }
-
-  return __real_strdup(s);
-}
-
-extern void *__wrap_calloc(size_t, size_t);
-extern void *__real_calloc(size_t, size_t);
-void *__wrap_calloc(size_t nmemb, size_t size) {
-  if (random() < (RAND_MAX / 100) / 4) { // fail 0.25% of the time
-    errno = ENOMEM;
-    return NULL;
-  }
-
-  return __real_calloc(nmemb, size);
-}
-
 static void cleanup(device_t *devs, unsigned int n_devs) {
-  for (int i = 0; i < n_devs; i++) {
+  for (unsigned int i = 0; i < n_devs; i++) {
     free(devs[i].keyHandle);
     free(devs[i].publicKey);
     free(devs[i].coseType);
@@ -53,6 +28,7 @@ static void cleanup(device_t *devs, unsigned int n_devs) {
 
 #define DEV_MAX_SIZE 10
 
+int LLVMFuzzerTestOneInput(const uint8_t *, size_t);
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   char buf[DEVSIZE * DEV_MAX_SIZE]; /* DEVSIZE * cfg.max_size */
   device_t devs[12] = {0};
@@ -67,9 +43,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   cfg.max_devs = DEV_MAX_SIZE;
 
   /* first 6 byte decides which parser we should call, if
-   * we want to run with debug and also sets the initial seed
-   * for random().
-   */
+   * we want to run with debug and also sets the initial seed */
   if (size < 6) {
     return -1;
   }
@@ -79,8 +53,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   }
 
   /* predictable random for this seed */
-  srandom(data[offset] << 24 | data[offset + 1] << 16 | data[offset + 2] << 8 |
-          data[offset + 3]);
+  prng_init(data[offset] << 24 | data[offset + 1] << 16 | data[offset + 2] << 8 |
+            data[offset + 3]);
   offset += 4;
 
   /* choose which format parser to run, even == native, odd == ssh */

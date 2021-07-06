@@ -10,6 +10,9 @@ ACLOCAL_AMFLAGS = -I m4
 
 AM_CFLAGS = $(CWFLAGS) $(CSFLAGS)
 AM_CPPFLAGS = $(LIBFIDO2_CFLAGS) $(LIBCRYPTO_CFLAGS)
+if ENABLE_FUZZING
+AM_CPPFLAGS += -fsanitize=fuzzer-no-link
+endif
 
 pampluginexecdir = $(PAMDIR)
 pampluginexec_LTLIBRARIES = pam_u2f.la
@@ -23,6 +26,36 @@ pam_u2f_la_SOURCES += explicit_bzero.c
 pam_u2f_la_LIBADD = -lpam
 pam_u2f_la_LIBADD += $(LIBFIDO2_LIBS) $(LIBCRYPTO_LIBS)
 pam_u2f_la_LDFLAGS = -module -avoid-version
+
+if ENABLE_FUZZING
+pam_u2f_la_SOURCES += fuzz/wrap.c
+pam_u2f_la_LDFLAGS += -Wl,--wrap=strdup
+pam_u2f_la_LDFLAGS += -Wl,--wrap=calloc
+pam_u2f_la_LDFLAGS += -Wl,--wrap=malloc
+pam_u2f_la_LDFLAGS += -Wl,--wrap=open
+pam_u2f_la_LDFLAGS += -Wl,--wrap=close
+pam_u2f_la_LDFLAGS += -Wl,--wrap=fdopen
+pam_u2f_la_LDFLAGS += -Wl,--wrap=fstat
+pam_u2f_la_LDFLAGS += -Wl,--wrap=read
+pam_u2f_la_LDFLAGS += -Wl,--wrap=gethostname
+pam_u2f_la_LDFLAGS += -Wl,--wrap=getpwnam_r
+pam_u2f_la_LDFLAGS += -Wl,--wrap=getpwuid_r
+pam_u2f_la_LDFLAGS += -Wl,--wrap=geteuid
+pam_u2f_la_LDFLAGS += -Wl,--wrap=secure_getenv
+pam_u2f_la_LDFLAGS += -Wl,--wrap=pam_get_user
+pam_u2f_la_LDFLAGS += -Wl,--wrap=pam_get_item
+pam_u2f_la_LDFLAGS += -Wl,--wrap=pam_modutil_drop_priv
+pam_u2f_la_LDFLAGS += -Wl,--wrap=pam_modutil_regain_priv
+pam_u2f_la_LDFLAGS += -Wl,--wrap=BIO_new
+pam_u2f_la_LDFLAGS += -Wl,--wrap=BIO_write
+pam_u2f_la_LDFLAGS += -Wl,--wrap=BIO_read
+pam_u2f_la_LDFLAGS += -Wl,--wrap=BIO_ctrl
+pam_u2f_la_LDFLAGS += -Wl,--wrap=BIO_new_mem_buf
+pam_u2f_la_LDFLAGS += -Wl,--wrap=EC_KEY_new_by_curve_name
+pam_u2f_la_LDFLAGS += -Wl,--wrap=EC_KEY_get0_group
+pam_u2f_la_LDFLAGS += -Wl,--wrap=fido_dev_open
+pam_u2f_la_LDFLAGS += -Wl,--wrap=fido_dev_info_manifest
+endif
 
 DEFS = -DDEBUG_PAM -DPAM_DEBUG @DEFS@
 
