@@ -33,7 +33,9 @@ char *secure_getenv(const char *name) {
 #endif
 
 static void parse_cfg(int flags, int argc, const char **argv, cfg_t *cfg) {
+#ifndef WITH_FUZZING
   struct stat st;
+#endif
   FILE *file = NULL;
   int fd = -1;
   int i;
@@ -94,7 +96,11 @@ static void parse_cfg(int flags, int argc, const char **argv, cfg_t *cfg) {
       } else {
         fd = open(filename,
                   O_WRONLY | O_APPEND | O_CLOEXEC | O_NOFOLLOW | O_NOCTTY);
+#ifndef WITH_FUZZING
         if (fd >= 0 && (fstat(fd, &st) == 0) && S_ISREG(st.st_mode)) {
+#else
+        if (fd >= 0) {
+#endif
           file = fdopen(fd, "a");
           if (file != NULL) {
             cfg->debug_file = file;

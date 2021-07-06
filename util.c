@@ -1267,7 +1267,11 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
   char *pin = NULL;
 
   init_opts(&opts);
+#ifndef WITH_FUZZING
   fido_init(cfg->debug ? FIDO_DEBUG : 0);
+#else
+  fido_init(0);
+#endif
   memset(&pk, 0, sizeof(pk));
 
   devlist = fido_dev_info_new(64);
@@ -1516,7 +1520,11 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
   memset(assert, 0, sizeof(assert));
   memset(pk, 0, sizeof(pk));
 
+#ifndef WITH_FUZZING
   fido_init(cfg->debug ? FIDO_DEBUG : 0);
+#else
+  fido_init(0);
+#endif
 
   for (i = 0; i < n_devs; ++i) {
     /* options used during authentication */
@@ -1660,7 +1668,12 @@ void _debug(FILE *debug_file, const char *file, int line, const char *func,
             const char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
-#ifdef LOG_DEBUG
+
+#if defined(WITH_FUZZING)
+  (void) debug_file;
+  snprintf(NULL, 0, DEBUG_STR, file, line, func);
+  vsnprintf(NULL, 0, fmt, ap);
+#elif defined(LOG_DEBUG)
   if (debug_file == (FILE *) -1) {
     syslog(LOG_AUTHPRIV | LOG_DEBUG, DEBUG_STR, file, line, func);
     vsyslog(LOG_AUTHPRIV | LOG_DEBUG, fmt, ap);
