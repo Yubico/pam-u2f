@@ -33,6 +33,9 @@ AM_CONDITIONAL([ENABLE_MAN], [test "$enable_man" = "yes"])
 AC_ARG_ENABLE([fuzzing],
   [AS_HELP_STRING([--enable-fuzzing], [Enable fuzzing targets])]
 )
+AS_IF([test "$enable_fuzzing" = "yes"],[
+  AC_DEFINE([WITH_FUZZING])
+])
 AM_CONDITIONAL([ENABLE_FUZZING], [test "$enable_fuzzing" = "yes"])
 
 AC_CHECK_HEADERS([security/pam_appl.h], [],
