@@ -1,6 +1,6 @@
 #!/bin/sh -eux
 
-make CFLAGS="-fprofile-instr-generate -fcoverage-mapping" V=1
+make -C .. CFLAGS="-fprofile-instr-generate -fcoverage-mapping" V=1
 if [ ! -e "corpus" ]; then
     curl --retry 4 -s -o corpus.tgz https://storage.googleapis.com/kroppkaka/corpus/pam-u2f.corpus.tgz
     tar xzf corpus.tgz
