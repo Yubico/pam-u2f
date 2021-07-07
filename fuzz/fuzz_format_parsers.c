@@ -53,8 +53,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   }
 
   /* predictable random for this seed */
-  prng_init(data[offset] << 24 | data[offset + 1] << 16 | data[offset + 2] << 8 |
-            data[offset + 3]);
+  prng_init((uint32_t) data[offset] << 24 | (uint32_t) data[offset + 1] << 16 |
+            (uint32_t) data[offset + 2] << 8 | (uint32_t) data[offset + 3]);
   offset += 4;
 
   /* choose which format parser to run, even == native, odd == ssh */
