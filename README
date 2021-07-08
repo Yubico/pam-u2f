@@ -24,7 +24,7 @@ installed using
 [source]
 ----
 # apt install --no-install-recommends autoconf automake libtool pkg-config \
-    libfido2-dev libpam-dev libssl-dev
+    libfido2-dev libcbor-dev libpam-dev libssl-dev
 ----
 
 If you downloaded a tarball, build it as follows.
@@ -59,7 +59,7 @@ necessary dependencies can be installed using
 [source]
 ----
 # apt install --no-install-recommends autoconf automake libtool gengetopt \
-    pkg-config libfido2-dev libpam-dev libssl-dev asciidoc xsltproc \
+    pkg-config libfido2-dev libcbor-dev libpam-dev libssl-dev asciidoc xsltproc \
     libxml2-utils docbook-xml
 ----
 
