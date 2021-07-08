@@ -21,7 +21,7 @@ In addition, https://developers.yubico.com/libfido2['libfido2'] (>=
 `libu2f-host` and `libu2f-server`. On Ubuntu, the necessary dependencies can be
 installed using
 
-[source]
+[source, console]
 ----
 # apt install --no-install-recommends autoconf automake libtool pkg-config \
     libfido2-dev libpam-dev libssl-dev
@@ -29,7 +29,7 @@ installed using
 
 If you downloaded a tarball, build it as follows.
 
-[source, bash]
+[source, console]
 ----
 $ ./configure
 $ make
@@ -40,14 +40,14 @@ Building from Git
 
 You may check out the sources using Git with the following command:
 
-[source, bash]
+[source, console]
 ----
 $ git clone git://github.com/Yubico/pam-u2f.git
 ----
 
 This will create a directory 'pam-u2f'. Enter the directory:
 
-[source, bash]
+[source, console]
 ----
 $ cd pam-u2f
 ----
@@ -56,7 +56,7 @@ $ cd pam-u2f
 `AsciiDoc` and `xsltproc` are used to generate the manpages. On Ubuntu, the
 necessary dependencies can be installed using
 
-[source]
+[source, console]
 ----
 # apt install --no-install-recommends autoconf automake libtool gengetopt \
     pkg-config libfido2-dev libpam-dev libssl-dev asciidoc xsltproc \
@@ -65,7 +65,7 @@ necessary dependencies can be installed using
 
 On Fedora, the necessary dependencies can be installed using
 
-[source]
+[source, console]
 ----
 # dnf -y install autoconf automake libtool gengetopt libfido2-devel pam-devel \
     openssl-devel asciidoc
@@ -73,9 +73,9 @@ On Fedora, the necessary dependencies can be installed using
 
 Generate the build system using:
 
-[source, bash]
+[source, console]
 ----
-  $ autoreconf --install
+$ autoreconf --install
 ----
 
 Then build as usual, see above under <<building,Building>>.
@@ -301,7 +301,7 @@ In order to obtain the required information for the authentication procedure,
 a token should be first registered. This can be done by using the command line
 configuration tool provided with the module:
 
-[source, bash]
+[source, console]
 ----
 $ pamu2fcfg -uusername -opam://myorigin -ipam://myappid
 ----
@@ -321,7 +321,7 @@ SSH Credentials
 To generate SSH credentials OpenSSH version 8.2 or later is required.
 It is then possible to generate a credential file with:
 
-[source, bash]
+[source, console]
 ----
 $ ssh-keygen -t ecdsa-sk -f ./credential.ssh
 ----
@@ -359,7 +359,7 @@ In order to correctly update the security context the command
 Moreover, to allow read access to an authfile or directory placed in a
 non-standard location, the command
 
-[source, bash]
+[source, console]
 ----
 # chcon -R -t auth_home_t /path/to/target
 ----
