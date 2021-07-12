@@ -1062,8 +1062,8 @@ static int set_cdh(const cfg_t *cfg, fido_assert_t *assert) {
   return 1;
 }
 
-static fido_assert_t *prepare_assert(const cfg_t *cfg, const char *origin,
-                                     const char *kh, const struct opts *opts) {
+static fido_assert_t *prepare_assert(const cfg_t *cfg, const device_t *device,
+                                     const struct opts *opts) {
   fido_assert_t *assert = NULL;
   unsigned char *buf = NULL;
   size_t buf_len;
@@ -1076,20 +1076,24 @@ static fido_assert_t *prepare_assert(const cfg_t *cfg, const char *origin,
     goto err;
   }
 
-  r = fido_assert_set_rp(assert, origin);
+  if (device->old_format && strcmp(cfg->origin, cfg->appid) != 0)
+    r = fido_assert_set_rp(assert, cfg->appid);
+  else
+    r = fido_assert_set_rp(assert, cfg->origin);
+
   if (r != FIDO_OK) {
     if (cfg->debug)
       D(cfg->debug_file, "Unable to set origin: %s (%d)", fido_strerr(r), r);
     goto err;
   }
 
-  if (is_resident(kh)) {
+  if (is_resident(device->keyHandle)) {
     if (cfg->debug)
       D(cfg->debug_file, "Credential is resident");
   } else {
     if (cfg->debug)
-      D(cfg->debug_file, "Key handle: %s", kh);
-    if (!b64_decode(kh, (void **) &buf, &buf_len)) {
+      D(cfg->debug_file, "Key handle: %s", device->keyHandle);
+    if (!b64_decode(device->keyHandle, (void **) &buf, &buf_len)) {
       if (cfg->debug)
         D(cfg->debug_file, "Failed to decode key handle");
       goto err;
@@ -1306,7 +1310,7 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
         i + 1);
 
     init_opts(&opts); /* used during authenticator discovery */
-    assert = prepare_assert(cfg, cfg->origin, devices[i].keyHandle, &opts);
+    assert = prepare_assert(cfg, &devices[i], &opts);
     if (assert == NULL) {
       if (cfg->debug)
         D(cfg->debug_file, "Failed to prepare assert");
@@ -1517,7 +1521,7 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
   for (i = 0; i < n_devs; ++i) {
     /* options used during authentication */
     parse_opts(cfg, devices[i].attributes, &opts);
-    assert[i] = prepare_assert(cfg, cfg->origin, devices[i].keyHandle, &opts);
+    assert[i] = prepare_assert(cfg, &devices[i], &opts);
     if (assert[i] == NULL) {
       if (cfg->debug)
         D(cfg->debug_file, "Failed to prepare assert");
