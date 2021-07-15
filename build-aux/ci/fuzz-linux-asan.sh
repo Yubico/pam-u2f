@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euxo pipefail
 
-CORPUS_URL="https://storage.googleapis.com/kroppkaka/corpus/pam-u2f.corpus.tgz"
+CORPUS_URL="https://storage.googleapis.com/yubico-pam-u2f/corpus.tgz"
 
 LIBCBOR_URL="git://github.com/pjk/libcbor"
 LIBCBOR_TAG="v0.8.0"
@@ -64,9 +64,9 @@ make -j $(nproc)
 # fuzz
 curl --retry 4 -s -o corpus.tgz "${CORPUS_URL}"
 tar xzf corpus.tgz
-fuzz/fuzz_format_parsers corpus \
+fuzz/fuzz_format_parsers corpus/format_parsers \
 	-reload=30 -print_pcs=1 -print_funcs=30 -timeout=10 -runs=1
-fuzz/fuzz_auth corpus \
+fuzz/fuzz_auth corpus/auth \
 	-reload=30 -print_pcs=1 -print_funcs=30 -timeout=10 -runs=1
 
 popd &>/dev/null # fakeroot
