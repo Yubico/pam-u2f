@@ -100,12 +100,9 @@ sessions without U2F-support from the SSH client/server. If enabled,
 interactive mode becomes redundant and has no effect.
 
 *cue*::
-Set to prompt a message to remind to touch the device.
-
-*[cue_prompt=your prompt here]*::
-Set individual prompt message for the cue option. Watch the square
-brackets around this parameter to get spaces correctly recognized by
-PAM.
+If set, pam-u2f will ask the application to display a message reminding
+the user to interact with the device and, if an error occurs, will try
+to communicate the error back to the user.
 
 *nodetect*::
 Skip detecting if a suitable key is inserted before performing a full

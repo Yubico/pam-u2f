@@ -83,8 +83,6 @@ static void parse_cfg(int flags, int argc, const char **argv, cfg_t *cfg) {
       cfg->appid = argv[i] + 6;
     } else if (strncmp(argv[i], "prompt=", 7) == 0) {
       cfg->prompt = argv[i] + 7;
-    } else if (strncmp(argv[i], "cue_prompt=", 11) == 0) {
-      cfg->cue_prompt = argv[i] + 11;
     } else if (strncmp(argv[i], "debug_file=", 11) == 0) {
       const char *filename = argv[i] + 11;
       debug_close(cfg->debug_file);
