@@ -944,6 +944,62 @@ static int set_opts(const cfg_t *cfg, const struct opts *opts,
   return 1;
 }
 
+/* cue unless the authentication is completely silent */
+static void cue(pam_handle_t *pamh, const struct opts *opts) {
+  char *q = NULL;
+  /* XXX assumes bio */
+  if (opts->uv == FIDO_OPT_TRUE && opts->pin != FIDO_OPT_TRUE) {
+    q = strdup("Please touch the authenticator with an enrolled finger.");
+  } else if (opts->up == FIDO_OPT_TRUE) {
+    q = strdup("Please confirm user presence.");
+  }
+  if (q != NULL) {
+    converse(pamh, PAM_TEXT_INFO, q);
+  }
+  free(q);
+}
+
+static void cue_error(const cfg_t *cfg, pam_handle_t *pamh, int r) {
+  char *q = NULL;
+  switch (r) {
+    case FIDO_ERR_PIN_INVALID:
+      q = strdup("Invalid PIN.");
+      break;
+    case FIDO_ERR_PIN_BLOCKED:
+      q = strdup("PIN blocked.");
+      break;
+    case FIDO_ERR_ACTION_TIMEOUT:
+      q = strdup("Touch timeout.");
+      break;
+    case FIDO_ERR_UNSUPPORTED_OPTION:
+      q = strdup("Requested option not supported by authenticator.");
+      break;
+    case FIDO_ERR_OPERATION_DENIED:
+      q = strdup("Operation denied by the authenticator.");
+      break;
+#ifdef FIDO_ERR_UV_INVALID
+    case FIDO_ERR_UV_INVALID:
+      q = strdup("Fingerprint mismatch."); /* XXX assumes bio */
+      break;
+#endif
+#ifdef FIDO_ERR_UV_BLOCKED
+    case FIDO_ERR_UV_BLOCKED:
+      q = strdup("Biometric authentication blocked."); /* XXX retry with pin? */
+      break;
+#endif
+    default:
+      if (cfg->debug) {
+        if (asprintf(&q, "Unknown error: %s", fido_strerr(r)) == -1)
+          q = strdup("Unknown error");
+      }
+      break;
+  }
+  if (q != NULL) {
+    converse(pamh, PAM_TEXT_INFO, q);
+  }
+  free(q);
+}
+
 static int set_cdh(const cfg_t *cfg, fido_assert_t *assert) {
   unsigned char cdh[32];
   int r;
@@ -1231,11 +1287,9 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
             goto out;
           }
         }
-        if (opts.up == FIDO_OPT_TRUE || opts.uv == FIDO_OPT_TRUE) {
-          if (cfg->manual == 0 && cfg->cue && !cued) {
-            cued = 1;
-            converse(pamh, PAM_TEXT_INFO, DEFAULT_CUE);
-          }
+        if (cfg->manual == 0 && cfg->cue && !cued) {
+          cue(pamh, &opts);
+          cued = 1;
         }
         r = fido_dev_get_assert(authlist[j], assert, pin);
         if (pin) {
@@ -1255,6 +1309,10 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
           if (r == FIDO_OK) {
             retval = 1;
             goto out;
+          }
+        } else {
+          if (cued) {
+            cue_error(cfg, pamh, r);
           }
         }
       }
