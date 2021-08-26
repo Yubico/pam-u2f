@@ -30,7 +30,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef HAVE_PAM_MODUTIL_DROP_PRIV
+#if !defined(HAVE_PAM_MODUTIL_DROP_PRIV) && !defined(HAVE_OPENPAM_BORROW_CRED)
 
 #include <unistd.h>
 #include <pwd.h>
