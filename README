@@ -97,6 +97,9 @@ existing one by adding a line similar to this:
 auth sufficient pam_u2f.so debug
 ----
 
+For more information about the syntax of PAM configuration files, please
+see the manual page for pam.conf(5).
+
 Supported parameters for the module are:
 
 [horizontal]
