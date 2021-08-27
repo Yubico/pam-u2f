@@ -100,6 +100,12 @@ auth sufficient pam_u2f.so debug
 For more information about the syntax of PAM configuration files, please
 see the manual page for pam.conf(5).
 
+IMPORTANT: An erroneous PAM configuration may lock some or all users
+out of the system or prevent you from gaining root privileges. It is
+recommended that you start a separate shell with root privileges while
+configuring PAM to be able to revert changes if something goes wrong.
+Test your configuration thoroughly before closing the root shell.
+
 Supported parameters for the module are:
 
 [horizontal]
