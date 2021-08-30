@@ -1029,6 +1029,57 @@ static void parse_opts(const cfg_t *cfg, const char *attr, struct opts *opts) {
   }
 }
 
+static int get_device_opts(fido_dev_t *dev, int *pin, int *uv) {
+  fido_cbor_info_t *info = NULL;
+  char *const *ptr;
+  const bool *val;
+  size_t len;
+
+  *pin = *uv = -1; /* unsupported */
+
+  if (fido_dev_is_fido2(dev)) {
+    if ((info = fido_cbor_info_new()) == NULL ||
+        fido_dev_get_cbor_info(dev, info) != FIDO_OK) {
+      fido_cbor_info_free(&info);
+      return 0;
+    }
+
+    ptr = fido_cbor_info_options_name_ptr(info);
+    val = fido_cbor_info_options_value_ptr(info);
+    len = fido_cbor_info_options_len(info);
+    for (size_t i = 0; i < len; i++) {
+      if (strcmp(ptr[i], "clientPin") == 0) {
+        *pin = val[i];
+      } else if (strcmp(ptr[i], "uv") == 0) {
+        *uv = val[i];
+      }
+    }
+  }
+
+  fido_cbor_info_free(&info);
+  return 1;
+}
+
+static int match_device_opts(fido_dev_t *dev, struct opts *opts) {
+  int pin, uv;
+
+  /* FIXME: fido_dev_{supports,has}_{pin,uv} (1.7.0) */
+  if (!get_device_opts(dev, &pin, &uv)) {
+    return -1;
+  }
+
+  if (opts->uv == FIDO_OPT_FALSE && uv < 0) {
+    opts->uv = FIDO_OPT_OMIT;
+  }
+
+  if ((opts->pin == FIDO_OPT_TRUE && pin != 1) ||
+      (opts->uv == FIDO_OPT_TRUE && uv != 1)) {
+    return 0;
+  }
+
+  return 1;
+}
+
 static int set_opts(const cfg_t *cfg, const struct opts *opts,
                     fido_assert_t *assert) {
   if (fido_assert_set_up(assert, opts->up) != FIDO_OK) {
@@ -1331,12 +1382,22 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
       goto out;
     }
 
-    /* options used during authentication */
-    parse_opts(cfg, devices[i].attributes, &opts);
-
     if (get_authenticators(cfg, devlist, ndevs, assert,
                            is_resident(devices[i].keyHandle), authlist)) {
       for (size_t j = 0; authlist[j] != NULL; j++) {
+        /* options used during authentication */
+        parse_opts(cfg, devices[i].attributes, &opts);
+
+        r = match_device_opts(authlist[j], &opts);
+        if (r != 1) {
+          if (cfg->debug) {
+            D(cfg->debug_file, "%s, skipping authenticator",
+              r < 0 ? "Failed to query supported options"
+                    : "Unsupported options");
+          }
+          continue;
+        }
+
         if (!set_opts(cfg, &opts, assert)) {
           if (cfg->debug)
             D(cfg->debug_file, "Failed to set assert options");
