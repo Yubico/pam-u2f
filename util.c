@@ -995,7 +995,7 @@ static void cue_error(const cfg_t *cfg, pam_handle_t *pamh, int r) {
       break;
   }
   if (q != NULL) {
-    converse(pamh, PAM_TEXT_INFO, q);
+    converse(pamh, PAM_ERROR_MSG, q);
   }
   free(q);
 }
