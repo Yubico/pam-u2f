@@ -196,8 +196,9 @@ interactive mode becomes redundant and has no effect.
 
 cue::
 If set, pam-u2f will ask the application to display a message reminding
-the user to interact with the device and, if an error occurs, will try
-to communicate the error back to the user.
+the user to interact with the device and, if an error occurs, will
+try to communicate the error back to the user. Note that some PAM
+applications may display this message later than expected.
 
 nodetect::
 Set to skip detecting if a suitable FIDO token is inserted before
