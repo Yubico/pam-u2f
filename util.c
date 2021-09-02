@@ -1193,7 +1193,6 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
   fido_assert_t *assert = NULL;
   fido_dev_info_t *devlist = NULL;
   fido_dev_t **authlist = NULL;
-  int cued = 0;
   int r;
   int retval = -2;
   size_t ndevs = 0;
@@ -1287,9 +1286,8 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
             goto out;
           }
         }
-        if (cfg->manual == 0 && cfg->cue && !cued) {
+        if (cfg->cue) {
           cue(pamh, &opts);
-          cued = 1;
         }
         r = fido_dev_get_assert(authlist[j], assert, pin);
         if (pin) {
@@ -1311,7 +1309,7 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
             goto out;
           }
         } else {
-          if (cued) {
+          if (cfg->cue) {
             cue_error(cfg, pamh, r);
           }
         }
