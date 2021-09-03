@@ -27,13 +27,17 @@ considerations). This filename may be alternatively set to "stderr"
 (default), "stdout", or "syslog".
 
 *origin*=_origin_::
-Set the origin for the FIDO authentication procedure.
-If no value is specified, the origin "pam://$HOSTNAME" is used.
+Set the relying party ID for the FIDO authentication procedure. If no
+value is specified, the identifier "pam://$HOSTNAME" is used.
 
 *appid*=_appid_::
 Set the application ID for the U2F authentication
 procedure. If no value is specified, the same value used for origin is
-taken ("pam://$HOSTNAME" if also origin is not specified).
+taken ("pam://$HOSTNAME" if also origin is not specified). This setting
+is only applicable for U2F credentials created with pamu2fcfg versions
+v1.0.8 or earlier. Note that on v1.1.0 and v1.1.1 of pam-u2f, handling
+of this setting was temporarily broken if the value was not the same as
+the value of origin.
 
 *authfile*=_file_::
 Set the location of the file that holds the mappings of user
