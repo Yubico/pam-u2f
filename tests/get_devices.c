@@ -6,6 +6,10 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#ifndef	__dev_t_defined
+#include <sys/types.h>
+#endif /* __dev_t_defined */
+
 /* These #defines must be present according to PAM documentation. */
 #define PAM_SM_AUTH
 
