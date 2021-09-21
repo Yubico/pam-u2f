@@ -74,6 +74,9 @@ endif
 
 # Release
 
+# XXX: make distcheck happy with install location of pam_u2f.so
+AM_DISTCHECK_CONFIGURE_FLAGS = --with-pam-dir='/$$(prefix)/$(PAMDIR)'
+
 install-exec-hook:
 	rm -f $(DESTDIR)$(pampluginexecdir)/pam_u2f.la
 	chmod -f 644 $(DESTDIR)$(pampluginexecdir)/pam_u2f.so || true
@@ -106,7 +109,7 @@ release:
 		grep -q "Version $(VERSION) .released `date -I`" || \
 		(echo 'error: Update date/version in $(srcdir)/NEWS.'; exit 1)
 	rm -f $(srcdir)/ChangeLog
-	sudo make ChangeLog distcheck
+	make ChangeLog distcheck
 	gpg --detach-sign --default-key $(KEYID) $(PACKAGE)-$(VERSION).tar.gz
 	gpg --verify $(PACKAGE)-$(VERSION).tar.gz.sig
 	cd $(srcdir) && git push
