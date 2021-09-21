@@ -78,6 +78,9 @@ install-exec-hook:
 	rm -f $(DESTDIR)$(pampluginexecdir)/pam_u2f.la
 	chmod -f 644 $(DESTDIR)$(pampluginexecdir)/pam_u2f.so || true
 
+uninstall-hook:
+	rm -f $(DESTDIR)$(pampluginexecdir)/pam_u2f.so
+
 indent:
 	clang-format -i *.c *.h pamu2fcfg/*.c pamu2fcfg/*.h
 
