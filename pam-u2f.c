@@ -160,6 +160,15 @@ static void parse_cfg(int flags, int argc, const char **argv, cfg_t *cfg) {
     D(cfg->debug_file, __VA_ARGS__);                                           \
   }
 
+static void interactive_prompt(pam_handle_t *pamh, const cfg_t *cfg) {
+  char *tmp = NULL;
+
+  tmp = converse(pamh, PAM_PROMPT_ECHO_ON,
+                 cfg->prompt != NULL ? cfg->prompt : DEFAULT_PROMPT);
+
+  free(tmp);
+}
+
 /* PAM entry point for authentication verification */
 int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
                         const char **argv) {
@@ -426,12 +435,8 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
 
   if (cfg->manual == 0) {
     if (cfg->interactive) {
-      buf = converse(pamh, PAM_PROMPT_ECHO_ON,
-                     cfg->prompt != NULL ? cfg->prompt : DEFAULT_PROMPT);
-      free(buf);
-      buf = NULL;
+      interactive_prompt(pamh, cfg);
     }
-
     retval = do_authentication(cfg, devices, n_devices, pamh);
   } else {
     retval = do_manual_authentication(cfg, devices, n_devices, pamh);
