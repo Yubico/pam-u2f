@@ -169,6 +169,68 @@ static void interactive_prompt(pam_handle_t *pamh, const cfg_t *cfg) {
   free(tmp);
 }
 
+static char *resolve_authfile_path(const cfg_t *cfg, const struct passwd *user,
+                                   int *openasuser) {
+  char *authfile = NULL;
+  const char *authfile_dir;
+  const char *default_authfile;
+  const char *default_authfile_dir;
+
+  if (!cfg->sshformat) {
+    default_authfile = DEFAULT_AUTHFILE;
+    default_authfile_dir = DEFAULT_AUTHFILE_DIR;
+  } else {
+    default_authfile = DEFAULT_AUTHFILE_SSH;
+    default_authfile_dir = DEFAULT_AUTHFILE_DIR_SSH;
+  }
+
+  if (!cfg->auth_file) {
+    authfile_dir = secure_getenv(DEFAULT_AUTHFILE_DIR_VAR);
+    if (!authfile_dir) {
+      DBG("Variable %s is not set. Using default value ($HOME%s/)",
+          DEFAULT_AUTHFILE_DIR_VAR, default_authfile_dir);
+
+      if (asprintf(&authfile, "%s%s%s", user->pw_dir, default_authfile_dir,
+                   default_authfile) == -1) {
+        goto fail;
+      }
+
+      /* Opening a file in a users $HOME, need to drop privs for security */
+      *openasuser = geteuid() == 0 ? 1 : 0;
+
+    } else {
+      DBG("Variable %s set to %s", DEFAULT_AUTHFILE_DIR_VAR, authfile_dir);
+
+      if (asprintf(&authfile, "%s%s", authfile_dir, default_authfile) == -1) {
+        goto fail;
+      }
+
+      if (!cfg->openasuser) {
+        DBG("WARNING: not dropping privileges when reading %s, please "
+            "consider setting openasuser=1 in the module configuration",
+            authfile);
+      }
+    }
+  } else if (cfg->auth_file[0] != '/') {
+    /* Individual authorization mapping by user: auth_file is not
+        absolute path, so prepend user home dir. */
+    *openasuser = geteuid() == 0 ? 1 : 0;
+
+    if (asprintf(&authfile, "%s/%s", user->pw_dir, cfg->auth_file) == -1) {
+      goto fail;
+    }
+  } else {
+    DBG("Invalid argument, path already absolute");
+    goto fail;
+  }
+
+  return authfile;
+
+fail:
+  free(authfile);
+  return NULL;
+}
+
 /* PAM entry point for authentication verification */
 int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
                         const char **argv) {
@@ -180,10 +242,6 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
   cfg_t *cfg = &cfg_st;
   char buffer[BUFSIZE];
   char *buf = NULL;
-  char *authfile_dir;
-  size_t authfile_dir_len;
-  char *default_authfile;
-  char *default_authfile_dir;
   int pgu_ret, gpn_ret;
   int retval = PAM_IGNORE;
   device_t *devices = NULL;
@@ -269,85 +327,17 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
   DBG("Found user %s", user);
   DBG("Home directory for %s is %s", user, pw->pw_dir);
 
-  if (!cfg->sshformat) {
-    default_authfile = DEFAULT_AUTHFILE;
-    default_authfile_dir = DEFAULT_AUTHFILE_DIR;
-  } else {
-    default_authfile = DEFAULT_AUTHFILE_SSH;
-    default_authfile_dir = DEFAULT_AUTHFILE_DIR_SSH;
-  }
-
-  if (!cfg->auth_file) {
-    buf = NULL;
-    authfile_dir = secure_getenv(DEFAULT_AUTHFILE_DIR_VAR);
-    if (!authfile_dir) {
-      DBG("Variable %s is not set. Using default value ($HOME%s/)",
-          DEFAULT_AUTHFILE_DIR_VAR, default_authfile_dir);
-      authfile_dir_len = strlen(pw->pw_dir) + strlen(default_authfile_dir) +
-                         strlen(default_authfile) + 1;
-      buf = malloc(sizeof(char) * (authfile_dir_len));
-
-      if (!buf) {
-        DBG("Unable to allocate memory");
-        retval = PAM_IGNORE;
-        goto done;
-      }
-
-      /* Opening a file in a users $HOME, need to drop privs for security */
-      openasuser = geteuid() == 0 ? 1 : 0;
-
-      snprintf(buf, authfile_dir_len, "%s%s%s", pw->pw_dir,
-               default_authfile_dir, default_authfile);
-    } else {
-      DBG("Variable %s set to %s", DEFAULT_AUTHFILE_DIR_VAR, authfile_dir);
-      authfile_dir_len = strlen(authfile_dir) + strlen(default_authfile) + 1;
-      buf = malloc(sizeof(char) * (authfile_dir_len));
-
-      if (!buf) {
-        DBG("Unable to allocate memory");
-        retval = PAM_IGNORE;
-        goto done;
-      }
-
-      snprintf(buf, authfile_dir_len, "%s%s", authfile_dir, default_authfile);
-
-      if (!cfg->openasuser) {
-        DBG("WARNING: not dropping privileges when reading %s, please "
-            "consider setting openasuser=1 in the module configuration",
-            buf);
-      }
+  if (!cfg->auth_file || cfg->auth_file[0] != '/') {
+    if ((cfg->auth_file = resolve_authfile_path(cfg, pw, &openasuser)) ==
+        NULL) {
+      DBG("Could not resolve authfile path");
+      retval = PAM_IGNORE;
+      goto done;
     }
-
-    DBG("Using authentication file %s", buf);
-
-    cfg->auth_file = buf; /* cfg takes ownership */
     should_free_auth_file = 1;
-    buf = NULL;
-  } else {
-    if (cfg->auth_file[0] != '/') {
-      /* Individual authorization mapping by user: auth_file is not
-          absolute path, so prepend user home dir. */
-      openasuser = geteuid() == 0 ? 1 : 0;
-
-      authfile_dir_len =
-        strlen(pw->pw_dir) + strlen("/") + strlen(cfg->auth_file) + 1;
-      buf = malloc(sizeof(char) * (authfile_dir_len));
-
-      if (!buf) {
-        DBG("Unable to allocate memory");
-        retval = PAM_IGNORE;
-        goto done;
-      }
-
-      snprintf(buf, authfile_dir_len, "%s/%s", pw->pw_dir, cfg->auth_file);
-
-      cfg->auth_file = buf; /* update cfg */
-      should_free_auth_file = 1;
-      buf = NULL;
-    }
-
-    DBG("Using authentication file %s", cfg->auth_file);
   }
+
+  DBG("Using authentication file %s", cfg->auth_file);
 
   if (!openasuser) {
     openasuser = geteuid() == 0 && cfg->openasuser;
