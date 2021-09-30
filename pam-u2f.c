@@ -241,16 +241,14 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
   cfg_t cfg_st;
   cfg_t *cfg = &cfg_st;
   char buffer[BUFSIZE];
-  char *buf = NULL;
   int pgu_ret, gpn_ret;
   int retval = PAM_IGNORE;
   device_t *devices = NULL;
   unsigned n_devices = 0;
   int openasuser = 0;
-  int should_free_origin = 0;
-  int should_free_appid = 0;
-  int should_free_auth_file = 0;
-  int should_free_authpending_file = 0;
+  char *origin = NULL;
+  char *authfile = NULL;
+  char *authpending_file = NULL;
 
   parse_cfg(flags, argc, argv, cfg);
 
@@ -269,25 +267,17 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
       strcpy(buffer, SSH_ORIGIN);
     }
     DBG("Origin not specified, using \"%s\"", buffer);
-    cfg->origin = strdup(buffer);
+    cfg->origin = origin = strdup(buffer);
     if (!cfg->origin) {
       DBG("Unable to allocate memory");
       goto done;
-    } else {
-      should_free_origin = 1;
     }
   }
 
   if (!cfg->appid) {
     DBG("Appid not specified, using the same value of origin (%s)",
         cfg->origin);
-    cfg->appid = strdup(cfg->origin);
-    if (!cfg->appid) {
-      DBG("Unable to allocate memory")
-      goto done;
-    } else {
-      should_free_appid = 1;
-    }
+    cfg->appid = cfg->origin;
   }
 
   if (cfg->max_devs == 0) {
@@ -328,13 +318,12 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
   DBG("Home directory for %s is %s", user, pw->pw_dir);
 
   if (!cfg->auth_file || cfg->auth_file[0] != '/') {
-    if ((cfg->auth_file = resolve_authfile_path(cfg, pw, &openasuser)) ==
-        NULL) {
+    if ((cfg->auth_file = authfile =
+           resolve_authfile_path(cfg, pw, &openasuser)) == NULL) {
       DBG("Could not resolve authfile path");
       retval = PAM_IGNORE;
       goto done;
     }
-    should_free_auth_file = 1;
   }
 
   DBG("Using authentication file %s", cfg->auth_file);
@@ -390,13 +379,11 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
     int actual_size =
       snprintf(buffer, BUFSIZE, DEFAULT_AUTHPENDING_FILE_PATH, getuid());
     if (actual_size >= 0 && actual_size < BUFSIZE) {
-      cfg->authpending_file = strdup(buffer);
+      cfg->authpending_file = authpending_file = strdup(buffer);
     }
     if (!cfg->authpending_file) {
       DBG("Unable to allocate memory for the authpending_file, touch request "
           "notifications will not be emitted");
-    } else {
-      should_free_authpending_file = 1;
     }
   } else {
     if (strlen(cfg->authpending_file) == 0) {
@@ -452,31 +439,6 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
 done:
   free_devices(devices, n_devices);
 
-  if (buf) {
-    free(buf);
-    buf = NULL;
-  }
-#define free_const(a) free((void *) (uintptr_t)(a))
-  if (should_free_origin) {
-    free_const(cfg->origin);
-    cfg->origin = NULL;
-  }
-
-  if (should_free_appid) {
-    free_const(cfg->appid);
-    cfg->appid = NULL;
-  }
-
-  if (should_free_auth_file) {
-    free_const(cfg->auth_file);
-    cfg->auth_file = NULL;
-  }
-
-  if (should_free_authpending_file) {
-    free_const(cfg->authpending_file);
-    cfg->authpending_file = NULL;
-  }
-
   if (cfg->alwaysok && retval != PAM_SUCCESS) {
     DBG("alwaysok needed (otherwise return with %d)", retval);
     retval = PAM_SUCCESS;
@@ -486,6 +448,15 @@ done:
   if (cfg->is_custom_debug_file) {
     fclose(cfg->debug_file);
   }
+
+  free(origin);
+  cfg->origin = origin = NULL;
+
+  free(authfile);
+  cfg->auth_file = authfile = NULL;
+
+  free(authpending_file);
+  cfg->authpending_file = authpending_file = NULL;
 
   return retval;
 }
