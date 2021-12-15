@@ -1,4 +1,4 @@
-#  Copyright (C) 2014-2018 Yubico AB - See COPYING
+#  Copyright (C) 2014-2021 Yubico AB - See COPYING
 
 SUBDIRS = . pamu2fcfg tests
 
@@ -18,10 +18,11 @@ pampluginexecdir = $(PAMDIR)
 pampluginexec_LTLIBRARIES = pam_u2f.la
 
 pam_u2f_la_SOURCES = pam-u2f.c
-pam_u2f_la_SOURCES += util.c util.h
-pam_u2f_la_SOURCES += drop_privs.h
 pam_u2f_la_SOURCES += b64.c b64.h
+pam_u2f_la_SOURCES += debug.c debug.h
+pam_u2f_la_SOURCES += drop_privs.h
 pam_u2f_la_SOURCES += explicit_bzero.c
+pam_u2f_la_SOURCES += util.c util.h
 
 pam_u2f_la_LIBADD = -lpam
 pam_u2f_la_LIBADD += $(LIBFIDO2_LIBS) $(LIBCRYPTO_LIBS)

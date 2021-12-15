@@ -24,13 +24,6 @@
 #define DEFAULT_CUE "Please touch the device."
 #define DEFAULT_ORIGIN_PREFIX "pam://"
 #define SSH_ORIGIN "ssh:"
-#define DEBUG_STR "debug(pam_u2f): %s:%d (%s): "
-
-#if defined(DEBUG_PAM)
-#define D(file, ...) _debug(file, __FILE__, __LINE__, __func__, __VA_ARGS__)
-#else
-#define D(file, ...) ((void) 0)
-#endif /* DEBUG_PAM */
 
 typedef struct {
   unsigned max_devs;
@@ -75,13 +68,6 @@ char *converse(pam_handle_t *pamh, int echocode, const char *prompt);
 int random_bytes(void *, size_t);
 int cose_type(const char *, int *);
 const char *cose_string(int);
-
-#ifdef __GNUC__
-void _debug(FILE *, const char *, int, const char *, const char *, ...)
-  __attribute__((__format__(printf, 5, 6)));
-#else
-void _debug(FILE *, const char *, int, const char *, const char *, ...);
-#endif /* __GNUC__ */
 
 #if !defined(HAVE_EXPLICIT_BZERO)
 void explicit_bzero(void *, size_t);

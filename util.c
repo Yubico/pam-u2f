@@ -15,8 +15,6 @@
 #include <stdlib.h>
 #include <fcntl.h>
 #include <sys/stat.h>
-#include <stdarg.h>
-#include <syslog.h>
 #include <pwd.h>
 #include <errno.h>
 #include <unistd.h>
@@ -24,6 +22,7 @@
 #include <arpa/inet.h>
 
 #include "b64.h"
+#include "debug.h"
 #include "util.h"
 
 #define SSH_HEADER "-----BEGIN OPENSSH PRIVATE KEY-----\n"
@@ -1726,30 +1725,6 @@ char *converse(pam_handle_t *pamh, int echocode, const char *prompt) {
 
   return ret;
 }
-
-#if defined(PAM_DEBUG)
-void _debug(FILE *debug_file, const char *file, int line, const char *func,
-            const char *fmt, ...) {
-  va_list ap;
-  va_start(ap, fmt);
-
-#if defined(WITH_FUZZING)
-  (void) debug_file;
-  snprintf(NULL, 0, DEBUG_STR, file, line, func);
-  vsnprintf(NULL, 0, fmt, ap);
-#else
-  if (debug_file == NULL) {
-    syslog(LOG_AUTHPRIV | LOG_DEBUG, DEBUG_STR, file, line, func);
-    vsyslog(LOG_AUTHPRIV | LOG_DEBUG, fmt, ap);
-  } else {
-    fprintf(debug_file, DEBUG_STR, file, line, func);
-    vfprintf(debug_file, fmt, ap);
-    fprintf(debug_file, "\n");
-  }
-#endif
-  va_end(ap);
-}
-#endif /* PAM_DEBUG */
 
 #ifndef RANDOM_DEV
 #define RANDOM_DEV "/dev/urandom"

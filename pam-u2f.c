@@ -20,8 +20,9 @@
 #include <string.h>
 #include <errno.h>
 
-#include "util.h"
+#include "debug.h"
 #include "drop_privs.h"
+#include "util.h"
 
 /* If secure_getenv is not defined, define it here */
 #ifndef HAVE_SECURE_GETENV
@@ -32,47 +33,11 @@ char *secure_getenv(const char *name) {
 }
 #endif
 
-static FILE *debug_open(const char *filename) {
-  struct stat st;
-  FILE *file;
-  int fd;
-
-  if (strcmp(filename, "stdout") == 0)
-    return stdout;
-  if (strcmp(filename, "stderr") == 0)
-    return stderr;
-  if (strcmp(filename, "syslog") == 0)
-    return NULL;
-
-  fd = open(filename, O_WRONLY | O_APPEND | O_CLOEXEC | O_NOFOLLOW | O_NOCTTY);
-  if (fd == -1 || fstat(fd, &st) != 0)
-    goto err;
-
-#ifndef WITH_FUZZING
-  if (!S_ISREG(st.st_mode))
-    goto err;
-#endif
-
-  if ((file = fdopen(fd, "a")) != NULL)
-    return file;
-
-err:
-  if (fd != -1)
-    close(fd);
-
-  return stderr; /* fallback to default */
-}
-
-static void debug_close(FILE *f) {
-  if (f != NULL && f != stdout && f != stderr)
-    fclose(f);
-}
-
 static void parse_cfg(int flags, int argc, const char **argv, cfg_t *cfg) {
   int i;
 
   memset(cfg, 0, sizeof(cfg_t));
-  cfg->debug_file = stderr;
+  cfg->debug_file = DEFAULT_DEBUG_FILE;
   cfg->userpresence = -1;
   cfg->userverification = -1;
   cfg->pinverification = -1;
@@ -484,7 +449,7 @@ done:
   DBG("done. [%s]", pam_strerror(pamh, retval));
 
   debug_close(cfg->debug_file);
-  cfg->debug_file = stderr;
+  cfg->debug_file = DEFAULT_DEBUG_FILE;
 
   return retval;
 }
