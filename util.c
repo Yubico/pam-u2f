@@ -1737,7 +1737,7 @@ void _debug(FILE *debug_file, const char *file, int line, const char *func,
   (void) debug_file;
   snprintf(NULL, 0, DEBUG_STR, file, line, func);
   vsnprintf(NULL, 0, fmt, ap);
-#elif defined(LOG_DEBUG)
+#else
   if (debug_file == (FILE *) -1) {
     syslog(LOG_AUTHPRIV | LOG_DEBUG, DEBUG_STR, file, line, func);
     vsyslog(LOG_AUTHPRIV | LOG_DEBUG, fmt, ap);
@@ -1746,11 +1746,7 @@ void _debug(FILE *debug_file, const char *file, int line, const char *func,
     vfprintf(debug_file, fmt, ap);
     fprintf(debug_file, "\n");
   }
-#else  /* Windows, MAC */
-  fprintf(debug_file, DEBUG_STR, file, line, func);
-  vfprintf(debug_file, fmt, ap);
-  fprintf(debug_file, "\n");
-#endif /* __linux__ */
+#endif
   va_end(ap);
 }
 #endif /* PAM_DEBUG */
