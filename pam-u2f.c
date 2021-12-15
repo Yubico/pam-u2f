@@ -32,12 +32,43 @@ char *secure_getenv(const char *name) {
 }
 #endif
 
-static void parse_cfg(int flags, int argc, const char **argv, cfg_t *cfg) {
-#ifndef WITH_FUZZING
+static FILE *debug_open(const char *filename) {
   struct stat st;
+  FILE *file;
+  int fd;
+
+  if (strcmp(filename, "stdout") == 0)
+    return stdout;
+  if (strcmp(filename, "stderr") == 0)
+    return stderr;
+  if (strcmp(filename, "syslog") == 0)
+    return NULL;
+
+  fd = open(filename, O_WRONLY | O_APPEND | O_CLOEXEC | O_NOFOLLOW | O_NOCTTY);
+  if (fd == -1 || fstat(fd, &st) != 0)
+    goto err;
+
+#ifndef WITH_FUZZING
+  if (!S_ISREG(st.st_mode))
+    goto err;
 #endif
-  FILE *file = NULL;
-  int fd = -1;
+
+  if ((file = fdopen(fd, "a")) != NULL)
+    return file;
+
+err:
+  if (fd != -1)
+    close(fd);
+
+  return stderr; /* fallback to default */
+}
+
+static void debug_close(FILE *f) {
+  if (f != NULL && f != stdout && f != stderr)
+    fclose(f);
+}
+
+static void parse_cfg(int flags, int argc, const char **argv, cfg_t *cfg) {
   int i;
 
   memset(cfg, 0, sizeof(cfg_t));
@@ -86,34 +117,9 @@ static void parse_cfg(int flags, int argc, const char **argv, cfg_t *cfg) {
     if (strncmp(argv[i], "cue_prompt=", 11) == 0)
       cfg->cue_prompt = argv[i] + 11;
     if (strncmp(argv[i], "debug_file=", 11) == 0) {
-      if (cfg->is_custom_debug_file)
-        fclose(cfg->debug_file);
-      cfg->debug_file = stderr;
-      cfg->is_custom_debug_file = 0;
       const char *filename = argv[i] + 11;
-      if (strncmp(filename, "stdout", 6) == 0) {
-        cfg->debug_file = stdout;
-      } else if (strncmp(filename, "stderr", 6) == 0) {
-        cfg->debug_file = stderr;
-      } else if (strncmp(filename, "syslog", 6) == 0) {
-        cfg->debug_file = NULL;
-      } else {
-        fd = open(filename,
-                  O_WRONLY | O_APPEND | O_CLOEXEC | O_NOFOLLOW | O_NOCTTY);
-#ifndef WITH_FUZZING
-        if (fd >= 0 && (fstat(fd, &st) == 0) && S_ISREG(st.st_mode)) {
-#else
-        if (fd >= 0) {
-#endif
-          file = fdopen(fd, "a");
-          if (file != NULL) {
-            cfg->debug_file = file;
-            cfg->is_custom_debug_file = 1;
-            file = NULL;
-            fd = -1;
-          }
-        }
-      }
+      debug_close(cfg->debug_file);
+      cfg->debug_file = debug_open(filename);
     }
   }
 
@@ -144,12 +150,6 @@ static void parse_cfg(int flags, int argc, const char **argv, cfg_t *cfg) {
     D(cfg->debug_file, "appid=%s", cfg->appid ? cfg->appid : "(null)");
     D(cfg->debug_file, "prompt=%s", cfg->prompt ? cfg->prompt : "(null)");
   }
-
-  if (fd != -1)
-    close(fd);
-
-  if (file != NULL)
-    fclose(file);
 }
 
 #ifdef DBG
@@ -483,9 +483,8 @@ done:
   }
   DBG("done. [%s]", pam_strerror(pamh, retval));
 
-  if (cfg->is_custom_debug_file) {
-    fclose(cfg->debug_file);
-  }
+  debug_close(cfg->debug_file);
+  cfg->debug_file = stderr;
 
   return retval;
 }
