@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2019 Yubico AB - See COPYING
+ * Copyright (C) 2014-2021 Yubico AB - See COPYING
  */
 
 #include <fido.h>
@@ -1738,7 +1738,7 @@ void _debug(FILE *debug_file, const char *file, int line, const char *func,
   snprintf(NULL, 0, DEBUG_STR, file, line, func);
   vsnprintf(NULL, 0, fmt, ap);
 #else
-  if (debug_file == (FILE *) -1) {
+  if (debug_file == NULL) {
     syslog(LOG_AUTHPRIV | LOG_DEBUG, DEBUG_STR, file, line, func);
     vsyslog(LOG_AUTHPRIV | LOG_DEBUG, fmt, ap);
   } else {

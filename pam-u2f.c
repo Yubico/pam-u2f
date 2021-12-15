@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2014-2019 Yubico AB - See COPYING
+ *  Copyright (C) 2014-2021 Yubico AB - See COPYING
  */
 
 /* Define which PAM interfaces we provide */
@@ -96,7 +96,7 @@ static void parse_cfg(int flags, int argc, const char **argv, cfg_t *cfg) {
       } else if (strncmp(filename, "stderr", 6) == 0) {
         cfg->debug_file = stderr;
       } else if (strncmp(filename, "syslog", 6) == 0) {
-        cfg->debug_file = (FILE *) -1;
+        cfg->debug_file = NULL;
       } else {
         fd = open(filename,
                   O_WRONLY | O_APPEND | O_CLOEXEC | O_NOFOLLOW | O_NOCTTY);
