@@ -818,35 +818,29 @@ static int get_authenticators(const cfg_t *cfg, const fido_dev_info_t *devlist,
   size_t i;
   size_t j;
 
-  if (cfg->debug)
-    D(cfg->debug_file, "Working with %zu authenticator(s)", devlist_len);
+  debug_dbg(cfg, "Working with %zu authenticator(s)", devlist_len);
 
   for (i = 0, j = 0; i < devlist_len; i++) {
-    if (cfg->debug)
-      D(cfg->debug_file, "Checking whether key exists in authenticator %zu", i);
+    debug_dbg(cfg, "Checking whether key exists in authenticator %zu", i);
 
     di = fido_dev_info_ptr(devlist, i);
     if (!di) {
-      if (cfg->debug)
-        D(cfg->debug_file, "Unable to get device pointer");
+      debug_dbg(cfg, "Unable to get device pointer");
       continue;
     }
 
-    if (cfg->debug)
-      D(cfg->debug_file, "Authenticator path: %s", fido_dev_info_path(di));
+    debug_dbg(cfg, "Authenticator path: %s", fido_dev_info_path(di));
 
     dev = fido_dev_new();
     if (!dev) {
-      if (cfg->debug)
-        D(cfg->debug_file, "Unable to allocate device type");
+      debug_dbg(cfg, "Unable to allocate device type");
       continue;
     }
 
     r = fido_dev_open(dev, fido_dev_info_path(di));
     if (r != FIDO_OK) {
-      if (cfg->debug)
-        D(cfg->debug_file, "Failed to open authenticator: %s (%d)",
-          fido_strerr(r), r);
+      debug_dbg(cfg, "Failed to open authenticator: %s (%d)", fido_strerr(r),
+                r);
       fido_dev_free(&dev);
       continue;
     }
@@ -859,12 +853,10 @@ static int get_authenticators(const cfg_t *cfg, const fido_dev_info_t *devlist,
       if ((!fido_dev_is_fido2(dev) && r == FIDO_ERR_USER_PRESENCE_REQUIRED) ||
           (fido_dev_is_fido2(dev) && r == FIDO_OK)) {
         authlist[j++] = dev;
-        if (cfg->debug)
-          D(cfg->debug_file, "Found key in authenticator %zu", i);
+        debug_dbg(cfg, "Found key in authenticator %zu", i);
         return (1);
       }
-      if (cfg->debug)
-        D(cfg->debug_file, "Key not found in authenticator %zu", i);
+      debug_dbg(cfg, "Key not found in authenticator %zu", i);
 
       fido_dev_close(dev);
       fido_dev_free(&dev);
@@ -874,8 +866,7 @@ static int get_authenticators(const cfg_t *cfg, const fido_dev_info_t *devlist,
   if (j != 0)
     return (1);
   else {
-    if (cfg->debug)
-      D(cfg->debug_file, "Key not found");
+    debug_dbg(cfg, "Key not found");
     return (0);
   }
 }
