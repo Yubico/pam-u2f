@@ -88,33 +88,30 @@ static void parse_cfg(int flags, int argc, const char **argv, cfg_t *cfg) {
     }
   }
 
-  if (cfg->debug) {
-    D(cfg->debug_file, "called.");
-    D(cfg->debug_file, "flags %d argc %d", flags, argc);
-    for (i = 0; i < argc; i++) {
-      D(cfg->debug_file, "argv[%d]=%s", i, argv[i]);
-    }
-    D(cfg->debug_file, "max_devices=%d", cfg->max_devs);
-    D(cfg->debug_file, "debug=%d", cfg->debug);
-    D(cfg->debug_file, "interactive=%d", cfg->interactive);
-    D(cfg->debug_file, "cue=%d", cfg->cue);
-    D(cfg->debug_file, "nodetect=%d", cfg->nodetect);
-    D(cfg->debug_file, "userpresence=%d", cfg->userpresence);
-    D(cfg->debug_file, "userverification=%d", cfg->userverification);
-    D(cfg->debug_file, "pinverification=%d", cfg->pinverification);
-    D(cfg->debug_file, "manual=%d", cfg->manual);
-    D(cfg->debug_file, "nouserok=%d", cfg->nouserok);
-    D(cfg->debug_file, "openasuser=%d", cfg->openasuser);
-    D(cfg->debug_file, "alwaysok=%d", cfg->alwaysok);
-    D(cfg->debug_file, "sshformat=%d", cfg->sshformat);
-    D(cfg->debug_file, "authfile=%s",
-      cfg->auth_file ? cfg->auth_file : "(null)");
-    D(cfg->debug_file, "authpending_file=%s",
-      cfg->authpending_file ? cfg->authpending_file : "(null)");
-    D(cfg->debug_file, "origin=%s", cfg->origin ? cfg->origin : "(null)");
-    D(cfg->debug_file, "appid=%s", cfg->appid ? cfg->appid : "(null)");
-    D(cfg->debug_file, "prompt=%s", cfg->prompt ? cfg->prompt : "(null)");
+  debug_dbg(cfg, "called.");
+  debug_dbg(cfg, "flags %d argc %d", flags, argc);
+  for (i = 0; i < argc; i++) {
+    debug_dbg(cfg, "argv[%d]=%s", i, argv[i]);
   }
+  debug_dbg(cfg, "max_devices=%d", cfg->max_devs);
+  debug_dbg(cfg, "debug=%d", cfg->debug);
+  debug_dbg(cfg, "interactive=%d", cfg->interactive);
+  debug_dbg(cfg, "cue=%d", cfg->cue);
+  debug_dbg(cfg, "nodetect=%d", cfg->nodetect);
+  debug_dbg(cfg, "userpresence=%d", cfg->userpresence);
+  debug_dbg(cfg, "userverification=%d", cfg->userverification);
+  debug_dbg(cfg, "pinverification=%d", cfg->pinverification);
+  debug_dbg(cfg, "manual=%d", cfg->manual);
+  debug_dbg(cfg, "nouserok=%d", cfg->nouserok);
+  debug_dbg(cfg, "openasuser=%d", cfg->openasuser);
+  debug_dbg(cfg, "alwaysok=%d", cfg->alwaysok);
+  debug_dbg(cfg, "sshformat=%d", cfg->sshformat);
+  debug_dbg(cfg, "authfile=%s", cfg->auth_file ? cfg->auth_file : "(null)");
+  debug_dbg(cfg, "authpending_file=%s",
+            cfg->authpending_file ? cfg->authpending_file : "(null)");
+  debug_dbg(cfg, "origin=%s", cfg->origin ? cfg->origin : "(null)");
+  debug_dbg(cfg, "appid=%s", cfg->appid ? cfg->appid : "(null)");
+  debug_dbg(cfg, "prompt=%s", cfg->prompt ? cfg->prompt : "(null)");
 }
 
 #ifdef DBG
