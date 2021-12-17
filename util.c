@@ -957,13 +957,11 @@ static int match_device_opts(fido_dev_t *dev, struct opts *opts) {
 static int set_opts(const cfg_t *cfg, const struct opts *opts,
                     fido_assert_t *assert) {
   if (fido_assert_set_up(assert, opts->up) != FIDO_OK) {
-    if (cfg->debug)
-      D(cfg->debug_file, "Failed to set UP");
+    debug_dbg(cfg, "Failed to set UP");
     return 0;
   }
   if (fido_assert_set_uv(assert, opts->uv) != FIDO_OK) {
-    if (cfg->debug)
-      D(cfg->debug_file, "Failed to set UV");
+    debug_dbg(cfg, "Failed to set UV");
     return 0;
   }
 
@@ -975,15 +973,13 @@ static int set_cdh(const cfg_t *cfg, fido_assert_t *assert) {
   int r;
 
   if (!random_bytes(cdh, sizeof(cdh))) {
-    if (cfg->debug)
-      D(cfg->debug_file, "Failed to generate challenge");
+    debug_dbg(cfg, "Failed to generate challenge");
     return 0;
   }
 
   r = fido_assert_set_clientdata_hash(assert, cdh, sizeof(cdh));
   if (r != FIDO_OK) {
-    if (cfg->debug)
-      D(cfg->debug_file, "Unable to set challenge: %s (%d)", fido_strerr(r), r);
+    debug_dbg(cfg, "Unable to set challenge: %s (%d)", fido_strerr(r), r);
     return 0;
   }
 
@@ -999,8 +995,7 @@ static fido_assert_t *prepare_assert(const cfg_t *cfg, const device_t *device,
   int r;
 
   if ((assert = fido_assert_new()) == NULL) {
-    if (cfg->debug)
-      D(cfg->debug_file, "Unable to allocate assertion");
+    debug_dbg(cfg, "Unable to allocate assertion");
     goto err;
   }
 
@@ -1010,41 +1005,33 @@ static fido_assert_t *prepare_assert(const cfg_t *cfg, const device_t *device,
     r = fido_assert_set_rp(assert, cfg->origin);
 
   if (r != FIDO_OK) {
-    if (cfg->debug)
-      D(cfg->debug_file, "Unable to set origin: %s (%d)", fido_strerr(r), r);
+    debug_dbg(cfg, "Unable to set origin: %s (%d)", fido_strerr(r), r);
     goto err;
   }
 
   if (is_resident(device->keyHandle)) {
-    if (cfg->debug)
-      D(cfg->debug_file, "Credential is resident");
+    debug_dbg(cfg, "Credential is resident");
   } else {
-    if (cfg->debug)
-      D(cfg->debug_file, "Key handle: %s", device->keyHandle);
+    debug_dbg(cfg, "Key handle: %s", device->keyHandle);
     if (!b64_decode(device->keyHandle, (void **) &buf, &buf_len)) {
-      if (cfg->debug)
-        D(cfg->debug_file, "Failed to decode key handle");
+      debug_dbg(cfg, "Failed to decode key handle");
       goto err;
     }
 
     r = fido_assert_allow_cred(assert, buf, buf_len);
     if (r != FIDO_OK) {
-      if (cfg->debug)
-        D(cfg->debug_file, "Unable to set keyHandle: %s (%d)", fido_strerr(r),
-          r);
+      debug_dbg(cfg, "Unable to set keyHandle: %s (%d)", fido_strerr(r), r);
       goto err;
     }
   }
 
   if (!set_opts(cfg, opts, assert)) {
-    if (cfg->debug)
-      D(cfg->debug_file, "Failed to set assert options");
+    debug_dbg(cfg, "Failed to set assert options");
     goto err;
   }
 
   if (!set_cdh(cfg, assert)) {
-    if (cfg->debug)
-      D(cfg->debug_file, "Failed to set client data hash");
+    debug_dbg(cfg, "Failed to set client data hash");
     goto err;
   }
 
@@ -1109,21 +1096,18 @@ static int parse_pk(const cfg_t *cfg, int old, const char *type, const char *pk,
 
   if (old) {
     if (!hex_decode(pk, &buf, &buf_len)) {
-      if (cfg->debug)
-        D(cfg->debug_file, "Failed to decode public key");
+      debug_dbg(cfg, "Failed to decode public key");
       goto err;
     }
   } else {
     if (!b64_decode(pk, (void **) &buf, &buf_len)) {
-      if (cfg->debug)
-        D(cfg->debug_file, "Failed to decode public key");
+      debug_dbg(cfg, "Failed to decode public key");
       goto err;
     }
   }
 
   if (!cose_type(type, &out->type)) {
-    if (cfg->debug)
-      D(cfg->debug_file, "Unknown COSE type '%s'", type);
+    debug_dbg(cfg, "Unknown COSE type '%s'", type);
     goto err;
   }
 
@@ -1131,8 +1115,7 @@ static int parse_pk(const cfg_t *cfg, int old, const char *type, const char *pk,
   // returned as an error.  Instead, it is handled by fido_verify_assert().
   if (out->type == COSE_ES256) {
     if ((out->ptr = es256_pk_new()) == NULL) {
-      if (cfg->debug)
-        D(cfg->debug_file, "Failed to allocate ES256 public key");
+      debug_dbg(cfg, "Failed to allocate ES256 public key");
       goto err;
     }
     if (old) {
@@ -1141,34 +1124,28 @@ static int parse_pk(const cfg_t *cfg, int old, const char *type, const char *pk,
       r = es256_pk_from_ptr(out->ptr, buf, buf_len);
     }
     if (r != FIDO_OK) {
-      if (cfg->debug)
-        D(cfg->debug_file, "Failed to convert ES256 public key");
+      debug_dbg(cfg, "Failed to convert ES256 public key");
     }
   } else if (out->type == COSE_RS256) {
     if ((out->ptr = rs256_pk_new()) == NULL) {
-      if (cfg->debug)
-        D(cfg->debug_file, "Failed to allocate RS256 public key");
+      debug_dbg(cfg, "Failed to allocate RS256 public key");
       goto err;
     }
     r = rs256_pk_from_ptr(out->ptr, buf, buf_len);
     if (r != FIDO_OK) {
-      if (cfg->debug)
-        D(cfg->debug_file, "Failed to convert RS256 public key");
+      debug_dbg(cfg, "Failed to convert RS256 public key");
     }
   } else if (out->type == COSE_EDDSA) {
     if ((out->ptr = eddsa_pk_new()) == NULL) {
-      if (cfg->debug)
-        D(cfg->debug_file, "Failed to allocate EDDSA public key");
+      debug_dbg(cfg, "Failed to allocate EDDSA public key");
       goto err;
     }
     r = eddsa_pk_from_ptr(out->ptr, buf, buf_len);
     if (r != FIDO_OK) {
-      if (cfg->debug)
-        D(cfg->debug_file, "Failed to convert EDDSA public key");
+      debug_dbg(cfg, "Failed to convert EDDSA public key");
     }
   } else {
-    if (cfg->debug)
-      D(cfg->debug_file, "COSE type '%s' not handled", type);
+    debug_dbg(cfg, "COSE type '%s' not handled", type);
     goto err;
   }
 
