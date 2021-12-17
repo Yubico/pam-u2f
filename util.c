@@ -178,13 +178,11 @@ static int parse_native_format(const cfg_t *cfg, const char *username,
     if (len > 0 && buf[len - 1] == '\n')
       buf[len - 1] = '\0';
 
-    if (cfg->debug)
-      D(cfg->debug_file, "Authorization line: %s", buf);
+    debug_dbg(cfg, "Authorization line: %s", buf);
 
     s_user = strtok_r(buf, ":", &saveptr);
     if (s_user && strcmp(username, s_user) == 0) {
-      if (cfg->debug)
-        D(cfg->debug_file, "Matched user: %s", s_user);
+      debug_dbg(cfg, "Matched user: %s", s_user);
 
       // only keep last line for this user
       for (i = 0; i < *n_devs; i++) {
@@ -199,11 +197,9 @@ static int parse_native_format(const cfg_t *cfg, const char *username,
 
         if ((*n_devs)++ > cfg->max_devs - 1) {
           *n_devs = cfg->max_devs;
-          if (cfg->debug) {
-            D(cfg->debug_file,
-              "Found more than %d devices, ignoring the remaining ones",
-              cfg->max_devs);
-          }
+          debug_dbg(cfg,
+                    "Found more than %d devices, ignoring the remaining ones",
+                    cfg->max_devs);
           break;
         }
 
@@ -212,105 +208,75 @@ static int parse_native_format(const cfg_t *cfg, const char *username,
         s_token = strtok_r(s_credential, ",", &credsaveptr);
 
         if (!s_token) {
-          if (cfg->debug) {
-            D(cfg->debug_file,
-              "Unable to retrieve keyHandle for device %d", i + 1);
-          }
+          debug_dbg(cfg, "Unable to retrieve keyHandle for device %d", i + 1);
           return -1;
         }
 
-        if (cfg->debug) {
-          D(cfg->debug_file, "KeyHandle for device number %d: %s", i + 1,
-            s_token);
-        }
+        debug_dbg(cfg, "KeyHandle for device number %d: %s", i + 1, s_token);
 
         devices[i].keyHandle = strdup(s_token);
 
         if (!devices[i].keyHandle) {
-          if (cfg->debug) {
-            D(cfg->debug_file,
-              "Unable to allocate memory for keyHandle number %d", i);
-          }
+          debug_dbg(cfg, "Unable to allocate memory for keyHandle number %d",
+                    i);
           return -1;
         }
 
-        if (is_resident(devices[i].keyHandle) && cfg->debug) {
-          D(cfg->debug_file, "Credential is resident");
+        if (is_resident(devices[i].keyHandle)) {
+          debug_dbg(cfg, "Credential is resident");
         }
 
         s_token = strtok_r(NULL, ",", &credsaveptr);
 
         if (!s_token) {
-          if (cfg->debug) {
-            D(cfg->debug_file, "Unable to retrieve publicKey number %d", i + 1);
-          }
+          debug_dbg(cfg, "Unable to retrieve publicKey number %d", i + 1);
           return -1;
         }
 
-        if (cfg->debug) {
-          D(cfg->debug_file, "publicKey for device number %d: %s", i + 1,
-            s_token);
-        }
+        debug_dbg(cfg, "publicKey for device number %d: %s", i + 1, s_token);
 
         devices[i].publicKey = strdup(s_token);
 
         if (!devices[i].publicKey) {
-          if (cfg->debug) {
-            D(cfg->debug_file,
-              "Unable to allocate memory for publicKey number %d", i);
-          }
+          debug_dbg(cfg, "Unable to allocate memory for publicKey number %d",
+                    i);
           return -1;
         }
 
         s_token = strtok_r(NULL, ",", &credsaveptr);
 
         if (!s_token) {
-          if (cfg->debug) {
-            D(cfg->debug_file, "Unable to retrieve COSE type %d", i + 1);
-            D(cfg->debug_file, "Assuming ES256 (backwards compatibility)");
-          }
+          debug_dbg(cfg, "Unable to retrieve COSE type %d", i + 1);
+          debug_dbg(cfg, "Assuming ES256 (backwards compatibility)");
           devices[i].old_format = 1;
           devices[i].coseType = strdup("es256");
         } else {
-          if (cfg->debug) {
-            D(cfg->debug_file, "COSE type for device number %d: %s", i + 1,
-              s_token);
-          }
+          debug_dbg(cfg, "COSE type for device number %d: %s", i + 1, s_token);
           devices[i].coseType = strdup(s_token);
         }
 
         if (!devices[i].coseType) {
-          if (cfg->debug) {
-            D(cfg->debug_file,
-              "Unable to allocate memory for COSE type number %d", i);
-          }
+          debug_dbg(cfg, "Unable to allocate memory for COSE type number %d",
+                    i);
           return -1;
         }
 
         s_token = strtok_r(NULL, ",", &credsaveptr);
 
         if (devices[i].old_format == 1) {
-          if (cfg->debug) {
-            D(cfg->debug_file, "Old format for device %d, no attributes",
-              i + 1);
-            D(cfg->debug_file, "Assuming 'presence' (backwards compatibility)");
-          }
+          debug_dbg(cfg, "Old format for device %d, no attributes", i + 1);
+          debug_dbg(cfg, "Assuming 'presence' (backwards compatibility)");
           s_token = "+presence";
         } else if (!s_token) {
           s_token = "";
         }
 
-        if (cfg->debug) {
-          D(cfg->debug_file, "Attributes for device number %d: %s", i + 1,
-            s_token);
-        }
+        debug_dbg(cfg, "Attributes for device number %d: %s", i + 1, s_token);
         devices[i].attributes = strdup(s_token);
 
         if (!devices[i].attributes) {
-          if (cfg->debug) {
-            D(cfg->debug_file,
-              "Unable to allocate memory for attributes number %d", i);
-          }
+          debug_dbg(cfg, "Unable to allocate memory for attributes number %d",
+                    i);
           return -1;
         }
 
@@ -319,10 +285,8 @@ static int parse_native_format(const cfg_t *cfg, const char *username,
           devices[i].keyHandle = normal_b64(websafe_b64);
           free(websafe_b64);
           if (!devices[i].keyHandle) {
-            if (cfg->debug) {
-              D(cfg->debug_file,
-                "Unable to allocate memory for keyHandle number %d", i);
-            }
+            debug_dbg(cfg, "Unable to allocate memory for keyHandle number %d",
+                      i);
             return -1;
           }
         }
