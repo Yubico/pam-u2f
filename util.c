@@ -1181,55 +1181,46 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
 
   devlist = fido_dev_info_new(64);
   if (!devlist) {
-    if (cfg->debug)
-      D(cfg->debug_file, "Unable to allocate devlist");
+    debug_dbg(cfg, "Unable to allocate devlist");
     goto out;
   }
 
   r = fido_dev_info_manifest(devlist, 64, &ndevs);
   if (r != FIDO_OK) {
-    if (cfg->debug)
-      D(cfg->debug_file, "Unable to discover device(s), %s (%d)",
-        fido_strerr(r), r);
+    debug_dbg(cfg, "Unable to discover device(s), %s (%d)", fido_strerr(r), r);
     goto out;
   }
 
   ndevs_prev = ndevs;
 
-  if (cfg->debug)
-    D(cfg->debug_file, "Device max index is %zu", ndevs);
+  debug_dbg(cfg, "Device max index is %zu", ndevs);
 
   authlist = calloc(64 + 1, sizeof(fido_dev_t *));
   if (!authlist) {
-    if (cfg->debug)
-      D(cfg->debug_file, "Unable to allocate authenticator list");
+    debug_dbg(cfg, "Unable to allocate authenticator list");
     goto out;
   }
 
-  if (cfg->nodetect && cfg->debug)
-    D(cfg->debug_file,
-      "nodetect option specified, suitable key detection will be skipped");
+  if (cfg->nodetect)
+    debug_dbg(cfg, "nodetect option specified, suitable key detection will be "
+                   "skipped");
 
   i = 0;
   while (i < n_devs) {
     retval = -2;
 
-    if (cfg->debug)
-      D(cfg->debug_file, "Attempting authentication with device number %d",
-        i + 1);
+    debug_dbg(cfg, "Attempting authentication with device number %d", i + 1);
 
     init_opts(&opts); /* used during authenticator discovery */
     assert = prepare_assert(cfg, &devices[i], &opts);
     if (assert == NULL) {
-      if (cfg->debug)
-        D(cfg->debug_file, "Failed to prepare assert");
+      debug_dbg(cfg, "Failed to prepare assert");
       goto out;
     }
 
     if (!parse_pk(cfg, devices[i].old_format, devices[i].coseType,
                   devices[i].publicKey, &pk)) {
-      if (cfg->debug)
-        D(cfg->debug_file, "Failed to parse public key");
+      debug_dbg(cfg, "Failed to parse public key");
       goto out;
     }
 
@@ -1241,30 +1232,26 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
 
         r = match_device_opts(authlist[j], &opts);
         if (r != 1) {
-          if (cfg->debug) {
-            D(cfg->debug_file, "%s, skipping authenticator",
-              r < 0 ? "Failed to query supported options"
-                    : "Unsupported options");
-          }
+          debug_dbg(cfg, "%s, skipping authenticator",
+                    r < 0 ? "Failed to query supported options"
+                          : "Unsupported options");
           continue;
         }
 
         if (!set_opts(cfg, &opts, assert)) {
-          if (cfg->debug)
-            D(cfg->debug_file, "Failed to set assert options");
+          debug_dbg(cfg, "Failed to set assert options");
           goto out;
         }
 
         if (!set_cdh(cfg, assert)) {
-          if (cfg->debug)
-            D(cfg->debug_file, "Failed to reset client data hash");
+          debug_dbg(cfg, "Failed to reset client data hash");
           goto out;
         }
 
         if (opts.pin == FIDO_OPT_TRUE) {
           pin = converse(pamh, PAM_PROMPT_ECHO_OFF, "Please enter the PIN: ");
           if (pin == NULL) {
-            D(cfg->debug_file, "converse() returned NULL");
+            debug_dbg(cfg, "converse() returned NULL");
             goto out;
           }
         }
@@ -1285,7 +1272,7 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
           if (opts.pin == FIDO_OPT_TRUE || opts.uv == FIDO_OPT_TRUE) {
             r = fido_assert_set_uv(assert, FIDO_OPT_TRUE);
             if (r != FIDO_OK) {
-              D(cfg->debug_file, "Failed to set UV");
+              debug_dbg(cfg, "Failed to set UV");
               goto out;
             }
           }
@@ -1297,8 +1284,7 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
         }
       }
     } else {
-      if (cfg->debug)
-        D(cfg->debug_file, "Device for this keyhandle is not present");
+      debug_dbg(cfg, "Device for this keyhandle is not present");
     }
 
     i++;
@@ -1307,24 +1293,21 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
 
     devlist = fido_dev_info_new(64);
     if (!devlist) {
-      if (cfg->debug)
-        D(cfg->debug_file, "Unable to allocate devlist");
+      debug_dbg(cfg, "Unable to allocate devlist");
       goto out;
     }
 
     r = fido_dev_info_manifest(devlist, 64, &ndevs);
     if (r != FIDO_OK) {
-      if (cfg->debug)
-        D(cfg->debug_file, "Unable to discover device(s), %s (%d)",
-          fido_strerr(r), r);
+      debug_dbg(cfg, "Unable to discover device(s), %s (%d)", fido_strerr(r),
+                r);
       goto out;
     }
 
     if (ndevs > ndevs_prev) {
-      if (cfg->debug)
-        D(cfg->debug_file,
-          "Devices max_index has changed: %zu (was %zu). Starting over", ndevs,
-          ndevs_prev);
+      debug_dbg(cfg,
+                "Devices max_index has changed: %zu (was %zu). Starting over",
+                ndevs, ndevs_prev);
       ndevs_prev = ndevs;
       i = 0;
     }
