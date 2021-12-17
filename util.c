@@ -1357,35 +1357,30 @@ static int manual_get_assert(const cfg_t *cfg, const char *prompt,
   b64_sig = converse(pamh, PAM_PROMPT_ECHO_ON, prompt);
 
   if (!b64_decode(b64_authdata, (void **) &authdata, &authdata_len)) {
-    if (cfg->debug)
-      D(cfg->debug_file, "Failed to decode authenticator data");
+    debug_dbg(cfg, "Failed to decode authenticator data");
     goto err;
   }
 
   if (!b64_decode(b64_sig, (void **) &sig, &sig_len)) {
-    if (cfg->debug)
-      D(cfg->debug_file, "Failed to decode signature");
+    debug_dbg(cfg, "Failed to decode signature");
     goto err;
   }
 
   r = fido_assert_set_count(assert, 1);
   if (r != FIDO_OK) {
-    if (cfg->debug)
-      D(cfg->debug_file, "Failed to set signature count of assertion");
+    debug_dbg(cfg, "Failed to set signature count of assertion");
     goto err;
   }
 
   r = fido_assert_set_authdata(assert, 0, authdata, authdata_len);
   if (r != FIDO_OK) {
-    if (cfg->debug)
-      D(cfg->debug_file, "Failed to set authdata of assertion");
+    debug_dbg(cfg, "Failed to set authdata of assertion");
     goto err;
   }
 
   r = fido_assert_set_sig(assert, 0, sig, sig_len);
   if (r != FIDO_OK) {
-    if (cfg->debug)
-      D(cfg->debug_file, "Failed to set signature of assertion");
+    debug_dbg(cfg, "Failed to set signature of assertion");
     goto err;
   }
 
@@ -1429,37 +1424,30 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
     parse_opts(cfg, devices[i].attributes, &opts);
     assert[i] = prepare_assert(cfg, &devices[i], &opts);
     if (assert[i] == NULL) {
-      if (cfg->debug)
-        D(cfg->debug_file, "Failed to prepare assert");
+      debug_dbg(cfg, "Failed to prepare assert");
       goto out;
     }
 
-    if (cfg->debug)
-      D(cfg->debug_file, "Attempting authentication with device number %d",
-        i + 1);
+    debug_dbg(cfg, "Attempting authentication with device number %d", i + 1);
 
     if (!parse_pk(cfg, devices[i].old_format, devices[i].coseType,
                   devices[i].publicKey, &pk[i])) {
-      if (cfg->debug)
-        D(cfg->debug_file, "Unable to parse public key %u", i);
+      debug_dbg(cfg, "Unable to parse public key %u", i);
       goto out;
     }
 
     if (!b64_encode(fido_assert_clientdata_hash_ptr(assert[i]),
                     fido_assert_clientdata_hash_len(assert[i]),
                     &b64_challenge)) {
-      if (cfg->debug)
-        D(cfg->debug_file, "Failed to encode challenge");
+      debug_dbg(cfg, "Failed to encode challenge");
       goto out;
     }
 
-    if (cfg->debug)
-      D(cfg->debug_file, "Challenge: %s", b64_challenge);
+    debug_dbg(cfg, "Challenge: %s", b64_challenge);
 
     n = snprintf(prompt, sizeof(prompt), "Challenge #%d:", i + 1);
     if (n <= 0 || (size_t) n >= sizeof(prompt)) {
-      if (cfg->debug)
-        D(cfg->debug_file, "Failed to print challenge prompt");
+      debug_dbg(cfg, "Failed to print challenge prompt");
       goto out;
     }
 
@@ -1468,8 +1456,7 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
     n = snprintf(buf, sizeof(buf), "%s\n%s\n%s", b64_challenge, cfg->origin,
                  devices[i].keyHandle);
     if (n <= 0 || (size_t) n >= sizeof(buf)) {
-      if (cfg->debug)
-        D(cfg->debug_file, "Failed to print fido2-assert input string");
+      debug_dbg(cfg, "Failed to print fido2-assert input string");
       goto out;
     }
 
@@ -1488,14 +1475,12 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
   for (i = 0; i < n_devs; ++i) {
     n = snprintf(prompt, sizeof(prompt), "Response #%d: ", i + 1);
     if (n <= 0 || (size_t) n >= sizeof(prompt)) {
-      if (cfg->debug)
-        D(cfg->debug_file, "Failed to print response prompt");
+      debug_dbg(cfg, "Failed to print response prompt");
       goto out;
     }
 
     if (!manual_get_assert(cfg, prompt, pamh, assert[i])) {
-      if (cfg->debug)
-        D(cfg->debug_file, "Failed to get assert %u", i);
+      debug_dbg(cfg, "Failed to get assert %u", i);
       goto out;
     }
 
