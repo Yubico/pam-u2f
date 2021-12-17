@@ -306,9 +306,7 @@ static int load_ssh_key(const cfg_t *cfg, char *buf, size_t buf_size,
 
   if (opwfile_size > buf_size ||
       opwfile_size < SSH_HEADER_LEN + SSH_TRAILER_LEN) {
-    if (cfg->debug) {
-      D(cfg->debug_file, "Malformed SSH key (length)");
-    }
+    debug_dbg(cfg, "Malformed SSH key (length)");
     return 0;
   }
 
@@ -316,18 +314,14 @@ static int load_ssh_key(const cfg_t *cfg, char *buf, size_t buf_size,
   if (fgets(buf, SSH_HEADER_LEN + 1, opwfile) == NULL ||
       strlen(buf) != SSH_HEADER_LEN ||
       strncmp(buf, SSH_HEADER, SSH_HEADER_LEN) != 0) {
-    if (cfg->debug) {
-      D(cfg->debug_file, "Malformed SSH key (header)");
-    }
+    debug_dbg(cfg, "Malformed SSH key (header)");
     return 0;
   }
 
   while (opwfile_size > 0 && buf_size > 1) {
     ch = fgetc(opwfile);
     if (ch == EOF) {
-      if (cfg->debug) {
-        D(cfg->debug_file, "Unexpected authfile termination");
-      }
+      debug_dbg(cfg, "Unexpected authfile termination");
       return 0;
     }
 
@@ -342,9 +336,7 @@ static int load_ssh_key(const cfg_t *cfg, char *buf, size_t buf_size,
             fgets(cp + 1, SSH_TRAILER_LEN, opwfile) == NULL ||
             strlen(cp) != SSH_TRAILER_LEN ||
             strncmp(cp, SSH_TRAILER, SSH_TRAILER_LEN) != 0) {
-          if (cfg->debug) {
-            D(cfg->debug_file, "Malformed SSH key (trailer)");
-          }
+          debug_dbg(cfg, "Malformed SSH key (trailer)");
           return 0;
         }
 
@@ -355,10 +347,8 @@ static int load_ssh_key(const cfg_t *cfg, char *buf, size_t buf_size,
       }
     }
   }
-
-  if (cfg->debug) { // TODO(adma): too verbose? Delete?
-    D(cfg->debug_file, "Credential is \"%s\"", buf);
-  }
+  // TODO(adma): too verbose? Delete?
+  debug_dbg(cfg, "Credential is \"%s\"", buf);
 
   return 1;
 }
@@ -426,12 +416,10 @@ static int ssh_log_cstring(const cfg_t *cfg, const unsigned char **buf,
   (void) name; // silence compiler warnings if PAM_DEBUG disabled
 
   if (!ssh_get_cstring(buf, size, &str, &len)) {
-    if (cfg->debug)
-      D(cfg->debug_file, "Malformed SSH key (%s)", name);
+    debug_dbg(cfg, "Malformed SSH key (%s)", name);
     return 0;
   }
-  if (cfg->debug)
-    D(cfg->debug_file, "%s (%zu) \"%s\"", name, len, str);
+  debug_dbg(cfg, "%s (%zu) \"%s\"", name, len, str);
 
   free(str);
   return 1;
@@ -445,28 +433,21 @@ static int ssh_get_attrs(const cfg_t *cfg, const unsigned char **buf,
 
   // flags
   if (!ssh_get_u8(buf, size, &flags)) {
-    if (cfg->debug) {
-      D(cfg->debug_file, "Malformed SSH key (flags)");
-    }
+    debug_dbg(cfg, "Malformed SSH key (flags)");
     return 0;
   }
-  if (cfg->debug) {
-    D(cfg->debug_file, "flags: %02x", flags);
-  }
+  debug_dbg(cfg, "flags: %02x", flags);
 
   r = snprintf(tmp, sizeof(tmp), "%s%s",
                flags & SSH_SK_USER_PRESENCE_REQD ? "+presence" : "",
                flags & SSH_SK_USER_VERIFICATION_REQD ? "+verification" : "");
   if (r < 0 || (size_t) r >= sizeof(tmp)) {
-    if (cfg->debug)
-      D(cfg->debug_file, "Unable to prepare flags");
+    debug_dbg(cfg, "Unable to prepare flags");
     return 0;
   }
 
   if ((*attrs = strdup(tmp)) == NULL) {
-    if (cfg->debug) {
-      D(cfg->debug_file, "Unable to allocate attributes");
-    }
+    debug_dbg(cfg, "Unable to allocate attributes");
     return 0;
   }
 
@@ -488,9 +469,7 @@ static int ssh_get_pubkey(const cfg_t *cfg, const unsigned char **buf,
 
   // key type
   if (!ssh_get_cstring(buf, size, &ssh_type, &len)) {
-    if (cfg->debug) {
-      D(cfg->debug_file, "Malformed SSH key (keytype)");
-    }
+    debug_dbg(cfg, "Malformed SSH key (keytype)");
     goto err;
   }
 
@@ -502,60 +481,44 @@ static int ssh_get_pubkey(const cfg_t *cfg, const unsigned char **buf,
     type = COSE_EDDSA;
     point_len = SSH_EDDSA_POINT_LEN;
   } else {
-    if (cfg->debug) {
-      D(cfg->debug_file, "Unknown key type %s", ssh_type);
-    }
+    debug_dbg(cfg, "Unknown key type %s", ssh_type);
     goto err;
   }
 
-  if (cfg->debug) {
-    D(cfg->debug_file, "keytype (%zu) \"%s\"", len, ssh_type);
-  }
+  debug_dbg(cfg, "keytype (%zu) \"%s\"", len, ssh_type);
 
   if (type == COSE_ES256) {
     // curve name
     if (!ssh_get_cstring(buf, size, &ssh_curve, &len)) {
-      if (cfg->debug) {
-        D(cfg->debug_file, "Malformed SSH key (curvename)");
-      }
+      debug_dbg(cfg, "Malformed SSH key (curvename)");
       goto err;
     }
 
     if (len == SSH_P256_NAME_LEN &&
         memcmp(ssh_curve, SSH_P256_NAME, SSH_P256_NAME_LEN) == 0) {
-      if (cfg->debug) {
-        D(cfg->debug_file, "curvename (%zu) \"%s\"", len, ssh_curve);
-      }
+      debug_dbg(cfg, "curvename (%zu) \"%s\"", len, ssh_curve);
     } else {
-      if (cfg->debug) {
-        D(cfg->debug_file, "Unknown curve %s", ssh_curve);
-      }
+      debug_dbg(cfg, "Unknown curve %s", ssh_curve);
       goto err;
     }
   }
 
   // point
   if (!ssh_get_string_ref(buf, size, &blob, &len)) {
-    if (cfg->debug) {
-      D(cfg->debug_file, "Malformed SSH key (point)");
-    }
+    debug_dbg(cfg, "Malformed SSH key (point)");
     goto err;
   }
 
   if (len != point_len) {
-    if (cfg->debug) {
-      D(cfg->debug_file, "Invalid point length, should be %zu, found %zu",
-        point_len, len);
-    }
+    debug_dbg(cfg, "Invalid point length, should be %zu, found %zu", point_len,
+              len);
     goto err;
   }
 
   if (type == COSE_ES256) {
     // Skip the initial '04'
     if (len < 1) {
-      if (cfg->debug) {
-        D(cfg->debug_file, "Failed to skip initial '04'");
-      }
+      debug_dbg(cfg, "Failed to skip initial '04'");
       goto err;
     }
     blob++;
@@ -563,16 +526,12 @@ static int ssh_get_pubkey(const cfg_t *cfg, const unsigned char **buf,
   }
 
   if (!b64_encode(blob, len, pubkey_p)) {
-    if (cfg->debug) {
-      D(cfg->debug_file, "Unable to allocate public key");
-    }
+    debug_dbg(cfg, "Unable to allocate public key");
     goto err;
   }
 
   if ((*type_p = strdup(cose_string(type))) == NULL) {
-    if (cfg->debug) {
-      D(cfg->debug_file, "Unable to allocate COSE type");
-    }
+    debug_dbg(cfg, "Unable to allocate COSE type");
     goto err;
   }
 
@@ -607,9 +566,7 @@ static int parse_ssh_format(const cfg_t *cfg, char *buf, size_t buf_size,
 
   if (!load_ssh_key(cfg, buf, buf_size, opwfile, opwfile_size) ||
       !b64_decode(buf, (void **) &decoded_initial, &decoded_len)) {
-    if (cfg->debug) {
-      D(cfg->debug_file, "Unable to decode credential");
-    }
+    debug_dbg(cfg, "Unable to decode credential");
     goto out;
   }
 
@@ -618,9 +575,7 @@ static int parse_ssh_format(const cfg_t *cfg, char *buf, size_t buf_size,
   // magic
   if (decoded_len < SSH_AUTH_MAGIC_LEN ||
       memcmp(decoded, SSH_AUTH_MAGIC, SSH_AUTH_MAGIC_LEN) != 0) {
-    if (cfg->debug) {
-      D(cfg->debug_file, "Malformed SSH key (magic)");
-    }
+    debug_dbg(cfg, "Malformed SSH key (magic)");
     goto out;
   }
 
@@ -633,54 +588,40 @@ static int parse_ssh_format(const cfg_t *cfg, char *buf, size_t buf_size,
     goto out;
 
   if (!ssh_get_u32(&decoded, &decoded_len, &tmp)) {
-    if (cfg->debug) {
-      D(cfg->debug_file, "Malformed SSH key (nkeys)");
-    }
+    debug_dbg(cfg, "Malformed SSH key (nkeys)");
     goto out;
   }
-  if (cfg->debug) {
-    D(cfg->debug_file, "nkeys: %" PRIu32, tmp);
-  }
+  debug_dbg(cfg, "nkeys: %" PRIu32, tmp);
   if (tmp != 1) {
-    if (cfg->debug) {
-      D(cfg->debug_file, "Multiple keys not supported");
-    }
+    debug_dbg(cfg, "Multiple keys not supported");
     goto out;
   }
 
   // public_key (skip)
   if (!ssh_get_string_ref(&decoded, &decoded_len, NULL, NULL)) {
-    if (cfg->debug) {
-      D(cfg->debug_file, "Malformed SSH key (pubkey)");
-    }
+    debug_dbg(cfg, "Malformed SSH key (pubkey)");
     goto out;
   }
 
   // private key (consume length)
   if (!ssh_get_u32(&decoded, &decoded_len, &tmp) || decoded_len < tmp) {
-    if (cfg->debug) {
-      D(cfg->debug_file, "Malformed SSH key (pvtkey length)");
-    }
+    debug_dbg(cfg, "Malformed SSH key (pvtkey length)");
     goto out;
   }
 
   // check1, check2
   if (!ssh_get_u32(&decoded, &decoded_len, &check1) ||
       !ssh_get_u32(&decoded, &decoded_len, &check2)) {
-    if (cfg->debug) {
-      D(cfg->debug_file, "Malformed SSH key (check1, check2)");
-    }
+    debug_dbg(cfg, "Malformed SSH key (check1, check2)");
     goto out;
   }
-  if (cfg->debug) {
-    D(cfg->debug_file, "check1: %" PRIu32, check1);
-    D(cfg->debug_file, "check2: %" PRIu32, check2);
-  }
+
+  debug_dbg(cfg, "check1: %" PRIu32, check1);
+  debug_dbg(cfg, "check2: %" PRIu32, check2);
+
   if (check1 != check2) {
-    if (cfg->debug) {
-      D(cfg->debug_file, "Mismatched check values");
-      goto out;
-    }
+    debug_dbg(cfg, "Mismatched check values");
+    goto out;
   }
 
   if (!ssh_get_pubkey(cfg, &decoded, &decoded_len, &devices[0].coseType,
@@ -692,28 +633,18 @@ static int parse_ssh_format(const cfg_t *cfg, char *buf, size_t buf_size,
   // keyhandle
   if (!ssh_get_string_ref(&decoded, &decoded_len, &blob, &len) ||
       !b64_encode(blob, len, &devices[0].keyHandle)) {
-    if (cfg->debug) {
-      D(cfg->debug_file, "Malformed SSH key (keyhandle)");
-    }
+    debug_dbg(cfg, "Malformed SSH key (keyhandle)");
     goto out;
   }
 
-  if (cfg->debug) {
-    D(cfg->debug_file, "KeyHandle for device number 1: %s",
-      devices[0].keyHandle);
-    D(cfg->debug_file, "publicKey for device number 1: %s",
-      devices[0].publicKey);
-    D(cfg->debug_file, "COSE type for device number 1: %s",
-      devices[0].coseType);
-    D(cfg->debug_file, "Attributes for device number 1: %s",
-      devices[0].attributes);
-  }
+  debug_dbg(cfg, "KeyHandle for device number 1: %s", devices[0].keyHandle);
+  debug_dbg(cfg, "publicKey for device number 1: %s", devices[0].publicKey);
+  debug_dbg(cfg, "COSE type for device number 1: %s", devices[0].coseType);
+  debug_dbg(cfg, "Attributes for device number 1: %s", devices[0].attributes);
 
   // reserved (skip)
   if (!ssh_get_string_ref(&decoded, &decoded_len, NULL, NULL)) {
-    if (cfg->debug) {
-      D(cfg->debug_file, "Malformed SSH key (reserved)");
-    }
+    debug_dbg(cfg, "Malformed SSH key (reserved)");
     goto out;
   }
 
@@ -723,17 +654,13 @@ static int parse_ssh_format(const cfg_t *cfg, char *buf, size_t buf_size,
 
   // padding
   if (decoded_len >= 255) {
-    if (cfg->debug) {
-      D(cfg->debug_file, "Malformed SSH key (padding length)");
-    }
+    debug_dbg(cfg, "Malformed SSH key (padding length)");
     goto out;
   }
 
   for (int i = 1; (unsigned) i <= decoded_len; i++) {
     if (decoded[i - 1] != i) {
-      if (cfg->debug) {
-        D(cfg->debug_file, "Malformed SSH key (padding)");
-      }
+      debug_dbg(cfg, "Malformed SSH key (padding)");
       goto out;
     }
   }
