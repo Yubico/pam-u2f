@@ -811,54 +811,49 @@ int get_devices_from_authfile(const cfg_t *cfg, const char *username,
 
   fd = open(cfg->auth_file, O_RDONLY | O_CLOEXEC | O_NOCTTY);
   if (fd < 0) {
-    if (cfg->debug)
-      D(cfg->debug_file, "Cannot open file: %s (%s)", cfg->auth_file,
-        strerror(errno));
+    debug_dbg(cfg, "Cannot open file: %s (%s)", cfg->auth_file,
+              strerror(errno));
     goto err;
   }
 
   if (fstat(fd, &st) < 0) {
-    if (cfg->debug)
-      D(cfg->debug_file, "Cannot stat file: %s (%s)", cfg->auth_file,
-        strerror(errno));
+    debug_dbg(cfg, "Cannot stat file: %s (%s)", cfg->auth_file,
+              strerror(errno));
     goto err;
   }
 
   if (!S_ISREG(st.st_mode)) {
-    if (cfg->debug)
-      D(cfg->debug_file, "%s is not a regular file", cfg->auth_file);
+    debug_dbg(cfg, "%s is not a regular file", cfg->auth_file);
     goto err;
   }
 
   if (st.st_size == 0) {
-    if (cfg->debug)
-      D(cfg->debug_file, "File %s is empty", cfg->auth_file);
+    debug_dbg(cfg, "File %s is empty", cfg->auth_file);
     goto err;
   }
   opwfile_size = st.st_size;
 
   gpu_ret = getpwuid_r(st.st_uid, &pw_s, buffer, sizeof(buffer), &pw);
   if (gpu_ret != 0 || pw == NULL) {
-    D(cfg->debug_file, "Unable to retrieve credentials for uid %u, (%s)",
-      st.st_uid, strerror(errno));
+    debug_dbg(cfg, "Unable to retrieve credentials for uid %u, (%s)", st.st_uid,
+              strerror(errno));
     goto err;
   }
 
   if (strcmp(pw->pw_name, username) != 0 && strcmp(pw->pw_name, "root") != 0) {
     if (strcmp(username, "root") != 0) {
-      D(cfg->debug_file,
-        "The owner of the authentication file is neither %s nor root",
-        username);
+      debug_dbg(cfg,
+                "The owner of the authentication file is neither %s nor root",
+                username);
     } else {
-      D(cfg->debug_file, "The owner of the authentication file is not root");
+      debug_dbg(cfg, "The owner of the authentication file is not root");
     }
     goto err;
   }
 
   opwfile = fdopen(fd, "r");
   if (opwfile == NULL) {
-    if (cfg->debug)
-      D(cfg->debug_file, "fdopen: %s", strerror(errno));
+    debug_dbg(cfg, "fdopen: %s", strerror(errno));
     goto err;
   } else {
     fd = -1; /* fd belongs to opwfile */
@@ -866,8 +861,7 @@ int get_devices_from_authfile(const cfg_t *cfg, const char *username,
 
   buf = calloc(1, (DEVSIZE * cfg->max_devs));
   if (!buf) {
-    if (cfg->debug)
-      D(cfg->debug_file, "Unable to allocate memory");
+    debug_dbg(cfg, "Unable to allocate memory");
     goto err;
   }
 
@@ -883,8 +877,7 @@ int get_devices_from_authfile(const cfg_t *cfg, const char *username,
     goto err;
   }
 
-  if (cfg->debug)
-    D(cfg->debug_file, "Found %d device(s) for user %s", *n_devs, username);
+  debug_dbg(cfg, "Found %d device(s) for user %s", *n_devs, username);
 
   retval = 1;
   goto out;
