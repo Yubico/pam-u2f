@@ -12,7 +12,8 @@
 
 #include "debug.h"
 
-#define DEBUG_STR "debug(pam_u2f): %s:%d (%s): "
+#define DEBUG_FMT "debug(pam_u2f): %s:%d (%s): %s"
+#define MSGLEN 2048
 
 FILE *debug_open(const char *filename) {
   struct stat st;
@@ -50,24 +51,35 @@ void debug_close(FILE *f) {
     fclose(f);
 }
 
+static void do_log(FILE *debug_file, const char *file, int line,
+                   const char *func, const char *msg) {
+#ifndef WITH_FUZZING
+  if (debug_file == NULL) {
+    syslog(LOG_AUTHPRIV | LOG_DEBUG, DEBUG_FMT, file, line, func, msg);
+  } else {
+    fprintf(debug_file, DEBUG_FMT "\n", file, line, func, msg);
+  }
+#else
+  (void) debug_file;
+  snprintf(NULL, 0, DEBUG_FMT, file, line, func, msg);
+#endif
+}
+
+ATTRIBUTE_FORMAT(printf, 5, 0)
+static void debug_vfprintf(FILE *debug_file, const char *file, int line,
+                           const char *func, const char *fmt, va_list args) {
+  char msg[MSGLEN];
+  int r;
+
+  r = vsnprintf(msg, sizeof(msg), fmt, args);
+  do_log(debug_file, file, line, func, r < 0 ? __func__ : msg);
+}
+
 void debug_fprintf(FILE *debug_file, const char *file, int line,
                    const char *func, const char *fmt, ...) {
   va_list ap;
-  va_start(ap, fmt);
 
-#if defined(WITH_FUZZING)
-  (void) debug_file;
-  snprintf(NULL, 0, DEBUG_STR, file, line, func);
-  vsnprintf(NULL, 0, fmt, ap);
-#else
-  if (debug_file == NULL) {
-    syslog(LOG_AUTHPRIV | LOG_DEBUG, DEBUG_STR, file, line, func);
-    vsyslog(LOG_AUTHPRIV | LOG_DEBUG, fmt, ap);
-  } else {
-    fprintf(debug_file, DEBUG_STR, file, line, func);
-    vfprintf(debug_file, fmt, ap);
-    fprintf(debug_file, "\n");
-  }
-#endif
+  va_start(ap, fmt);
+  debug_vfprintf(debug_file, file, line, func, fmt, ap);
   va_end(ap);
 }
