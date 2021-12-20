@@ -68,8 +68,12 @@ static void do_log(FILE *debug_file, const char *file, int line,
 ATTRIBUTE_FORMAT(printf, 5, 0)
 static void debug_vfprintf(FILE *debug_file, const char *file, int line,
                            const char *func, const char *fmt, va_list args) {
+  const char *bn;
   char msg[MSGLEN];
   int r;
+
+  if ((bn = strrchr(file, '/')) != NULL)
+    file = bn + 1;
 
   r = vsnprintf(msg, sizeof(msg), fmt, args);
   do_log(debug_file, file, line, func, r < 0 ? __func__ : msg);
