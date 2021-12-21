@@ -178,7 +178,7 @@ static int parse_native_format(const cfg_t *cfg, const char *username,
     if (len > 0 && buf[len - 1] == '\n')
       buf[len - 1] = '\0';
 
-    debug_dbg(cfg, "Authorization line: %s", buf);
+    debug_dbg(cfg, "Read %zu bytes", len);
 
     s_user = strtok_r(buf, ":", &saveptr);
     if (s_user && strcmp(username, s_user) == 0) {
@@ -347,8 +347,6 @@ static int load_ssh_key(const cfg_t *cfg, char *buf, size_t buf_size,
       }
     }
   }
-  // TODO(adma): too verbose? Delete?
-  debug_dbg(cfg, "Credential is \"%s\"", buf);
 
   return 1;
 }
@@ -702,24 +700,22 @@ int get_devices_from_authfile(const cfg_t *cfg, const char *username,
 
   fd = open(cfg->auth_file, O_RDONLY | O_CLOEXEC | O_NOCTTY);
   if (fd < 0) {
-    debug_dbg(cfg, "Cannot open file: %s (%s)", cfg->auth_file,
-              strerror(errno));
+    debug_dbg(cfg, "Cannot open authentication file: %s", strerror(errno));
     goto err;
   }
 
   if (fstat(fd, &st) < 0) {
-    debug_dbg(cfg, "Cannot stat file: %s (%s)", cfg->auth_file,
-              strerror(errno));
+    debug_dbg(cfg, "Cannot stat authentication file: %s", strerror(errno));
     goto err;
   }
 
   if (!S_ISREG(st.st_mode)) {
-    debug_dbg(cfg, "%s is not a regular file", cfg->auth_file);
+    debug_dbg(cfg, "Authentication file is not a regular file");
     goto err;
   }
 
   if (st.st_size == 0) {
-    debug_dbg(cfg, "File %s is empty", cfg->auth_file);
+    debug_dbg(cfg, "Authentication file is empty");
     goto err;
   }
   opwfile_size = st.st_size;

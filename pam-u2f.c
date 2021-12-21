@@ -161,10 +161,9 @@ static char *resolve_authfile_path(const cfg_t *cfg, const struct passwd *user,
       }
 
       if (!cfg->openasuser) {
-        debug_dbg(cfg,
-                  "WARNING: not dropping privileges when reading %s, please "
-                  "consider setting openasuser=1 in the module configuration",
-                  authfile);
+        debug_dbg(cfg, "WARNING: not dropping privileges when reading the "
+                       "authentication file, please consider setting "
+                       "openasuser=1 in the module configuration");
       }
     }
   } else if (cfg->auth_file[0] != '/') {
@@ -332,7 +331,7 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
       retval = PAM_SUCCESS;
       goto done;
     } else if (retval != 1) {
-      debug_dbg(cfg, "Unable to get devices from file %s", cfg->auth_file);
+      debug_dbg(cfg, "Unable to get devices from authentication file");
       retval = PAM_AUTHINFO_UNAVAIL;
       goto done;
     } else {
@@ -366,7 +365,7 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
 
   int authpending_file_descriptor = -1;
   if (cfg->authpending_file) {
-    debug_dbg(cfg, "Using file '%s' for emitting touch request notifications",
+    debug_dbg(cfg, "Touch request notifications will be emitted via '%s'",
               cfg->authpending_file);
 
     // Open (or create) the authpending_file to indicate that we start waiting
@@ -375,10 +374,8 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
       open(cfg->authpending_file,
            O_RDONLY | O_CREAT | O_CLOEXEC | O_NOFOLLOW | O_NOCTTY, 0664);
     if (authpending_file_descriptor < 0) {
-      debug_dbg(cfg,
-                "Unable to emit 'authentication started' notification by "
-                "opening the file '%s', (%s)",
-                cfg->authpending_file, strerror(errno));
+      debug_dbg(cfg, "Unable to emit 'authentication started' notification: %s",
+                strerror(errno));
     }
   }
 
@@ -394,10 +391,8 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
   // Close the authpending_file to indicate that we stop waiting for a touch
   if (authpending_file_descriptor >= 0) {
     if (close(authpending_file_descriptor) < 0) {
-      debug_dbg(cfg,
-                "Unable to emit 'authentication stopped' notification by "
-                "closing the file '%s', (%s)",
-                cfg->authpending_file, strerror(errno));
+      debug_dbg(cfg, "Unable to emit 'authentication stopped' notification: %s",
+                strerror(errno));
     }
   }
 
