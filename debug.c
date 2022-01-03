@@ -12,7 +12,7 @@
 
 #include "debug.h"
 
-#define DEBUG_FMT "debug(pam_u2f): %s:%d (%s): %s"
+#define DEBUG_FMT "debug(pam_u2f): %s:%d (%s): %s%s"
 #define MSGLEN 2048
 
 FILE *debug_open(const char *filename) {
@@ -52,16 +52,16 @@ void debug_close(FILE *f) {
 }
 
 static void do_log(FILE *debug_file, const char *file, int line,
-                   const char *func, const char *msg) {
+                   const char *func, const char *msg, const char *suffix) {
 #ifndef WITH_FUZZING
   if (debug_file == NULL) {
-    syslog(LOG_AUTHPRIV | LOG_DEBUG, DEBUG_FMT, file, line, func, msg);
+    syslog(LOG_AUTHPRIV | LOG_DEBUG, DEBUG_FMT, file, line, func, msg, suffix);
   } else {
-    fprintf(debug_file, DEBUG_FMT "\n", file, line, func, msg);
+    fprintf(debug_file, DEBUG_FMT "\n", file, line, func, msg, suffix);
   }
 #else
   (void) debug_file;
-  snprintf(NULL, 0, DEBUG_FMT, file, line, func, msg);
+  snprintf(NULL, 0, DEBUG_FMT, file, line, func, msg, suffix);
 #endif
 }
 
@@ -75,8 +75,11 @@ static void debug_vfprintf(FILE *debug_file, const char *file, int line,
   if ((bn = strrchr(file, '/')) != NULL)
     file = bn + 1;
 
-  r = vsnprintf(msg, sizeof(msg), fmt, args);
-  do_log(debug_file, file, line, func, r < 0 ? __func__ : msg);
+  if ((r = vsnprintf(msg, sizeof(msg), fmt, args)) < 0)
+    do_log(debug_file, file, line, func, __func__, "");
+  else
+    do_log(debug_file, file, line, func, msg,
+           (size_t) r < sizeof(msg) ? "" : "[truncated]");
 }
 
 void debug_fprintf(FILE *debug_file, const char *file, int line,
