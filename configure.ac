@@ -15,10 +15,8 @@ AM_MAINTAINER_MODE
 AC_USE_SYSTEM_EXTENSIONS
 AM_PROG_CC_C_O
 AM_PROG_AR
-AC_LIBTOOL_WIN32_DLL
-AC_DISABLE_STATIC
-AC_PROG_LIBTOOL
-AC_PROG_CC_STDC
+LT_INIT([disable-static])
+AC_PROG_CC
 
 AC_ARG_ENABLE([man],
   [AS_HELP_STRING([--disable-man], [Disable man page generation])],
@@ -52,7 +50,7 @@ case "$host" in
      *)         PAMDIR="/usr/lib"
 esac
 AC_ARG_WITH(pam-dir,
-  AC_HELP_STRING([--with-pam-dir=DIR], [Where to install the PAM module]), [
+  AS_HELP_STRING([--with-pam-dir=DIR], [Where to install the PAM module]), [
     case "${withval}" in
       /*) PAMDIR="${withval}";;
       ./*|../*) AC_MSG_ERROR(Bad value for --with-pam-dir);;
