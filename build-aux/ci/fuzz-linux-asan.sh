@@ -3,10 +3,10 @@ set -euxo pipefail
 
 CORPUS_URL="https://storage.googleapis.com/yubico-pam-u2f/corpus.tgz"
 
-LIBCBOR_URL="git://github.com/pjk/libcbor"
+LIBCBOR_URL="https://github.com/pjk/libcbor"
 LIBCBOR_TAG="v0.8.0"
 LIBCBOR_CFLAGS="-fsanitize=address,alignment,bounds"
-LIBFIDO2_URL="git://github.com/Yubico/libfido2"
+LIBFIDO2_URL="https://github.com/Yubico/libfido2"
 LIBFIDO2_TAG="1.7.0"
 LIBFIDO2_CFLAGS="-fsanitize=address,alignment,bounds"
 
