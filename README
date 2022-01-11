@@ -42,7 +42,7 @@ You may check out the sources using Git with the following command:
 
 [source, console]
 ----
-$ git clone git://github.com/Yubico/pam-u2f.git
+$ git clone https://github.com/Yubico/pam-u2f.git
 ----
 
 This will create a directory 'pam-u2f'. Enter the directory:
