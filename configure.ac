@@ -1,4 +1,4 @@
-#  Copyright (C) 2014-2019 Yubico AB
+#  Copyright (C) 2014-2022 Yubico AB
 AC_PREREQ([2.65])
 AC_INIT([pam_u2f], [1.2.1], [https://github.com/Yubico/pam-u2f/issues],
   [pam_u2f], [https://developers.yubico.com/pam-u2f/])
@@ -100,6 +100,7 @@ AC_CONFIG_FILES([
   pamu2fcfg/Makefile
   tests/Makefile
   fuzz/Makefile
+  man/Makefile
 ])
 
 creduser=$(whoami)

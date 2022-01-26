@@ -1,6 +1,10 @@
-#  Copyright (C) 2014-2021 Yubico AB - See COPYING
+#  Copyright (C) 2014-2022 Yubico AB - See COPYING
 
 SUBDIRS = . pamu2fcfg tests
+
+if ENABLE_MAN
+SUBDIRS += man
+endif
 
 if ENABLE_FUZZING
 SUBDIRS += fuzz
@@ -59,19 +63,6 @@ pam_u2f_la_LDFLAGS += -Wl,--wrap=fido_dev_info_manifest
 endif
 
 DEFS = -DDEBUG_PAM -DPAM_DEBUG @DEFS@
-
-if ENABLE_MAN
-dist_man8_MANS = $(top_builddir)/man/pam_u2f.8
-DISTCLEANFILES = $(dist_man8_MANS)
-
-MANSOURCES = $(top_builddir)/man/pam_u2f.8.txt
-EXTRA_DIST = $(MANSOURCES)
-
-SUFFIXES = .8.txt .8
-
-.8.txt.8:
-	$(A2X) --format=manpage -L -a revdate="Version $(VERSION)" $<
-endif
 
 # Release
 
