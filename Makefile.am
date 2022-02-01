@@ -33,7 +33,10 @@ pam_u2f_la_SOURCES =
 pam_u2f_la_LIBADD = libmodule.la
 pam_u2f_la_LDFLAGS = -module -avoid-version
 
-if ENABLE_FUZZING
+if !ENABLE_FUZZING
+pam_u2f_la_LDFLAGS += -export-symbols $(srcdir)/export.sym
+else
+pam_u2f_la_LDFLAGS += -export-symbols $(srcdir)/fuzz/export.sym
 pam_u2f_la_SOURCES += fuzz/wrap.c
 pam_u2f_la_LDFLAGS += -Wl,--wrap=strdup
 pam_u2f_la_LDFLAGS += -Wl,--wrap=calloc
@@ -64,6 +67,8 @@ pam_u2f_la_LDFLAGS += -Wl,--wrap=fido_dev_info_manifest
 endif
 
 DEFS = -DDEBUG_PAM -DPAM_DEBUG @DEFS@
+
+EXTRA_DIST = export.sym
 
 # Release
 
