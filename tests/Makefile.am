@@ -11,6 +11,6 @@ check_PROGRAMS = dlsym_check
 dlsym_check_LDFLAGS = -ldl $(AM_LDFLAGS)
 
 check_PROGRAMS += get_devices
-get_devices_LDADD = $(top_builddir)/pam_u2f.la
+get_devices_LDADD = $(top_builddir)/libmodule.la
 
 TESTS = $(check_PROGRAMS)

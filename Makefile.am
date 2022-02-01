@@ -18,18 +18,19 @@ if ENABLE_FUZZING
 AM_CPPFLAGS += -fsanitize=fuzzer-no-link
 endif
 
+noinst_LTLIBRARIES = libmodule.la
+libmodule_la_SOURCES = pam-u2f.c
+libmodule_la_SOURCES += b64.c b64.h
+libmodule_la_SOURCES += debug.c debug.h
+libmodule_la_SOURCES += drop_privs.h
+libmodule_la_SOURCES += explicit_bzero.c
+libmodule_la_SOURCES += util.c util.h
+libmodule_la_LIBADD = -lpam $(LIBFIDO2_LIBS) $(LIBCRYPTO_LIBS)
+
 pampluginexecdir = $(PAMDIR)
 pampluginexec_LTLIBRARIES = pam_u2f.la
-
-pam_u2f_la_SOURCES = pam-u2f.c
-pam_u2f_la_SOURCES += b64.c b64.h
-pam_u2f_la_SOURCES += debug.c debug.h
-pam_u2f_la_SOURCES += drop_privs.h
-pam_u2f_la_SOURCES += explicit_bzero.c
-pam_u2f_la_SOURCES += util.c util.h
-
-pam_u2f_la_LIBADD = -lpam
-pam_u2f_la_LIBADD += $(LIBFIDO2_LIBS) $(LIBCRYPTO_LIBS)
+pam_u2f_la_SOURCES =
+pam_u2f_la_LIBADD = libmodule.la
 pam_u2f_la_LDFLAGS = -module -avoid-version
 
 if ENABLE_FUZZING
