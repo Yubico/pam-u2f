@@ -19,7 +19,7 @@
 #include <string.h>
 #include "../util.h"
 
-int main(int argc, const char **argv) {
+int main(void) {
   int rc;
 
   cfg_t cfg;
