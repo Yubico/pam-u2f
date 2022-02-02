@@ -34,7 +34,7 @@ m4/ltsugar.m4
 m4/ltversion.m4
 m4/lt~obsolete.m4
 tests/.deps/
-tests/basic
+tests/dlsym_check
 man/pam_u2f.8
 pamu2fcfg/cmdline.c
 pamu2fcfg/cmdline.h
