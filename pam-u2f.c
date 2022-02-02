@@ -196,7 +196,6 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
   cfg_t cfg_st;
   cfg_t *cfg = &cfg_st;
   char buffer[BUFSIZE];
-  char *buf = NULL;
   int pgu_ret, gpn_ret;
   int retval = PAM_IGNORE;
   device_t *devices = NULL;
@@ -407,10 +406,6 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
 done:
   free_devices(devices, n_devices);
 
-  if (buf) {
-    free(buf);
-    buf = NULL;
-  }
 #define free_const(a) free((void *) (uintptr_t)(a))
   if (should_free_origin) {
     free_const(cfg->origin);
