@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2021 Yubico AB - See COPYING
+ * Copyright (C) 2014-2022 Yubico AB - See COPYING
  */
 
 #define BUFSIZE 1024
@@ -16,18 +16,31 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <pwd.h>
+#include <err.h>
 
 #include "b64.h"
-#include "cmdline.h"
 #include "util.h"
 
 #include "openbsd-compat.h"
 
-static fido_cred_t *prepare_cred(const struct gengetopt_args_info *const args) {
+struct args {
+  const char *appid;
+  const char *origin;
+  const char *type;
+  const char *username;
+  int resident;
+  int no_user_presence;
+  int pin_verification;
+  int user_verification;
+  int debug;
+  int verbose;
+  int nouser;
+};
+
+static fido_cred_t *prepare_cred(const struct args *const args) {
   fido_cred_t *cred = NULL;
-  fido_opt_t resident_key;
-  char *appid = NULL;
-  char *user = NULL;
+  const char *appid = NULL;
+  const char *user = NULL;
   struct passwd *passwd;
   unsigned char userid[32];
   unsigned char cdh[32];
@@ -43,11 +56,9 @@ static fido_cred_t *prepare_cred(const struct gengetopt_args_info *const args) {
   }
 
   type = COSE_ES256; /* default */
-  if (args->type_given) {
-    if (!cose_type(args->type_arg, &type)) {
-      fprintf(stderr, "Unknown COSE type '%s'.\n", args->type_arg);
-      goto err;
-    }
+  if (args->type && !cose_type(args->type, &type)) {
+    fprintf(stderr, "Unknown COSE type '%s'.\n", args->type);
+    goto err;
   }
 
   if ((r = fido_cred_set_type(cred, type)) != FIDO_OK) {
@@ -66,8 +77,8 @@ static fido_cred_t *prepare_cred(const struct gengetopt_args_info *const args) {
     goto err;
   }
 
-  if (args->origin_given) {
-    if (strlcpy(origin, args->origin_arg, sizeof(origin)) >= sizeof(origin)) {
+  if (args->origin) {
+    if (strlcpy(origin, args->origin, sizeof(origin)) >= sizeof(origin)) {
       fprintf(stderr, "error: strlcpy failed\n");
       goto err;
     }
@@ -82,13 +93,13 @@ static fido_cred_t *prepare_cred(const struct gengetopt_args_info *const args) {
     }
   }
 
-  if (args->appid_given) {
-    appid = args->appid_arg;
+  if (args->appid) {
+    appid = args->appid;
   } else {
     appid = origin;
   }
 
-  if (args->verbose_given) {
+  if (args->verbose) {
     fprintf(stderr, "Setting origin to %s\n", origin);
     fprintf(stderr, "Setting appid to %s\n", appid);
   }
@@ -98,8 +109,8 @@ static fido_cred_t *prepare_cred(const struct gengetopt_args_info *const args) {
     goto err;
   }
 
-  if (args->username_given) {
-    user = args->username_arg;
+  if (args->username) {
+    user = args->username;
   } else {
     if ((passwd = getpwuid(getuid())) == NULL) {
       perror("getpwuid");
@@ -113,7 +124,7 @@ static fido_cred_t *prepare_cred(const struct gengetopt_args_info *const args) {
     goto err;
   }
 
-  if (args->verbose_given) {
+  if (args->verbose) {
     fprintf(stderr, "Setting user to %s\n", user);
     fprintf(stderr, "Setting user id to ");
     for (size_t i = 0; i < sizeof(userid); i++)
@@ -127,13 +138,8 @@ static fido_cred_t *prepare_cred(const struct gengetopt_args_info *const args) {
     goto err;
   }
 
-  if (args->resident_given) {
-    resident_key = FIDO_OPT_TRUE;
-  } else {
-    resident_key = FIDO_OPT_OMIT;
-  }
-
-  if ((r = fido_cred_set_rk(cred, resident_key)) != FIDO_OK) {
+  if ((r = fido_cred_set_rk(cred, args->resident ? FIDO_OPT_TRUE
+                                                 : FIDO_OPT_OMIT)) != FIDO_OK) {
     fprintf(stderr, "error: fido_cred_set_rk (%d) %s\n", r, fido_strerr(r));
     goto err;
   }
@@ -212,7 +218,7 @@ static int verify_cred(const fido_cred_t *const cred) {
   return 0;
 }
 
-static int print_authfile_line(const struct gengetopt_args_info *const args,
+static int print_authfile_line(const struct args *const args,
                                const fido_cred_t *const cred) {
   const unsigned char *kh = NULL;
   const unsigned char *pk = NULL;
@@ -253,7 +259,7 @@ static int print_authfile_line(const struct gengetopt_args_info *const args,
     goto err;
   }
 
-  if (!args->nouser_given) {
+  if (!args->nouser) {
     if ((user = fido_cred_user_name(cred)) == NULL) {
       fprintf(stderr, "error: fido_cred_user_name returned NULL\n");
       goto err;
@@ -261,11 +267,11 @@ static int print_authfile_line(const struct gengetopt_args_info *const args,
     printf("%s", user);
   }
 
-  printf(":%s,%s,%s,%s%s%s", args->resident_given ? "*" : b64_kh, b64_pk,
+  printf(":%s,%s,%s,%s%s%s", args->resident ? "*" : b64_kh, b64_pk,
          cose_string(fido_cred_type(cred)),
-         !args->no_user_presence_given ? "+presence" : "",
-         args->user_verification_given ? "+verification" : "",
-         args->pin_verification_given ? "+pin" : "");
+         !args->no_user_presence ? "+presence" : "",
+         args->user_verification ? "+verification" : "",
+         args->pin_verification ? "+pin" : "");
 
   ok = 0;
 
@@ -276,9 +282,112 @@ err:
   return ok;
 }
 
+static void parse_args(int argc, char *argv[], struct args *args) {
+  int c;
+  enum {
+    OPT_VERSION = 0x100,
+  };
+  /* clang-format off */
+  static const struct option options[] = {
+    { "help",              no_argument,       NULL, 'h'         },
+    { "version",           no_argument,       NULL, OPT_VERSION },
+    { "origin",            required_argument, NULL, 'o'         },
+    { "appid",             required_argument, NULL, 'i'         },
+    { "type",              required_argument, NULL, 't'         },
+    { "resident",          no_argument,       NULL, 'r'         },
+    { "no-user-presence",  no_argument,       NULL, 'P'         },
+    { "pin-verification",  no_argument,       NULL, 'N'         },
+    { "user-verification", no_argument,       NULL, 'V'         },
+    { "debug",             no_argument,       NULL, 'd'         },
+    { "verbose",           no_argument,       NULL, 'v'         },
+    { "username",          required_argument, NULL, 'u'         },
+    { "nouser",            no_argument,       NULL, 'n'         },
+    { 0,                   0,                 0,    0           }
+  };
+  const char *usage =
+"Usage: pamu2fcfg [OPTION]...\n"
+"Perform a FIDO2/U2F registration operation and print a configuration line that\n"
+"can be used with the pam_u2f module.\n"
+"\n"
+"  -h, --help               Print help and exit\n"
+"      --version            Print version and exit\n"
+"  -o, --origin=STRING      Relying party ID to use during registration,\n"
+"                             defaults to pam://hostname\n"
+"  -i, --appid=STRING       Relying party name to use during registration,\n"
+"                             defaults to the value of origin\n"
+"  -t, --type=STRING        COSE type to use during registration (ES256, EDDSA,\n"
+"                             or RS256), defaults to ES256\n"
+"  -r, --resident           Generate a resident (discoverable) credential\n"
+"  -P, --no-user-presence   Allow the credential to be used without ensuring the\n"
+"                             user's presence\n"
+"  -N, --pin-verification   Require PIN verification during authentication\n"
+"  -V, --user-verification  Require user verification during authentication\n"
+"  -d, --debug              Print debug information\n"
+"  -v, --verbose            Print information about chosen origin and appid\n"
+"  -u, --username=STRING    The name of the user registering the device,\n"
+"                             defaults to the current user name\n"
+"  -n, --nouser             Print only registration information (key handle,\n"
+"                             public key, and options), useful for appending\n"
+"\n"
+"Report bugs at <" PACKAGE_BUGREPORT ">.\n";
+  /* clang-format on */
+
+  while ((c = getopt_long(argc, argv, "ho:i:t:rPNVdvu:n", options, NULL)) !=
+         -1) {
+    switch (c) {
+      case 'h':
+        printf("%s", usage);
+        exit(EXIT_SUCCESS);
+      case 'o':
+        args->origin = optarg;
+        break;
+      case 'i':
+        args->appid = optarg;
+        break;
+      case 't':
+        args->type = optarg;
+        break;
+      case 'u':
+        args->username = optarg;
+        break;
+      case 'r':
+        args->resident = 1;
+        break;
+      case 'P':
+        args->no_user_presence = 1;
+        break;
+      case 'N':
+        args->pin_verification = 1;
+        break;
+      case 'V':
+        args->user_verification = 1;
+        break;
+      case 'd':
+        args->debug = 1;
+        break;
+      case 'v':
+        args->verbose = 1;
+        break;
+      case 'n':
+        args->nouser = 1;
+        break;
+      case OPT_VERSION:
+        printf("pamu2fcfg " PACKAGE_VERSION "\n");
+        exit(EXIT_SUCCESS);
+      case '?':
+        exit(EXIT_FAILURE);
+      default:
+        errx(EXIT_FAILURE, "unknown option 0x%x", c);
+    }
+  }
+
+  if (optind != argc)
+    errx(EXIT_FAILURE, "unsupported positional argument(s)");
+}
+
 int main(int argc, char *argv[]) {
   int exit_code = EXIT_FAILURE;
-  struct gengetopt_args_info args_info;
+  struct args args = {0};
   fido_cred_t *cred = NULL;
   fido_dev_info_t *devlist = NULL;
   fido_dev_t *dev = NULL;
@@ -287,20 +396,10 @@ int main(int argc, char *argv[]) {
   size_t ndevs = 0;
   int r;
 
-  /* NOTE: initializes args_info. on error, frees args_info and calls exit() */
-  if (cmdline_parser(argc, argv, &args_info) != 0)
-    goto err;
+  parse_args(argc, argv, &args);
+  fido_init(args.debug ? FIDO_DEBUG : 0);
 
-  if (args_info.help_given) {
-    cmdline_parser_print_help();
-    printf("\nReport bugs at <https://github.com/Yubico/pam-u2f>.\n");
-    exit_code = EXIT_SUCCESS;
-    goto err;
-  }
-
-  fido_init(args_info.debug_flag ? FIDO_DEBUG : 0);
-
-  if ((cred = prepare_cred(&args_info)) == NULL)
+  if ((cred = prepare_cred(&args)) == NULL)
     goto err;
 
   devlist = fido_dev_info_new(64);
@@ -370,7 +469,7 @@ int main(int argc, char *argv[]) {
   }
 
   if (make_cred(path, dev, cred) != 0 || verify_cred(cred) != 0 ||
-      print_authfile_line(&args_info, cred) != 0)
+      print_authfile_line(&args, cred) != 0)
     goto err;
 
   exit_code = EXIT_SUCCESS;
@@ -381,8 +480,6 @@ err:
   fido_dev_info_free(&devlist, ndevs);
   fido_cred_free(&cred);
   fido_dev_free(&dev);
-
-  cmdline_parser_free(&args_info);
 
   exit(exit_code);
 }
