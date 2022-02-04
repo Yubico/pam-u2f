@@ -30,7 +30,7 @@ jobs:
         sudo apt -q update
         sudo apt install --no-install-recommends -q -y \
           autoconf automake libtool pkg-config libfido2-dev libpam-dev \
-          gengetopt git2cl asciidoc-base xsltproc
+          git2cl asciidoc-base xsltproc
         if [ "${CC%-*}" == "clang" ]; then
           sudo apt install -q -y ${CC%-*}-tools-${CC#clang-}
         else

@@ -19,7 +19,7 @@ jobs:
       run: |
         sudo apt -q update
         sudo apt install -q -y autoconf automake libtool pkg-config \
-          libpam-dev gengetopt libz-dev libudev-dev
+          libpam-dev libz-dev libudev-dev
           sudo apt install -q -y ${CC%-*}-tools-${CC#clang-}
     - name: Fuzz
       env:

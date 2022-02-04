@@ -16,7 +16,7 @@ jobs:
         apk -q update
         apk add build-base clang clang-analyzer cmake coreutils eudev-dev
         apk add git linux-headers openssl-dev zlib-dev
-        apk add autoconf automake libtool linux-pam-dev gengetopt
+        apk add autoconf automake libtool linux-pam-dev
     - name: checkout pam-u2f
       uses: actions/checkout@v2
     - name: checkout libcbor

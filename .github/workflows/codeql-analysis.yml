@@ -23,7 +23,7 @@ jobs:
       run: |
         sudo apt -q update
         sudo apt install -y libpam-dev asciidoc autoconf automake libtool \
-          software-properties-common libssl-dev pkg-config gengetopt
+          software-properties-common libssl-dev pkg-config
         sudo apt-add-repository -u -y ppa:yubico/stable
         sudo apt install -y libfido2-dev
         ./autogen.sh
