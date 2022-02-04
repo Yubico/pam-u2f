@@ -52,13 +52,13 @@ This will create a directory 'pam-u2f'. Enter the directory:
 $ cd pam-u2f
 ----
 
-`autoconf`, `automake`, `gengetopt`, `libtool`, and `libpam` must be installed.
-`AsciiDoc` and `xsltproc` are used to generate the manpages. On Ubuntu, the
-necessary dependencies can be installed using
+`autoconf`, `automake`, `libtool`, and `libpam` must be installed.
+`AsciiDoc` and `xsltproc` are used to generate the manpages. On Ubuntu,
+the necessary dependencies can be installed using
 
 [source, console]
 ----
-# apt install --no-install-recommends autoconf automake libtool gengetopt \
+# apt install --no-install-recommends autoconf automake libtool \
     pkg-config libfido2-dev libpam-dev libssl-dev asciidoc xsltproc \
     libxml2-utils docbook-xml
 ----
@@ -67,7 +67,7 @@ On Fedora, the necessary dependencies can be installed using
 
 [source, console]
 ----
-# dnf -y install autoconf automake libtool gengetopt libfido2-devel pam-devel \
+# dnf -y install autoconf automake libtool libfido2-devel pam-devel \
     openssl-devel asciidoc
 ----
 
