@@ -27,7 +27,13 @@ export ASAN_OPTIONS="detect_leaks=1:detect_invalid_pointer_pairs=2"
 
 pushd "${FAKEROOT}" &>/dev/null
 
-git clone --depth 1 "${LIBFIDO2_URL}" -b "${LIBFIDO2_TAG}"
+git clone "${LIBFIDO2_URL}"
+# temporarily checkout a commit where prng_up is exported in libfido2
+# this can be removed once a new release of libfido2 is made
+pushd libfido2 &>/dev/null
+git checkout f65f1e7bc286b490f65d21a01983ff3ebafa446d
+popd &>/dev/null # libfido2
+
 git clone --depth 1 "${LIBCBOR_URL}" -b "${LIBCBOR_TAG}"
 
 # libcbor (with libfido2 patch)
