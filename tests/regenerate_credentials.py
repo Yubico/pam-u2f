@@ -1,6 +1,7 @@
 #!/bin/python2
 
 import collections
+import os
 import re
 import subprocess
 import sys
@@ -50,95 +51,75 @@ def print_test_case(filename, sshformat, credentials):
     code = ""
     free_block = ""
 
-    code += start.format(authfile = filename, ssh = sshformat, devices = len(credentials))
+    code += start.format(authfile=filename, ssh=sshformat, devices=len(credentials))
     for c, v in enumerate(credentials):
-        code += checks.format(i = c, kh = v.keyhandle, pk = v.pubkey, attr = v.attributes, old = v.oldformat)
-        free_block += free.format(i = c)
+        code += checks.format(
+            i=c, kh=v.keyhandle, pk=v.pubkey, attr=v.attributes, old=v.oldformat
+        )
+        free_block += free.format(i=c)
 
     code += free_block + end
 
     print(code)
 
 
+def generate_credential(filename, mode, *args):
+    command = [PUC, "-u@USERNAME@" if mode == "w" else "-n"]
+    command.extend(filter(lambda x: x.strip() != "", args))
+    line = subprocess.check_output(command)
+    with open(filename, mode) as handle:
+        handle.write(line)
+
+    matches = re.match(r"^.*?:(.*?),(.*?),es256,(.*)", line, re.M)
+    return Credential(
+        keyhandle=matches.group(1),
+        pubkey=matches.group(2),
+        attributes=matches.group(3),
+        oldformat=0,
+    )
+
+
 # Single credentials
-print >> sys.stderr, "Generating single credentials"
+print >>sys.stderr, "Generating single credentials"
 
 for r in resident:
     for p in presence:
         for n in pin:
             for v in verification:
-                filename = "credentials/new_" + r + p + v + n
-                print >> sys.stderr, "Generating " + filename + ".templ"
-                line = subprocess.check_output([PUC, "-u@USERNAME@", r, p, v, n])
-
-                matches = re.match(r'^.*?:(.*?),(.*?),es256,(.*)', line, re.M)
-                with open(filename + ".templ", "w") as outfile:
-                    outfile.write(line)
-                credentials = [Credential(keyhandle = matches.group(1),
-                                         pubkey = matches.group(2),
-                                         attributes = matches.group(3),
-                                         oldformat = 0)]
-
-                print_test_case(filename + ".cred", sshformat, credentials)
+                filename = "credentials/new_" + r + p + v + n + ".cred.in"
+                print >>sys.stderr, "Generating " + filename
+                credentials = [generate_credential(filename, "w", r, p, v, n)]
+                filename = os.path.splitext(filename)[0]
+                print_test_case(filename, sshformat, credentials)
 
 
 # Double credentials
-print >> sys.stderr, "Generating double credentials"
+print >>sys.stderr, "Generating double credentials"
 
 for r in resident:
     for p in presence:
         for n in pin:
             for v in verification:
-                filename = "credentials/new_double_" + r + p + v + n
-                print >> sys.stderr, "Generating " + filename + ".templ"
-                line = subprocess.check_output([PUC, "-u@USERNAME@", r, p, v, n])
-
-                matches = re.match(r'^.*?:(.*?),(.*?),es256,(.*)', line, re.M)
-                with open(filename + ".templ", "w") as outfile:
-                    outfile.write(line)
-                credentials = [Credential(keyhandle = matches.group(1),
-                                         pubkey = matches.group(2),
-                                         attributes = matches.group(3),
-                                         oldformat = 0)]
-
-                line = subprocess.check_output([PUC, "-n", r, p, v, n])
-
-                matches = re.match(r'^.*?:(.*?),(.*?),es256,(.*)', line, re.M)
-                with open(filename + ".templ", "a") as outfile:
-                    outfile.write(line)
-                credentials += [Credential(keyhandle = matches.group(1),
-                                         pubkey = matches.group(2),
-                                         attributes = matches.group(3),
-                                         oldformat = 0)]
-
-                print_test_case(filename + ".cred", sshformat, credentials)
+                filename = "credentials/new_double_" + r + p + v + n + ".cred.in"
+                print >>sys.stderr, "Generating " + filename
+                credentials = [
+                    generate_credential(filename, "w", r, p, v, n),
+                    generate_credential(filename, "a", r, p, v, n),
+                ]
+                filename = os.path.splitext(filename)[0]
+                print_test_case(filename, sshformat, credentials)
 
 # Mixed credentials
-print >> sys.stderr, "Mixed double credentials"
+print >>sys.stderr, "Mixed double credentials"
 
 options = [("", ""), ("", "-P"), ("-P", ""), ("-P", "-P")]
 
 for p1, p2 in options:
-    filename = "credentials/new_mixed_" + p1 +"1" + p2 + "2"
-    print >> sys.stderr, "Generating " + filename + ".templ"
-    line = subprocess.check_output([PUC, "-u@USERNAME@", p1])
-
-    matches = re.match(r'^.*?:(.*?),(.*?),es256,(.*)', line, re.M)
-    with open(filename + ".templ", "w") as outfile:
-        outfile.write(line)
-    credentials = [Credential(keyhandle = matches.group(1),
-                              pubkey = matches.group(2),
-                              attributes = matches.group(3),
-                              oldformat = 0)]
-
-    line = subprocess.check_output([PUC, "-n", p2])
-
-    matches = re.match(r'^.*?:(.*?),(.*?),es256,(.*)', line, re.M)
-    with open(filename + ".templ", "a") as outfile:
-        outfile.write(line)
-    credentials += [Credential(keyhandle = matches.group(1),
-                               pubkey = matches.group(2),
-                               attributes = matches.group(3),
-                               oldformat = 0)]
-
-    print_test_case(filename + ".cred", sshformat, credentials)
+    filename = "credentials/new_mixed_" + p1 + "1" + p2 + "2" + ".cred.in"
+    print >>sys.stderr, "Generating " + filename
+    credentials = [
+        generate_credential(filename, "w", p1),
+        generate_credential(filename, "a", p2),
+    ]
+    filename = os.path.splitext(filename)[0]
+    print_test_case(filename, sshformat, credentials)
