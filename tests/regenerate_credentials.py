@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import collections
+import itertools
 import os
 import re
 import subprocess
@@ -85,39 +86,31 @@ def generate_credential(filename, mode, *args):
 # Single credentials
 print("Generating single credentials", file=sys.stderr)
 
-for r in resident:
-    for p in presence:
-        for n in pin:
-            for v in verification:
-                filename = "credentials/new_" + r + p + v + n + ".cred.in"
-                print("Generating " + filename, file=sys.stderr)
-                credentials = [generate_credential(filename, "w", r, p, v, n)]
-                filename = os.path.splitext(filename)[0]
-                print_test_case(filename, sshformat, credentials)
+for (r, p, n, v) in itertools.product(resident, presence, pin, verification):
+    filename = "credentials/new_" + r + p + v + n + ".cred.in"
+    print("Generating " + filename, file=sys.stderr)
+    credentials = [generate_credential(filename, "w", r, p, v, n)]
+    filename = os.path.splitext(filename)[0]
+    print_test_case(filename, sshformat, credentials)
 
 
 # Double credentials
 print("Generating double credentials", file=sys.stderr)
 
-for r in resident:
-    for p in presence:
-        for n in pin:
-            for v in verification:
-                filename = "credentials/new_double_" + r + p + v + n + ".cred.in"
-                print("Generating " + filename, file=sys.stderr)
-                credentials = [
-                    generate_credential(filename, "w", r, p, v, n),
-                    generate_credential(filename, "a", r, p, v, n),
-                ]
-                filename = os.path.splitext(filename)[0]
-                print_test_case(filename, sshformat, credentials)
+for (r, p, n, v) in itertools.product(resident, presence, pin, verification):
+    filename = "credentials/new_double_" + r + p + v + n + ".cred.in"
+    print("Generating " + filename, file=sys.stderr)
+    credentials = [
+        generate_credential(filename, "w", r, p, v, n),
+        generate_credential(filename, "a", r, p, v, n),
+    ]
+    filename = os.path.splitext(filename)[0]
+    print_test_case(filename, sshformat, credentials)
 
 # Mixed credentials
 print("Mixed double credentials", file=sys.stderr)
 
-options = [("", ""), ("", "-P"), ("-P", ""), ("-P", "-P")]
-
-for p1, p2 in options:
+for (p1, p2) in itertools.product(presence, presence):
     filename = "credentials/new_mixed_" + p1 + "1" + p2 + "2" + ".cred.in"
     print("Generating " + filename, file=sys.stderr)
     credentials = [
