@@ -1,4 +1,4 @@
-#!/bin/python2
+#!/usr/bin/env python3
 
 import collections
 import os
@@ -16,9 +16,12 @@ pin = ["", "-N"]
 
 verification = ["", "-V"]
 
-Credential = collections.namedtuple("Credential", "keyhandle pubkey attributes oldformat")
+Credential = collections.namedtuple(
+    "Credential", "keyhandle pubkey attributes oldformat"
+)
 
 sshformat = 0
+
 
 def print_test_case(filename, sshformat, credentials):
 
@@ -65,8 +68,8 @@ def print_test_case(filename, sshformat, credentials):
 
 def generate_credential(filename, mode, *args):
     command = [PUC, "-u@USERNAME@" if mode == "w" else "-n"]
-    command.extend(filter(lambda x: x.strip() != "", args))
-    line = subprocess.check_output(command)
+    command.extend([x for x in args if x.strip() != ""])
+    line = subprocess.check_output(command).decode("utf-8")
     with open(filename, mode) as handle:
         handle.write(line)
 
@@ -80,28 +83,28 @@ def generate_credential(filename, mode, *args):
 
 
 # Single credentials
-print >>sys.stderr, "Generating single credentials"
+print("Generating single credentials", file=sys.stderr)
 
 for r in resident:
     for p in presence:
         for n in pin:
             for v in verification:
                 filename = "credentials/new_" + r + p + v + n + ".cred.in"
-                print >>sys.stderr, "Generating " + filename
+                print("Generating " + filename, file=sys.stderr)
                 credentials = [generate_credential(filename, "w", r, p, v, n)]
                 filename = os.path.splitext(filename)[0]
                 print_test_case(filename, sshformat, credentials)
 
 
 # Double credentials
-print >>sys.stderr, "Generating double credentials"
+print("Generating double credentials", file=sys.stderr)
 
 for r in resident:
     for p in presence:
         for n in pin:
             for v in verification:
                 filename = "credentials/new_double_" + r + p + v + n + ".cred.in"
-                print >>sys.stderr, "Generating " + filename
+                print("Generating " + filename, file=sys.stderr)
                 credentials = [
                     generate_credential(filename, "w", r, p, v, n),
                     generate_credential(filename, "a", r, p, v, n),
@@ -110,13 +113,13 @@ for r in resident:
                 print_test_case(filename, sshformat, credentials)
 
 # Mixed credentials
-print >>sys.stderr, "Mixed double credentials"
+print("Mixed double credentials", file=sys.stderr)
 
 options = [("", ""), ("", "-P"), ("-P", ""), ("-P", "-P")]
 
 for p1, p2 in options:
     filename = "credentials/new_mixed_" + p1 + "1" + p2 + "2" + ".cred.in"
-    print >>sys.stderr, "Generating " + filename
+    print("Generating " + filename, file=sys.stderr)
     credentials = [
         generate_credential(filename, "w", p1),
         generate_credential(filename, "a", p2),
