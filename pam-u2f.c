@@ -130,6 +130,8 @@ static char *resolve_authfile_path(const cfg_t *cfg, const struct passwd *user,
   const char *default_authfile;
   const char *default_authfile_dir;
 
+  *openasuser = geteuid() == 0; /* user files, drop privileges */
+
   if (!cfg->sshformat) {
     default_authfile = DEFAULT_AUTHFILE;
     default_authfile_dir = DEFAULT_AUTHFILE_DIR;
@@ -149,14 +151,11 @@ static char *resolve_authfile_path(const cfg_t *cfg, const struct passwd *user,
         authfile = NULL;
         goto fail;
       }
-
-      /* Opening a file in a users $HOME, need to drop privs for security */
-      *openasuser = geteuid() == 0 ? 1 : 0;
-
     } else {
       debug_dbg(cfg, "Variable %s set to %s", DEFAULT_AUTHFILE_DIR_VAR,
                 authfile_dir);
 
+      *openasuser = 0; /* documented exception, require explicit openasuser */
       if (asprintf(&authfile, "%s%s", authfile_dir, default_authfile) == -1) {
         authfile = NULL;
         goto fail;
@@ -169,10 +168,6 @@ static char *resolve_authfile_path(const cfg_t *cfg, const struct passwd *user,
       }
     }
   } else {
-    /* Individual authorization mapping by user: auth_file is not
-        absolute path, so prepend user home dir. */
-    *openasuser = geteuid() == 0 ? 1 : 0;
-
     if (asprintf(&authfile, "%s/%s", user->pw_dir, cfg->auth_file) == -1) {
       authfile = NULL;
       goto fail;
