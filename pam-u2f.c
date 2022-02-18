@@ -146,6 +146,7 @@ static char *resolve_authfile_path(const cfg_t *cfg, const struct passwd *user,
 
       if (asprintf(&authfile, "%s%s%s", user->pw_dir, default_authfile_dir,
                    default_authfile) == -1) {
+        authfile = NULL;
         goto fail;
       }
 
@@ -157,6 +158,7 @@ static char *resolve_authfile_path(const cfg_t *cfg, const struct passwd *user,
                 authfile_dir);
 
       if (asprintf(&authfile, "%s%s", authfile_dir, default_authfile) == -1) {
+        authfile = NULL;
         goto fail;
       }
 
@@ -172,6 +174,7 @@ static char *resolve_authfile_path(const cfg_t *cfg, const struct passwd *user,
     *openasuser = geteuid() == 0 ? 1 : 0;
 
     if (asprintf(&authfile, "%s/%s", user->pw_dir, cfg->auth_file) == -1) {
+      authfile = NULL;
       goto fail;
     }
   } else {
@@ -179,11 +182,8 @@ static char *resolve_authfile_path(const cfg_t *cfg, const struct passwd *user,
     goto fail;
   }
 
-  return authfile;
-
 fail:
-  free(authfile);
-  return NULL;
+  return authfile;
 }
 
 /* PAM entry point for authentication verification */
