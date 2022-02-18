@@ -168,7 +168,7 @@ static char *resolve_authfile_path(const cfg_t *cfg, const struct passwd *user,
                        "openasuser=1 in the module configuration");
       }
     }
-  } else if (cfg->auth_file[0] != '/') {
+  } else {
     /* Individual authorization mapping by user: auth_file is not
         absolute path, so prepend user home dir. */
     *openasuser = geteuid() == 0 ? 1 : 0;
@@ -177,9 +177,6 @@ static char *resolve_authfile_path(const cfg_t *cfg, const struct passwd *user,
       authfile = NULL;
       goto fail;
     }
-  } else {
-    debug_dbg(cfg, "Invalid argument, path already absolute");
-    goto fail;
   }
 
 fail:
