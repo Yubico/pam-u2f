@@ -126,41 +126,22 @@ static void interactive_prompt(pam_handle_t *pamh, const cfg_t *cfg) {
 static char *resolve_authfile_path(const cfg_t *cfg, const struct passwd *user,
                                    int *openasuser) {
   char *authfile = NULL;
-  const char *authfile_dir;
-  const char *default_authfile;
-  const char *default_authfile_dir;
+  const char *dir = NULL;
+  const char *path = NULL;
 
   *openasuser = geteuid() == 0; /* user files, drop privileges */
 
-  if (!cfg->sshformat) {
-    default_authfile = DEFAULT_AUTHFILE;
-    default_authfile_dir = DEFAULT_AUTHFILE_DIR;
-  } else {
-    default_authfile = DEFAULT_AUTHFILE_SSH;
-    default_authfile_dir = DEFAULT_AUTHFILE_DIR_SSH;
-  }
-
-  if (!cfg->auth_file) {
-    authfile_dir = secure_getenv(DEFAULT_AUTHFILE_DIR_VAR);
-    if (!authfile_dir) {
-      debug_dbg(cfg, "Variable %s is not set. Using default value ($HOME%s/)",
-                DEFAULT_AUTHFILE_DIR_VAR, default_authfile_dir);
-
-      if (asprintf(&authfile, "%s%s%s", user->pw_dir, default_authfile_dir,
-                   default_authfile) == -1) {
-        authfile = NULL;
-        goto fail;
-      }
+  if (cfg->auth_file == NULL) {
+    if ((dir = secure_getenv(DEFAULT_AUTHFILE_DIR_VAR)) == NULL) {
+      debug_dbg(cfg, "Variable %s is not set, using default",
+                DEFAULT_AUTHFILE_DIR_VAR);
+      dir = user->pw_dir;
+      path = cfg->sshformat ? DEFAULT_AUTHFILE_DIR_SSH "/" DEFAULT_AUTHFILE_SSH
+                            : DEFAULT_AUTHFILE_DIR "/" DEFAULT_AUTHFILE;
     } else {
-      debug_dbg(cfg, "Variable %s set to %s", DEFAULT_AUTHFILE_DIR_VAR,
-                authfile_dir);
-
+      debug_dbg(cfg, "Variable %s set to %s", DEFAULT_AUTHFILE_DIR_VAR, dir);
       *openasuser = 0; /* documented exception, require explicit openasuser */
-      if (asprintf(&authfile, "%s%s", authfile_dir, default_authfile) == -1) {
-        authfile = NULL;
-        goto fail;
-      }
-
+      path = cfg->sshformat ? DEFAULT_AUTHFILE_SSH : DEFAULT_AUTHFILE;
       if (!cfg->openasuser) {
         debug_dbg(cfg, "WARNING: not dropping privileges when reading the "
                        "authentication file, please consider setting "
@@ -168,13 +149,14 @@ static char *resolve_authfile_path(const cfg_t *cfg, const struct passwd *user,
       }
     }
   } else {
-    if (asprintf(&authfile, "%s/%s", user->pw_dir, cfg->auth_file) == -1) {
-      authfile = NULL;
-      goto fail;
-    }
+    dir = user->pw_dir;
+    path = cfg->auth_file;
   }
 
-fail:
+  if (dir == NULL || *dir != '/' || path == NULL ||
+      asprintf(&authfile, "%s/%s", dir, path) == -1)
+    authfile = NULL;
+
   return authfile;
 }
 
