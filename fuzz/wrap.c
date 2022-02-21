@@ -1,10 +1,11 @@
-/* Copyright (C) 2021 Yubico AB - See COPYING */
+/* Copyright (C) 2021-2022 Yubico AB - See COPYING */
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <pwd.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -70,6 +71,23 @@ WRAP(int, BIO_ctrl, (BIO * b, int cmd, long larg, void *parg), -1,
 WRAP(BIO *, BIO_new_mem_buf, (const void *buf, int len), NULL, (buf, len))
 WRAP(EC_KEY *, EC_KEY_new_by_curve_name, (int nid), NULL, (nid))
 WRAP(const EC_GROUP *, EC_KEY_get0_group, (const EC_KEY *key), NULL, (key))
+
+extern int __wrap_asprintf(char **strp, const char *fmt, ...);
+extern int __wrap_asprintf(char **strp, const char *fmt, ...) {
+  va_list ap;
+  int r;
+
+  if (uniform_random(400) < 1) {
+    *strp = (void *) 0xdeadbeef;
+    return -1;
+  }
+
+  va_start(ap, fmt);
+  r = vasprintf(strp, fmt, ap);
+  va_end(ap);
+
+  return r;
+}
 
 extern uid_t __wrap_geteuid(void);
 extern uid_t __wrap_geteuid(void) {

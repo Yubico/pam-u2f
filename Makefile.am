@@ -38,6 +38,7 @@ pam_u2f_la_LDFLAGS += -export-symbols $(srcdir)/export.sym
 else
 pam_u2f_la_LDFLAGS += -export-symbols $(srcdir)/fuzz/export.sym
 pam_u2f_la_SOURCES += fuzz/wrap.c
+pam_u2f_la_LDFLAGS += -Wl,--wrap=asprintf
 pam_u2f_la_LDFLAGS += -Wl,--wrap=strdup
 pam_u2f_la_LDFLAGS += -Wl,--wrap=calloc
 pam_u2f_la_LDFLAGS += -Wl,--wrap=malloc
