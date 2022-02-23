@@ -41,14 +41,16 @@ def read_credentials(filename):
 
 
 def print_test_case(filename, credentials):
-    start = """
+    start = """\
+  dev = calloc(cfg.max_devs, sizeof(*dev));
+  assert(dev != NULL);
   cfg.auth_file = "{authfile}";
   rc = get_devices_from_authfile(&cfg, username, dev, &n_devs);
   assert(rc == 1);
   assert(n_devs == {devices});
 """
 
-    checks = """
+    checks = """\
   assert(strcmp(dev[{i}].coseType, "es256") == 0);
   assert(strcmp(dev[{i}].keyHandle, "{kh}") == 0);
   assert(strcmp(dev[{i}].publicKey, "{pk}") == 0);
@@ -56,14 +58,8 @@ def print_test_case(filename, credentials):
   assert(dev[{i}].old_format == {old});
 """
 
-    free = """
-  free(dev[{i}].coseType);
-  free(dev[{i}].attributes);
-  free(dev[{i}].keyHandle);
-  free(dev[{i}].publicKey);
-"""
-    end = """
-  memset(dev, 0, sizeof(dev));
+    end = """\
+  free_devices(dev, n_devs);
 """
 
     code = ""
@@ -74,9 +70,8 @@ def print_test_case(filename, credentials):
         code += checks.format(
             i=c, kh=v.keyhandle, pk=v.pubkey, attr=v.attributes, old=v.oldformat
         )
-        free_block += free.format(i=c)
 
-    code += free_block + end
+    code += end
 
     print(code)
 
