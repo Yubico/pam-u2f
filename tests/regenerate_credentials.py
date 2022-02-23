@@ -21,14 +21,28 @@ Credential = collections.namedtuple(
     "Credential", "keyhandle pubkey attributes oldformat"
 )
 
-sshformat = 0
+
+def read_credentials(filename):
+    with open(filename, "r") as handle:
+        line = handle.readline()
+
+    credentials = []
+    for credstr in line.split(":")[1:]:
+        matches = re.match(r"^(.*?),(.*?),es256,(.*)$", credstr, re.M)
+        credentials.append(
+            Credential(
+                keyhandle=matches.group(1),
+                pubkey=matches.group(2),
+                attributes=matches.group(3),
+                oldformat=0,
+            )
+        )
+    return credentials
 
 
-def print_test_case(filename, sshformat, credentials):
-
+def print_test_case(filename, credentials):
     start = """
   cfg.auth_file = "{authfile}";
-  cfg.sshformat = {ssh};
   rc = get_devices_from_authfile(&cfg, username, dev, &n_devs);
   assert(rc == 1);
   assert(n_devs == {devices});
@@ -55,7 +69,7 @@ def print_test_case(filename, sshformat, credentials):
     code = ""
     free_block = ""
 
-    code += start.format(authfile=filename, ssh=sshformat, devices=len(credentials))
+    code += start.format(authfile=filename, devices=len(credentials))
     for c, v in enumerate(credentials):
         code += checks.format(
             i=c, kh=v.keyhandle, pk=v.pubkey, attr=v.attributes, old=v.oldformat
@@ -88,10 +102,12 @@ print("Generating single credentials", file=sys.stderr)
 
 for (r, p, n, v) in itertools.product(resident, presence, pin, verification):
     filename = "credentials/new_" + r + p + v + n + ".cred.in"
-    print("Generating " + filename, file=sys.stderr)
-    credentials = [generate_credential(filename, "w", r, p, v, n)]
+    if not os.path.exists(filename):
+        print("Generating " + filename, file=sys.stderr)
+        generate_credential(filename, "w", r, p, v, n)
+    credentials = read_credentials(filename)
     filename = os.path.splitext(filename)[0]
-    print_test_case(filename, sshformat, credentials)
+    print_test_case(filename, credentials)
 
 
 # Double credentials
@@ -99,23 +115,23 @@ print("Generating double credentials", file=sys.stderr)
 
 for (r, p, n, v) in itertools.product(resident, presence, pin, verification):
     filename = "credentials/new_double_" + r + p + v + n + ".cred.in"
-    print("Generating " + filename, file=sys.stderr)
-    credentials = [
+    if not os.path.exists(filename):
+        print("Generating " + filename, file=sys.stderr)
         generate_credential(filename, "w", r, p, v, n),
         generate_credential(filename, "a", r, p, v, n),
-    ]
+    credentials = read_credentials(filename)
     filename = os.path.splitext(filename)[0]
-    print_test_case(filename, sshformat, credentials)
+    print_test_case(filename, credentials)
 
 # Mixed credentials
 print("Mixed double credentials", file=sys.stderr)
 
 for (p1, p2) in itertools.product(presence, presence):
     filename = "credentials/new_mixed_" + p1 + "1" + p2 + "2" + ".cred.in"
-    print("Generating " + filename, file=sys.stderr)
-    credentials = [
+    if not os.path.exists(filename):
+        print("Generating " + filename, file=sys.stderr)
         generate_credential(filename, "w", p1),
         generate_credential(filename, "a", p2),
-    ]
+    credentials = read_credentials(filename)
     filename = os.path.splitext(filename)[0]
-    print_test_case(filename, sshformat, credentials)
+    print_test_case(filename, credentials)
