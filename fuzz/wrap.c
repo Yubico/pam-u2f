@@ -17,6 +17,8 @@
 #include "drop_privs.h"
 #include "fuzz/fuzz.h"
 
+extern int prng_up;
+
 #ifdef HAVE_PAM_MODUTIL_DROP_PRIV
 typedef struct pam_modutil_privs fuzz_privs_t;
 #else
@@ -39,7 +41,7 @@ static char env[] = "value";
   extern type __wrap_##name args;                                              \
   extern type __real_##name args;                                              \
   type __wrap_##name args {                                                    \
-    if (uniform_random(400) < 1) {                                             \
+    if (prng_up && uniform_random(400) < 1) {                                  \
       return (retval);                                                         \
     }                                                                          \
                                                                                \
@@ -79,7 +81,7 @@ extern uid_t __wrap_geteuid(void) {
 extern int __real_open(const char *pathname, int flags);
 extern int __wrap_open(const char *pathname, int flags);
 extern int __wrap_open(const char *pathname, int flags) {
-  if (uniform_random(400) < 1)
+  if (prng_up && uniform_random(400) < 1)
     return -1;
   /* open write-only files as /dev/null */
   if ((flags & O_ACCMODE) == O_WRONLY)
