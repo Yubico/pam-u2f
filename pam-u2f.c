@@ -69,7 +69,7 @@ static void parse_cfg(int flags, int argc, const char **argv, cfg_t *cfg) {
       sscanf(argv[i], "pinverification=%d", &cfg->pinverification);
     } else if (strncmp(argv[i], "authfile=", 9) == 0) {
       cfg->auth_file = argv[i] + 9;
-    } else if (strncmp(argv[i], "sshformat", 9) == 0) {
+    } else if (strcmp(argv[i], "sshformat") == 0) {
       cfg->sshformat = 1;
     } else if (strncmp(argv[i], "authpending_file=", 17) == 0) {
       cfg->authpending_file = argv[i] + 17;
