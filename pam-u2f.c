@@ -43,45 +43,45 @@ static void parse_cfg(int flags, int argc, const char **argv, cfg_t *cfg) {
   cfg->pinverification = -1;
 
   for (i = 0; i < argc; i++) {
-    if (strncmp(argv[i], "max_devices=", 12) == 0)
+    if (strncmp(argv[i], "max_devices=", 12) == 0) {
       sscanf(argv[i], "max_devices=%u", &cfg->max_devs);
-    if (strcmp(argv[i], "manual") == 0)
+    } else if (strcmp(argv[i], "manual") == 0) {
       cfg->manual = 1;
-    if (strcmp(argv[i], "debug") == 0)
+    } else if (strcmp(argv[i], "debug") == 0) {
       cfg->debug = 1;
-    if (strcmp(argv[i], "nouserok") == 0)
+    } else if (strcmp(argv[i], "nouserok") == 0) {
       cfg->nouserok = 1;
-    if (strcmp(argv[i], "openasuser") == 0)
+    } else if (strcmp(argv[i], "openasuser") == 0) {
       cfg->openasuser = 1;
-    if (strcmp(argv[i], "alwaysok") == 0)
+    } else if (strcmp(argv[i], "alwaysok") == 0) {
       cfg->alwaysok = 1;
-    if (strcmp(argv[i], "interactive") == 0)
+    } else if (strcmp(argv[i], "interactive") == 0) {
       cfg->interactive = 1;
-    if (strcmp(argv[i], "cue") == 0)
+    } else if (strcmp(argv[i], "cue") == 0) {
       cfg->cue = 1;
-    if (strcmp(argv[i], "nodetect") == 0)
+    } else if (strcmp(argv[i], "nodetect") == 0) {
       cfg->nodetect = 1;
-    if (strncmp(argv[i], "userpresence=", 13) == 0)
+    } else if (strncmp(argv[i], "userpresence=", 13) == 0) {
       sscanf(argv[i], "userpresence=%d", &cfg->userpresence);
-    if (strncmp(argv[i], "userverification=", 17) == 0)
+    } else if (strncmp(argv[i], "userverification=", 17) == 0) {
       sscanf(argv[i], "userverification=%d", &cfg->userverification);
-    if (strncmp(argv[i], "pinverification=", 16) == 0)
+    } else if (strncmp(argv[i], "pinverification=", 16) == 0) {
       sscanf(argv[i], "pinverification=%d", &cfg->pinverification);
-    if (strncmp(argv[i], "authfile=", 9) == 0)
+    } else if (strncmp(argv[i], "authfile=", 9) == 0) {
       cfg->auth_file = argv[i] + 9;
-    if (strncmp(argv[i], "sshformat", 9) == 0)
+    } else if (strncmp(argv[i], "sshformat", 9) == 0) {
       cfg->sshformat = 1;
-    if (strncmp(argv[i], "authpending_file=", 17) == 0)
+    } else if (strncmp(argv[i], "authpending_file=", 17) == 0) {
       cfg->authpending_file = argv[i] + 17;
-    if (strncmp(argv[i], "origin=", 7) == 0)
+    } else if (strncmp(argv[i], "origin=", 7) == 0) {
       cfg->origin = argv[i] + 7;
-    if (strncmp(argv[i], "appid=", 6) == 0)
+    } else if (strncmp(argv[i], "appid=", 6) == 0) {
       cfg->appid = argv[i] + 6;
-    if (strncmp(argv[i], "prompt=", 7) == 0)
+    } else if (strncmp(argv[i], "prompt=", 7) == 0) {
       cfg->prompt = argv[i] + 7;
-    if (strncmp(argv[i], "cue_prompt=", 11) == 0)
+    } else if (strncmp(argv[i], "cue_prompt=", 11) == 0) {
       cfg->cue_prompt = argv[i] + 11;
-    if (strncmp(argv[i], "debug_file=", 11) == 0) {
+    } else if (strncmp(argv[i], "debug_file=", 11) == 0) {
       const char *filename = argv[i] + 11;
       debug_close(cfg->debug_file);
       cfg->debug_file = debug_open(filename);
