@@ -995,7 +995,7 @@ static fido_assert_t *prepare_assert(const cfg_t *cfg, const device_t *device,
     goto err;
   }
 
-  if (device->old_format && strcmp(cfg->origin, cfg->appid) != 0)
+  if (device->old_format)
     r = fido_assert_set_rp(assert, cfg->appid);
   else
     r = fido_assert_set_rp(assert, cfg->origin);
