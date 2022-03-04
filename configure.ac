@@ -59,19 +59,10 @@ AC_ARG_WITH(pam-dir,
 ])
 AC_SUBST(PAMDIR, "$PAMDIR")
 
-
 PKG_CHECK_MODULES([LIBCRYPTO], [libcrypto], [], [])
 PKG_CHECK_MODULES([LIBFIDO2], [libfido2 >= 1.3.0], [], [])
 
-
-# Check for secure_getenv, strlcpy, readpassphrase, explicit_bzero, and memset_s
-am_save_CFLAGS="$CFLAGS"
-am_save_LIBS="$LIBS"
-CFLAGS="$CFLAGS"
-LIBS="$LIBS"
 AC_CHECK_FUNCS([secure_getenv strlcpy readpassphrase explicit_bzero memset_s])
-CFLAGS=$am_save_CFLAGS
-LIBS=$am_save_LIBS
 
 # Make clang emit errors for unknown warnings to make the AX_CHECK_COMPILE_FLAG
 # macro behave as intended, excluding unsupported flags.
