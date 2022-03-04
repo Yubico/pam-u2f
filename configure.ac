@@ -38,7 +38,7 @@ AM_CONDITIONAL([ENABLE_FUZZING], [test "$enable_fuzzing" = "yes"])
 
 AC_CHECK_HEADERS([security/pam_appl.h], [],
   [AC_MSG_ERROR([[PAM header files not found, install libpam-dev.]])])
-AC_CHECK_HEADERS([security/pam_modules.h security/_pam_macros.h security/pam_modutil.h security/openpam.h], [], [],
+AC_CHECK_HEADERS([security/pam_modules.h security/pam_modutil.h security/openpam.h], [], [],
   [#include <sys/types.h>
    #include <security/pam_appl.h>])
 AC_CHECK_LIB([pam], [pam_start])
