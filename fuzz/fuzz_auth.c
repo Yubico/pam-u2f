@@ -1,4 +1,7 @@
-/* Copyright (C) 2021 Yubico AB - See COPYING */
+/* Copyright (C) 2021-2022 Yubico AB - See COPYING */
+#include <sys/types.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
 #include <assert.h>
 #include <err.h>
 #include <errno.h>
@@ -6,9 +9,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <sys/types.h>
 #include <unistd.h>
 
 #include "fuzz/fuzz.h"

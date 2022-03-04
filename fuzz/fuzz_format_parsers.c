@@ -1,12 +1,13 @@
 /*
- * Copyright (C) 2020 Yubico AB - See COPYING
+ * Copyright (C) 2020-2022 Yubico AB - See COPYING
  */
-#include <string.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <errno.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 #include "fuzz/fuzz.h"
