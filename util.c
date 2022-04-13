@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2021 Yubico AB - See COPYING
+ * Copyright (C) 2014-2022 Yubico AB - See COPYING
  */
 
 #include <fido.h>
@@ -165,11 +165,53 @@ static void reset_device(device_t *device) {
   memset(device, 0, sizeof(*device));
 }
 
+static int parse_native_credential(const cfg_t *cfg, char *s, device_t *cred) {
+  const char *delim = ",";
+  const char *kh, *pk, *type, *attr;
+  char *saveptr = NULL;
+
+  memset(cred, 0, sizeof(*cred));
+
+  if ((kh = strtok_r(s, delim, &saveptr)) == NULL) {
+    debug_dbg(cfg, "Missing key handle");
+    goto fail;
+  }
+
+  if ((pk = strtok_r(NULL, delim, &saveptr)) == NULL) {
+    debug_dbg(cfg, "Missing public key");
+    goto fail;
+  }
+
+  if ((type = strtok_r(NULL, delim, &saveptr)) == NULL) {
+    debug_dbg(cfg, "Old format, assume es256 and +presence");
+    cred->old_format = 1;
+    type = "es256";
+    attr = "+presence";
+  } else if ((attr = strtok_r(NULL, delim, &saveptr)) == NULL) {
+    debug_dbg(cfg, "Empty attributes");
+    attr = "";
+  }
+
+  cred->keyHandle = cred->old_format ? normal_b64(kh) : strdup(kh);
+  if (cred->keyHandle == NULL || (cred->publicKey = strdup(pk)) == NULL ||
+      (cred->coseType = strdup(type)) == NULL ||
+      (cred->attributes = strdup(attr)) == NULL) {
+    debug_dbg(cfg, "Unable to allocate memory for credential components");
+    goto fail;
+  }
+
+  return 1;
+
+fail:
+  reset_device(cred);
+  return 0;
+}
+
 static int parse_native_format(const cfg_t *cfg, const char *username,
                                char *buf, FILE *opwfile, device_t *devices,
                                unsigned *n_devs) {
 
-  char *s_user, *s_token, *s_credential;
+  char *s_user, *s_credential;
   unsigned i;
 
   while (fgets(buf, (int) (DEVSIZE * (cfg->max_devs - 1)), opwfile)) {
@@ -192,9 +234,6 @@ static int parse_native_format(const cfg_t *cfg, const char *username,
 
       i = 0;
       while ((s_credential = strtok_r(NULL, ":", &saveptr))) {
-        // s_credential is the whole line now
-        char *credsaveptr = NULL;
-
         if ((*n_devs)++ > cfg->max_devs - 1) {
           *n_devs = cfg->max_devs;
           debug_dbg(cfg,
@@ -203,94 +242,19 @@ static int parse_native_format(const cfg_t *cfg, const char *username,
           break;
         }
 
-        reset_device(&devices[i]);
-
-        s_token = strtok_r(s_credential, ",", &credsaveptr);
-
-        if (!s_token) {
-          debug_dbg(cfg, "Unable to retrieve keyHandle for device %d", i + 1);
+        if (!parse_native_credential(cfg, s_credential, &devices[i])) {
+          debug_dbg(cfg, "Failed to parse credential");
           return -1;
         }
 
-        debug_dbg(cfg, "KeyHandle for device number %d: %s", i + 1, s_token);
-
-        devices[i].keyHandle = strdup(s_token);
-
-        if (!devices[i].keyHandle) {
-          debug_dbg(cfg, "Unable to allocate memory for keyHandle number %d",
-                    i);
-          return -1;
-        }
-
-        if (is_resident(devices[i].keyHandle)) {
-          debug_dbg(cfg, "Credential is resident");
-        }
-
-        s_token = strtok_r(NULL, ",", &credsaveptr);
-
-        if (!s_token) {
-          debug_dbg(cfg, "Unable to retrieve publicKey number %d", i + 1);
-          return -1;
-        }
-
-        debug_dbg(cfg, "publicKey for device number %d: %s", i + 1, s_token);
-
-        devices[i].publicKey = strdup(s_token);
-
-        if (!devices[i].publicKey) {
-          debug_dbg(cfg, "Unable to allocate memory for publicKey number %d",
-                    i);
-          return -1;
-        }
-
-        s_token = strtok_r(NULL, ",", &credsaveptr);
-
-        if (!s_token) {
-          debug_dbg(cfg, "Unable to retrieve COSE type %d", i + 1);
-          debug_dbg(cfg, "Assuming ES256 (backwards compatibility)");
-          devices[i].old_format = 1;
-          devices[i].coseType = strdup("es256");
-        } else {
-          debug_dbg(cfg, "COSE type for device number %d: %s", i + 1, s_token);
-          devices[i].coseType = strdup(s_token);
-        }
-
-        if (!devices[i].coseType) {
-          debug_dbg(cfg, "Unable to allocate memory for COSE type number %d",
-                    i);
-          return -1;
-        }
-
-        s_token = strtok_r(NULL, ",", &credsaveptr);
-
-        if (devices[i].old_format == 1) {
-          debug_dbg(cfg, "Old format for device %d, no attributes", i + 1);
-          debug_dbg(cfg, "Assuming 'presence' (backwards compatibility)");
-          s_token = "+presence";
-        } else if (!s_token) {
-          s_token = "";
-        }
-
-        debug_dbg(cfg, "Attributes for device number %d: %s", i + 1, s_token);
-        devices[i].attributes = strdup(s_token);
-
-        if (!devices[i].attributes) {
-          debug_dbg(cfg, "Unable to allocate memory for attributes number %d",
-                    i);
-          return -1;
-        }
-
-        if (devices[i].old_format) {
-          char *websafe_b64 = devices[i].keyHandle;
-          devices[i].keyHandle = normal_b64(websafe_b64);
-          free(websafe_b64);
-          if (!devices[i].keyHandle) {
-            debug_dbg(cfg, "Unable to allocate memory for keyHandle number %d",
-                      i);
-            return -1;
-          }
-        }
-
+        debug_dbg(cfg, "KeyHandle for device number %u: %s", i + 1,
+                  devices[i].keyHandle);
+        debug_dbg(cfg, "publicKey for device number %u: %s", i + 1,
+                  devices[i].publicKey);
+        debug_dbg(cfg, "COSE type for device number %u: %s", i + 1,
+                  devices[i].coseType);
+        debug_dbg(cfg, "Attributes for device number %u: %s", i + 1,
+                  devices[i].attributes);
         i++;
       }
     }
