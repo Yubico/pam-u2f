@@ -244,7 +244,7 @@ static int parse_native_format(const cfg_t *cfg, const char *username,
 
         if (!parse_native_credential(cfg, s_credential, &devices[i])) {
           debug_dbg(cfg, "Failed to parse credential");
-          return -1;
+          return 0;
         }
 
         debug_dbg(cfg, "KeyHandle for device number %u: %s", i + 1,
@@ -642,7 +642,7 @@ out:
     decoded_initial = NULL;
   }
 
-  return -1;
+  return 0;
 }
 
 int get_devices_from_authfile(const cfg_t *cfg, const char *username,
