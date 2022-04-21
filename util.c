@@ -728,16 +728,15 @@ int get_devices_from_authfile(const cfg_t *cfg, const char *username,
   debug_dbg(cfg, "Found %d device(s) for user %s", *n_devs, username);
 
   retval = 1;
-  goto out;
 
 err:
-  for (i = 0; i < *n_devs; i++) {
-    reset_device(&devices[i]);
+  if (retval != 1) {
+    for (i = 0; i < *n_devs; i++) {
+      reset_device(&devices[i]);
+    }
+    *n_devs = 0;
   }
 
-  *n_devs = 0;
-
-out:
   if (buf) {
     free(buf);
     buf = NULL;
