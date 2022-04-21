@@ -260,6 +260,11 @@ static int parse_native_format(const cfg_t *cfg, const char *username,
     }
   }
 
+  if (!feof(opwfile)) {
+    debug_dbg(cfg, "authfile parsing ended before eof (%d)", errno);
+    return 0;
+  }
+
   return 1;
 }
 
