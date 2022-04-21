@@ -514,17 +514,18 @@ err:
 static int parse_ssh_format(const cfg_t *cfg, char *buf, size_t buf_size,
                             FILE *opwfile, size_t opwfile_size,
                             device_t *devices, unsigned *n_devs) {
-
   const unsigned char *decoded;
   unsigned char *decoded_initial = NULL;
   size_t decoded_len;
   const unsigned char *blob;
   uint32_t check1, check2, tmp;
   size_t len;
+  int r = 0;
 
   // The logic below is inspired by
   // how ssh parses its own keys. See sshkey.c
   reset_device(&devices[0]);
+  *n_devs = 0;
 
   if (!load_ssh_key(cfg, buf, buf_size, opwfile, opwfile_size) ||
       !b64_decode(buf, (void **) &decoded_initial, &decoded_len)) {
@@ -627,22 +628,18 @@ static int parse_ssh_format(const cfg_t *cfg, char *buf, size_t buf_size,
     }
   }
 
-  free(decoded_initial);
-  decoded_initial = NULL;
-
   *n_devs = 1;
-
-  return 1;
+  r = 1;
 
 out:
-  reset_device(&devices[0]);
-
-  if (decoded_initial) {
-    free(decoded_initial);
-    decoded_initial = NULL;
+  if (r != 1) {
+    reset_device(&devices[0]);
+    *n_devs = 0;
   }
 
-  return 0;
+  free(decoded_initial);
+
+  return r;
 }
 
 int get_devices_from_authfile(const cfg_t *cfg, const char *username,
