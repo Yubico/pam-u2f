@@ -208,15 +208,18 @@ fail:
 }
 
 static int parse_native_format(const cfg_t *cfg, const char *username,
-                               char *buf, FILE *opwfile, device_t *devices,
+                               FILE *opwfile, device_t *devices,
                                unsigned *n_devs) {
 
   char *s_user, *s_credential;
+  char *buf = NULL;
+  size_t bufsiz = 0;
+  ssize_t len;
   unsigned i;
+  int r = 0;
 
-  while (fgets(buf, (int) (DEVSIZE * (cfg->max_devs - 1)), opwfile)) {
+  while ((len = getline(&buf, &bufsiz, opwfile)) != -1) {
     char *saveptr = NULL;
-    size_t len = strlen(buf);
     if (len > 0 && buf[len - 1] == '\n')
       buf[len - 1] = '\0';
 
@@ -244,7 +247,7 @@ static int parse_native_format(const cfg_t *cfg, const char *username,
 
         if (!parse_native_credential(cfg, s_credential, &devices[i])) {
           debug_dbg(cfg, "Failed to parse credential");
-          return 0;
+          goto fail;
         }
 
         debug_dbg(cfg, "KeyHandle for device number %u: %s", i + 1,
@@ -262,10 +265,13 @@ static int parse_native_format(const cfg_t *cfg, const char *username,
 
   if (!feof(opwfile)) {
     debug_dbg(cfg, "authfile parsing ended before eof (%d)", errno);
-    return 0;
+    goto fail;
   }
 
-  return 1;
+  r = 1;
+fail:
+  free(buf);
+  return r;
 }
 
 static int load_ssh_key(const cfg_t *cfg, char *buf, size_t buf_size,
@@ -719,7 +725,7 @@ int get_devices_from_authfile(const cfg_t *cfg, const char *username,
   }
 
   if (cfg->sshformat == 0) {
-    retval = parse_native_format(cfg, username, buf, opwfile, devices, n_devs);
+    retval = parse_native_format(cfg, username, opwfile, devices, n_devs);
   } else {
     retval = parse_ssh_format(cfg, buf, DEVSIZE * cfg->max_devs, opwfile,
                               opwfile_size, devices, n_devs);
