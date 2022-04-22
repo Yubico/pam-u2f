@@ -62,6 +62,15 @@ AC_SUBST(PAMDIR, "$PAMDIR")
 PKG_CHECK_MODULES([LIBCRYPTO], [libcrypto], [], [])
 PKG_CHECK_MODULES([LIBFIDO2], [libfido2 >= 1.3.0], [], [])
 
+# Silence deprecation warnings for the EC_KEY_* family of functions. This can
+# be removed when we mandate libfido2 >=1.9.0 and switch to the EVP interface.
+AS_VERSION_COMPARE([`$PKG_CONFIG --modversion libcrypto`],[3.0],
+  [openssl_compat=no], [openssl_compat=yes], [openssl_compat=yes]
+)
+AS_IF([test "$openssl_compat" = "yes"],
+  [AC_DEFINE([OPENSSL_API_COMPAT],[0x10100000L])]
+)
+
 AC_CHECK_FUNCS([secure_getenv strlcpy readpassphrase explicit_bzero memset_s])
 
 # Make clang emit errors for unknown warnings to make the AX_CHECK_COMPILE_FLAG
