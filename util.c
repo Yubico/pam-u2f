@@ -678,7 +678,6 @@ out:
 int get_devices_from_authfile(const cfg_t *cfg, const char *username,
                               device_t *devices, unsigned *n_devs) {
 
-  char *buf = NULL;
   int retval = 0;
   int fd = -1;
   struct stat st;
@@ -740,12 +739,6 @@ int get_devices_from_authfile(const cfg_t *cfg, const char *username,
     fd = -1; /* fd belongs to opwfile */
   }
 
-  buf = calloc(1, (DEVSIZE * cfg->max_devs));
-  if (!buf) {
-    debug_dbg(cfg, "Unable to allocate memory");
-    goto err;
-  }
-
   if (cfg->sshformat == 0) {
     retval = parse_native_format(cfg, username, opwfile, devices, n_devs);
   } else {
@@ -767,11 +760,6 @@ err:
       reset_device(&devices[i]);
     }
     *n_devs = 0;
-  }
-
-  if (buf) {
-    free(buf);
-    buf = NULL;
   }
 
   if (opwfile)
