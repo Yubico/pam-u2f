@@ -25,6 +25,7 @@
 #include "debug.h"
 #include "util.h"
 
+#define SSH_MAX_SIZE 8192
 #define SSH_HEADER "-----BEGIN OPENSSH PRIVATE KEY-----\n"
 #define SSH_HEADER_LEN (sizeof(SSH_HEADER) - 1)
 #define SSH_TRAILER "-----END OPENSSH PRIVATE KEY-----\n"
@@ -274,15 +275,25 @@ fail:
   return r;
 }
 
-static int load_ssh_key(const cfg_t *cfg, char *buf, size_t buf_size,
-                        FILE *opwfile, size_t opwfile_size) {
-  char *cp = buf;
+static int load_ssh_key(const cfg_t *cfg, char **out, FILE *opwfile,
+                        size_t opwfile_size) {
+  size_t buf_size;
+  char *buf = NULL;
+  char *cp = NULL;
+  int r = 0;
   int ch;
 
-  if (opwfile_size > buf_size ||
-      opwfile_size < SSH_HEADER_LEN + SSH_TRAILER_LEN) {
+  *out = NULL;
+
+  if (opwfile_size < SSH_HEADER_LEN + SSH_TRAILER_LEN) {
     debug_dbg(cfg, "Malformed SSH key (length)");
-    return 0;
+    goto fail;
+  }
+
+  buf_size = opwfile_size > SSH_MAX_SIZE ? SSH_MAX_SIZE : opwfile_size;
+  if ((cp = buf = calloc(1, buf_size)) == NULL) {
+    debug_dbg(cfg, "Failed to allocate buffer for SSH key");
+    goto fail;
   }
 
   // NOTE(adma): +1 for \0
@@ -290,14 +301,14 @@ static int load_ssh_key(const cfg_t *cfg, char *buf, size_t buf_size,
       strlen(buf) != SSH_HEADER_LEN ||
       strncmp(buf, SSH_HEADER, SSH_HEADER_LEN) != 0) {
     debug_dbg(cfg, "Malformed SSH key (header)");
-    return 0;
+    goto fail;
   }
 
   while (opwfile_size > 0 && buf_size > 1) {
     ch = fgetc(opwfile);
     if (ch == EOF) {
       debug_dbg(cfg, "Unexpected authfile termination");
-      return 0;
+      goto fail;
     }
 
     opwfile_size--;
@@ -312,7 +323,7 @@ static int load_ssh_key(const cfg_t *cfg, char *buf, size_t buf_size,
             strlen(cp) != SSH_TRAILER_LEN ||
             strncmp(cp, SSH_TRAILER, SSH_TRAILER_LEN) != 0) {
           debug_dbg(cfg, "Malformed SSH key (trailer)");
-          return 0;
+          goto fail;
         }
 
         *(cp) = '\0';
@@ -323,7 +334,16 @@ static int load_ssh_key(const cfg_t *cfg, char *buf, size_t buf_size,
     }
   }
 
-  return 1;
+  r = 1;
+fail:
+  if (r != 1) {
+    free(buf);
+    buf = NULL;
+  }
+
+  *out = buf;
+
+  return r;
 }
 
 static int ssh_get(const unsigned char **buf, size_t *size, unsigned char *dst,
@@ -522,9 +542,10 @@ err:
   return ok;
 }
 
-static int parse_ssh_format(const cfg_t *cfg, char *buf, size_t buf_size,
-                            FILE *opwfile, size_t opwfile_size,
-                            device_t *devices, unsigned *n_devs) {
+static int parse_ssh_format(const cfg_t *cfg, FILE *opwfile,
+                            size_t opwfile_size, device_t *devices,
+                            unsigned *n_devs) {
+  char *b64 = NULL;
   const unsigned char *decoded;
   unsigned char *decoded_initial = NULL;
   size_t decoded_len;
@@ -538,8 +559,8 @@ static int parse_ssh_format(const cfg_t *cfg, char *buf, size_t buf_size,
   reset_device(&devices[0]);
   *n_devs = 0;
 
-  if (!load_ssh_key(cfg, buf, buf_size, opwfile, opwfile_size) ||
-      !b64_decode(buf, (void **) &decoded_initial, &decoded_len)) {
+  if (!load_ssh_key(cfg, &b64, opwfile, opwfile_size) ||
+      !b64_decode(b64, (void **) &decoded_initial, &decoded_len)) {
     debug_dbg(cfg, "Unable to decode credential");
     goto out;
   }
@@ -649,6 +670,7 @@ out:
   }
 
   free(decoded_initial);
+  free(b64);
 
   return r;
 }
@@ -727,8 +749,7 @@ int get_devices_from_authfile(const cfg_t *cfg, const char *username,
   if (cfg->sshformat == 0) {
     retval = parse_native_format(cfg, username, opwfile, devices, n_devs);
   } else {
-    retval = parse_ssh_format(cfg, buf, DEVSIZE * cfg->max_devs, opwfile,
-                              opwfile_size, devices, n_devs);
+    retval = parse_ssh_format(cfg, opwfile, opwfile_size, devices, n_devs);
   }
 
   if (retval != 1) {
