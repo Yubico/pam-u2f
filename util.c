@@ -326,6 +326,7 @@ static int load_ssh_key(const cfg_t *cfg, char **out, FILE *opwfile,
           goto fail;
         }
 
+        r = 1;
         *(cp) = '\0';
         break;
       } else {
@@ -334,7 +335,6 @@ static int load_ssh_key(const cfg_t *cfg, char **out, FILE *opwfile,
     }
   }
 
-  r = 1;
 fail:
   if (r != 1) {
     free(buf);
