@@ -301,10 +301,10 @@ static int load_ssh_key(const cfg_t *cfg, char *buf, size_t buf_size,
     }
 
     opwfile_size--;
-    buf_size--;
 
     if (ch != '\n' && ch != '\r') {
       *cp = (char) ch;
+      buf_size--;
       if (ch == '-') {
         // NOTE(adma): no +1 here since we already read one '-'
         if (buf_size < SSH_TRAILER_LEN ||
