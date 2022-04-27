@@ -211,18 +211,18 @@ authentication, the "nodetect" option was added.
 
 userpresence=int::
 If 1, request user presence during authentication. If 0, do not
-request user presence during authentication. Otherwise, fallback to
+request user presence during authentication. If omitted, fallback to
 the authenticator's default behaviour.
 
 userverification=int::
 If 1, request user verification during authentication (e.g. biometrics).
-If 0, do not request user verification during authentication. Otherwise,
+If 0, do not request user verification during authentication. If omitted,
 fallback to the authenticator's default behaviour. If enabled, an
 authenticator with support for FIDO2 user verification is required.
 
 pinverification=int::
 If 1, request PIN verification during authentication. If 0, do not
-request PIN verification during authentication. Otherwise, fallback to
+request PIN verification during authentication. If omitted, fallback to
 the authenticator's default behaviour. If enabled, an authenticator
 with support for a FIDO2 PIN is required.
 
