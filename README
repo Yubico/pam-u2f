@@ -215,14 +215,16 @@ request user presence during authentication. Otherwise, fallback to
 the authenticator's default behaviour.
 
 userverification=int::
-If 1, request user verification during authentication. If 0, do not
-request user verification during authentication. Otherwise, fallback
-to the authenticator's default behaviour.
+If 1, request user verification during authentication (e.g. biometrics).
+If 0, do not request user verification during authentication. Otherwise,
+fallback to the authenticator's default behaviour. If enabled, an
+authenticator with support for FIDO2 user verification is required.
 
 pinverification=int::
 If 1, request PIN verification during authentication. If 0, do not
 request PIN verification during authentication. Otherwise, fallback to
-the authenticator's default behaviour.
+the authenticator's default behaviour. If enabled, an authenticator
+with support for a FIDO2 PIN is required.
 
 sshformat::
 Use credentials produced by versions of OpenSSH that have support for
