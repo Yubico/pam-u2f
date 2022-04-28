@@ -20,7 +20,7 @@ static void test_ssh_credential(const char *username) {
   cfg.auth_file = "credentials/ssh_credential.cred";
   cfg.debug = 1;
   cfg.debug_file = stderr;
-  cfg.max_devs = 24;
+  cfg.max_devs = 1;
   cfg.sshformat = 1;
 
   dev = calloc(cfg.max_devs, sizeof(*dev));
@@ -52,7 +52,7 @@ static void test_old_credential(const char *username) {
   cfg.sshformat = 0;
   cfg.debug = 1;
   cfg.debug_file = stderr;
-  cfg.max_devs = 24;
+  cfg.max_devs = 1;
   cfg.sshformat = 0;
 
   dev = calloc(cfg.max_devs, sizeof(*dev));
@@ -70,6 +70,65 @@ static void test_old_credential(const char *username) {
            "425e79f8c41d8f049c8f7241a803563a43c139f923f0ab9007fbd0dcc722927") ==
     0);
   assert(dev[0].old_format == 1);
+  free_devices(dev, ndevs);
+}
+
+static void test_limited_count(const char *username) {
+  cfg_t cfg;
+  device_t *dev;
+  int rc;
+  unsigned ndevs;
+
+  memset(&cfg, 0, sizeof(cfg_t));
+  cfg.debug = 1;
+  cfg.debug_file = stderr;
+
+  /* authfile contains three credentials (eddsa, es256, eddsa) */
+  cfg.auth_file = "credentials/new_limited_count.cred";
+  cfg.max_devs = 1;
+
+  dev = calloc(cfg.max_devs, sizeof(*dev));
+  assert(dev != NULL);
+  rc = get_devices_from_authfile(&cfg, username, dev, &ndevs);
+  assert(rc == 1);
+  assert(ndevs == 1);
+  assert(strcmp(dev[0].coseType, "eddsa") == 0);
+  assert(strcmp(dev[0].keyHandle,
+                "3mh1qzbVrSyy+zp4rM5JSIQzGAnzolAnqEp/13wt0Ea/"
+                "V0q6rDcoRC3Eyw6tx71mBKDiT5k1fSvtqGYf49r+"
+                "lcnk6kyYQrWBoBaUhrgmF89EUkpXQk59Z+HysoW3HJ/"
+                "S6N56DMmElFRMrmf0n3uTNBE9Y5/lHfWT+5gvCvmgd/0=") == 0);
+  assert(strcmp(dev[0].publicKey,
+                "LpQP+xyOjupzQTMQ2L6B5kv1SnAntUC5zANmZ8Zntdo=") == 0);
+  assert(strcmp(dev[0].attributes, "+presence+verification+pin") == 0);
+  assert(dev[0].old_format == 0);
+  free_devices(dev, ndevs);
+
+  cfg.max_devs = 2;
+  dev = calloc(cfg.max_devs, sizeof(*dev));
+  assert(dev != NULL);
+  rc = get_devices_from_authfile(&cfg, username, dev, &ndevs);
+  assert(rc == 1);
+  assert(ndevs == 2);
+  assert(strcmp(dev[0].coseType, "eddsa") == 0);
+  assert(strcmp(dev[0].keyHandle,
+                "3mh1qzbVrSyy+zp4rM5JSIQzGAnzolAnqEp/13wt0Ea/"
+                "V0q6rDcoRC3Eyw6tx71mBKDiT5k1fSvtqGYf49r+"
+                "lcnk6kyYQrWBoBaUhrgmF89EUkpXQk59Z+HysoW3HJ/"
+                "S6N56DMmElFRMrmf0n3uTNBE9Y5/lHfWT+5gvCvmgd/0=") == 0);
+  assert(strcmp(dev[0].publicKey,
+                "LpQP+xyOjupzQTMQ2L6B5kv1SnAntUC5zANmZ8Zntdo=") == 0);
+  assert(strcmp(dev[0].attributes, "+presence+verification+pin") == 0);
+  assert(dev[0].old_format == 0);
+  assert(strcmp(dev[1].coseType, "es256") == 0);
+  assert(strcmp(dev[1].keyHandle,
+                "vCM/NAYjRqhbodPhR3wA0ElFEvAtGLH20WpRuGPb/MOYEQskUZgq6Jm51x5m/"
+                "CnbmPYp/KDjy8kOZgwssgCCew==") == 0);
+  assert(strcmp(dev[1].publicKey,
+                "qqx7ciL1kv4Tdg6Nxs99sx6u3gLE9rQcYoOwcOJymcp5ikQQH"
+                "7Ijh+D3gIQ89FGUUgmNWlteaXS9VtDsmN16Wg==") == 0);
+  assert(strcmp(dev[1].attributes, "+presence+verification+pin") == 0);
+  assert(dev[1].old_format == 0);
   free_devices(dev, ndevs);
 }
 
@@ -668,5 +727,6 @@ int main(void) {
 
   test_ssh_credential(username);
   test_old_credential(username);
+  test_limited_count(username);
   test_new_credentials(username);
 }
