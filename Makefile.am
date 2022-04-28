@@ -48,6 +48,7 @@ pam_u2f_la_LDFLAGS += -Wl,--wrap=fdopen
 pam_u2f_la_LDFLAGS += -Wl,--wrap=fstat
 pam_u2f_la_LDFLAGS += -Wl,--wrap=read
 pam_u2f_la_LDFLAGS += -Wl,--wrap=gethostname
+pam_u2f_la_LDFLAGS += -Wl,--wrap=getline
 pam_u2f_la_LDFLAGS += -Wl,--wrap=getpwnam_r
 pam_u2f_la_LDFLAGS += -Wl,--wrap=getpwuid_r
 pam_u2f_la_LDFLAGS += -Wl,--wrap=geteuid
