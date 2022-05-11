@@ -2,6 +2,8 @@ Copyright (c) 2014-2022 Yubico AB - See COPYING
 
 pam-u2f NEWS -- History of user-visible changes.          -*- outline -*-
 
+* Version 1.2.2 (unreleased)
+
 * Version 1.2.1 (released 2022-05-11)
 ** Fixed an issue where native credentials could be truncated, resulting in
 failure to authenticate or successful authentication with missing options.
