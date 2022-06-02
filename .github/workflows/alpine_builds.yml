@@ -14,7 +14,7 @@ jobs:
     - name: dependencies
       run: |
         apk -q update
-        apk add build-base clang clang-analyzer cmake coreutils eudev-dev
+        apk add bash build-base clang clang-analyzer cmake coreutils eudev-dev
         apk add git linux-headers openssl-dev zlib-dev
         apk add autoconf automake libtool linux-pam-dev
     - name: fix permissions on workdir
@@ -48,4 +48,4 @@ jobs:
         CC: ${{ matrix.cc }}
         USER: root
       run: |
-        /bin/bash -eux build-aux/ci/build-linux-${CC%-*}.sh
+        ./build-aux/ci/build-linux-${CC%-*}.sh
