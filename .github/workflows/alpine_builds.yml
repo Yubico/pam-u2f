@@ -14,35 +14,12 @@ jobs:
     - name: dependencies
       run: |
         apk -q update
-        apk add bash build-base clang clang-analyzer cmake coreutils eudev-dev
-        apk add git linux-headers openssl-dev zlib-dev
-        apk add autoconf automake libtool linux-pam-dev
+        apk add autoconf automake bash build-base clang clang-analyzer git \
+          libfido2-dev libtool linux-pam-dev openssl-dev pkgconfig
     - name: fix permissions on workdir
       run: chown root:wheel "${GITHUB_WORKSPACE}"
     - name: checkout pam-u2f
       uses: actions/checkout@v2
-    - name: checkout libcbor
-      uses: actions/checkout@v2
-      with:
-        repository: PJK/libcbor
-        path: libcbor
-        ref: v0.8.0
-    - name: checkout libfido2
-      uses: actions/checkout@v2
-      with:
-        repository: Yubico/libfido2
-        path: libfido2
-        ref: 1.7.0
-    - name: install libcbor
-      run: |
-        cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR=lib .
-        make -j"$(nproc)" && make install
-      working-directory: libcbor
-    - name: install libfido2
-      run: |
-        cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_LIBDIR=lib .
-        make -j"$(nproc)" && make install
-      working-directory: libfido2
     - name: build
       env:
         CC: ${{ matrix.cc }}
