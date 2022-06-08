@@ -16,10 +16,10 @@ jobs:
         apk -q update
         apk add autoconf automake bash build-base clang clang-analyzer git \
           libfido2-dev libtool linux-pam-dev openssl-dev pkgconfig
-    - name: fix permissions on workdir
-      run: chown root:wheel "${GITHUB_WORKSPACE}"
     - name: checkout pam-u2f
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
+    - name: mark workspace as safe
+      run: git config --global --add safe.directory "${GITHUB_WORKSPACE}"
     - name: build
       env:
         CC: ${{ matrix.cc }}

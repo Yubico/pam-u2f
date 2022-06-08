@@ -11,7 +11,7 @@ jobs:
         os: [ macos-10.15, macos-11, macos-12 ]
         cc: [ clang ]
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: dependencies
       run: brew install check cmake help2man mandoc openssl@1.1 pkg-config automake
     - name: build

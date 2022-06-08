@@ -16,7 +16,7 @@ jobs:
           - { os: ubuntu-18.04, cc: gcc-10 }
           - { os: ubuntu-18.04, cc: clang-10 }
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Setup
       if: ${{ matrix.os == 'ubuntu-18.04' }}
       run: |
