@@ -7,7 +7,7 @@ LIBCBOR_URL="https://github.com/pjk/libcbor"
 LIBCBOR_TAG="v0.8.0"
 LIBCBOR_CFLAGS="-fsanitize=address,alignment,bounds"
 LIBFIDO2_URL="https://github.com/Yubico/libfido2"
-LIBFIDO2_TAG="1.7.0"
+LIBFIDO2_TAG="1.11.0"
 LIBFIDO2_CFLAGS="-fsanitize=address,alignment,bounds"
 
 COMMON_CFLAGS="-g2 -fno-omit-frame-pointer"
@@ -27,13 +27,7 @@ export ASAN_OPTIONS="detect_leaks=1:detect_invalid_pointer_pairs=2"
 
 pushd "${FAKEROOT}" &>/dev/null
 
-git clone "${LIBFIDO2_URL}"
-# temporarily checkout a commit where prng_up is exported in libfido2
-# this can be removed once a new release of libfido2 is made
-pushd libfido2 &>/dev/null
-git checkout f65f1e7bc286b490f65d21a01983ff3ebafa446d
-popd &>/dev/null # libfido2
-
+git clone --depth 1 "${LIBFIDO2_URL}" -b "${LIBFIDO2_TAG}"
 git clone --depth 1 "${LIBCBOR_URL}" -b "${LIBCBOR_TAG}"
 
 # libcbor (with libfido2 patch)
