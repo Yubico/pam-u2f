@@ -4,7 +4,7 @@ set -euxo pipefail
 CORPUS_URL="https://storage.googleapis.com/yubico-pam-u2f/corpus.tgz"
 
 LIBCBOR_URL="https://github.com/pjk/libcbor"
-LIBCBOR_TAG="v0.8.0"
+LIBCBOR_TAG="v0.9.0"
 LIBCBOR_CFLAGS="-fsanitize=address,alignment,bounds"
 LIBFIDO2_URL="https://github.com/Yubico/libfido2"
 LIBFIDO2_TAG="1.11.0"
