@@ -3,9 +3,12 @@
  */
 
 #undef NDEBUG
+#include <sys/types.h>
+#include <assert.h>
+#include <pwd.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
+#include <unistd.h>
 
 #include <string.h>
 #include "../util.h"
@@ -718,15 +721,16 @@ static void test_new_credentials(const char *username) {
 }
 
 int main(void) {
-  const char *username;
+  struct passwd *pwd;
+  char *username;
 
-  if ((username = getenv("USER")) == NULL) {
-    username = getenv("LOGNAME");
-  }
-  assert(username != NULL);
+  assert((pwd = getpwuid(geteuid())) != NULL);
+  assert((username = strdup(pwd->pw_name)) != NULL);
 
   test_ssh_credential(username);
   test_old_credential(username);
   test_limited_count(username);
   test_new_credentials(username);
+
+  free(username);
 }
