@@ -23,6 +23,5 @@ jobs:
     - name: build
       env:
         CC: ${{ matrix.cc }}
-        USER: root
       run: |
         ./build-aux/ci/build-linux-${CC%-*}.sh
