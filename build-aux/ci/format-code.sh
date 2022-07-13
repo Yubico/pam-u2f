@@ -5,8 +5,8 @@
 # Script to determine if source code in a diff is properly formatted. On
 # GitHub, a commit range is provided which corresponds to the commit range of
 #   1) commits associated with a pull request, or
-#   2) commits on a branch which are not also part of master, or
-#   3) commits since last push to master.
+#   2) commits on a branch which are not also part of main, or
+#   3) commits since last push to main.
 #
 # Exits with non 0 exit code if formatting is needed.
 #
