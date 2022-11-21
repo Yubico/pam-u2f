@@ -96,7 +96,8 @@ auth sufficient pam_u2f.so debug
 ----
 
 For more information about the syntax of PAM configuration files, please
-see the manual page for pam.conf(5).
+see the manual page for pam.conf(5). Additional <<examples,example
+configurations>> can be found below.
 
 IMPORTANT: An erroneous PAM configuration may lock some or all users
 out of the system or prevent you from gaining root privileges. It is
@@ -235,6 +236,46 @@ IMPORTANT: On dynamic networks (e.g. where hostnames are set by DHCP),
 users should not rely on the default origin and appid
 ("pam://$HOSTNAME") but set those parameters explicitly to the same
 value.
+
+[[examples]]
+=== Example Service Configurations
+
+==== Second Factor Authentication
+
+Configure pam-u2f as a `required` module after your primary authentication
+module(s) for use as a second factor. Make sure that the primary authentication
+method is not `sufficient` or uses other control values that may preempt
+execution of pam-u2f.
+
+----
+# Primary authentication method(s) above this line.
+auth required pam_u2f.so authfile=/etc/u2f_mappings cue
+----
+
+==== Passwordless Authentication
+
+For a passwordless experience, where the authenticator PIN can be used in place
+of the user password, you can insert the below line towards the top of your
+service configuration. You may need to change the control value to something
+else if you'd like to execute additional authentication modules after pam-u2f.
+
+----
+auth sufficient pam_u2f.so authfile=/etc/u2f_mappings cue pinverification=1
+# Fallback modules go below this line (e.g. password authentication).
+----
+
+==== Passwordless Authentication using Biometrics
+
+Similar to the previous configuration but capable of built-in user
+verification, e.g. fingerprint matching using the YubiKey Bio. This example
+falls back to using PIN verification if the fingerprint does not match or is
+otherwise blocked.
+
+----
+auth sufficient pam_u2f.so authfile=/etc/u2f_mappings cue pinverification=0 userverification=1
+auth sufficient pam_u2f.so authfile=/etc/u2f_mappings cue pinverification=1 userverification=0
+# More fallback modules go below this line (e.g. password authentication).
+----
 
 [[authMappingFiles]]
 == Authorization Mapping Files

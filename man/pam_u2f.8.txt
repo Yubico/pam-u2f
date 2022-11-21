@@ -131,9 +131,20 @@ as SSH.
 
 == EXAMPLES
 
-auth sufficient pam_u2f.so debug origin=pam://$HOSTNAME appid=pam://$HOSTNAME
+Second factor authentication deferring user verification configuration to the
+authorization mapping file.
 
-auth required pam_u2f.so origin=http://example.com appid=http://example.com authfile=/etc/yubikey_mappings
+  auth required pam_u2f.so authfile=/etc/u2f_mappings cue
+
+Passwordless authentication enforcing PIN verification.
+
+  auth sufficient pam_u2f.so authfile=/etc/u2f_mappings cue pinverification=1 userverification=0
+
+Passwordless authentication using built-in UV (e.g. biometrics) with a fallback
+to PIN.
+
+  auth sufficient pam_u2f.so authfile=/etc/u2f_mappings cue pinverification=0 userverification=1
+  auth sufficient pam_u2f.so authfile=/etc/u2f_mappings cue pinverification=1 userverification=0
 
 == CAVEATS
 By default the mapping file inside a home directory will be opened as
