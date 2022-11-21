@@ -148,8 +148,9 @@ for a user to touch the device, and will be closed when it no longer
 waits for a touch. Use inotify to listen on these events, or a more
 high-level tool like
 https://github.com/maximbaz/yubikey-touch-detector[yubikey-touch-detector].
-Set an empty value in order to disable this functionality, like so:
-`authpending_file=`. Default value:
+Note that yubikey-touch-detector v1.5.1 and later no longer rely on the
+authpending file for its detection mechanism. Set an empty value in order to
+disable this functionality, like so: `authpending_file=`. Default value:
 /var/run/user/$UID/pam-u2f-authpending
 
 nouserok::
