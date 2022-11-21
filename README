@@ -1,5 +1,4 @@
-Pluggable Authentication Module (PAM) Universal 2nd Factor (U2F)
-================================================================
+= Pluggable Authentication Module (PAM) Universal 2nd Factor (U2F)
 
 image:https://github.com/yubico/pam-u2f/workflows/linux/badge.svg["Linux Build Status (github actions)", link="https://github.com/Yubico/pam-u2f/actions"]
 image:https://github.com/yubico/pam-u2f/workflows/macos/badge.svg["macOS Build Status (github actions)", link="https://github.com/Yubico/pam-u2f/actions"]
@@ -10,8 +9,7 @@ YubiKey (or other U2F/FIDO2 compliant authenticators) into your existing
 infrastructure.
 
 [[building]]
-Building
---------
+== Building
 
 This project uses 'autoconf', 'automake', 'pkg-config' and 'libtool'
 to achieve portability and ease of use.
@@ -35,8 +33,7 @@ $ ./configure
 $ make
 ----
 
-Building from Git
------------------
+== Building from Git
 
 You may check out the sources using Git with the following command:
 
@@ -80,8 +77,7 @@ $ autoreconf --install
 
 Then build as usual, see above under <<building,Building>>.
 
-Installation
-------------
+== Installation
 
 Once the module is built, copy the file `pam_u2f.so` to the correct
 directory for your system. Typically `/lib/security/` or
@@ -89,6 +85,8 @@ directory for your system. Typically `/lib/security/` or
 assuming that the pam directory chosen by `configure` is correct. If
 that is not the case it can be specified with `./configure
 --with-pam-dir=`.
+
+== Service Configuration
 
 Create a file for a new service in `/etc/pam.d/` or edit an already
 existing one by adding a line similar to this:
@@ -106,7 +104,7 @@ recommended that you start a separate shell with root privileges while
 configuring PAM to be able to revert changes if something goes wrong.
 Test your configuration thoroughly before closing the root shell.
 
-Supported parameters for the module are:
+=== Module Arguments
 
 [horizontal]
 debug::
@@ -233,9 +231,13 @@ FIDO devices. It is not possible to mix native credentials and SSH
 credentials. Once this option is enabled all credentials will be parsed
 as SSH.
 
+IMPORTANT: On dynamic networks (e.g. where hostnames are set by DHCP),
+users should not rely on the default origin and appid
+("pam://$HOSTNAME") but set those parameters explicitly to the same
+value.
+
 [[authMappingFiles]]
-Authorization Mapping Files
----------------------------
+== Authorization Mapping Files
 
 A mapping must be made between the YubiKey token and the user name,
 see <<registration, here>> for details on how to perform the
@@ -258,8 +260,7 @@ storing the mapping file in an encrypted home directory, will result
 in the impossibility of logging into the system. The partition is
 decrypted after login and the mapping file can not be accessed.
 
-Central Authorization Mapping
------------------------------
+=== Central Authorization Mapping
 
 Create a file e.g. `/etc/u2f_mappings`. The file must contain a user
 name, and the information obtained during the registration procedure.
@@ -278,14 +279,8 @@ If you do not set the `openasuser` setting, the authfile will be
 opened and parsed as `root` so make sure it has the correct owner and
 permissions set.
 
-IMPORTANT: On dynamic networks (e.g. where hostnames are set by DHCP),
-users should not rely on the default origin and appid
-("pam://$HOSTNAME") but set those parameters explicitly to the same
-value.
-
 [[individualAuth]]
-Individual Authorization Mapping by User
-----------------------------------------
+=== Individual Authorization Mapping by User
 
 Each user creates a `.config/Yubico/u2f_keys` (default) file inside
 their home directory and places the mapping in that file. You may want
@@ -309,8 +304,7 @@ be dropped by default. Consider also setting `openasuser` in that
 case.
 
 [[registration]]
-Obtaining Key Handles and Public Keys
--------------------------------------
+=== Obtaining Key Handles and Public Keys
 
 In order to obtain the required information for the authentication procedure,
 a token should be first registered. This can be done by using the command line
@@ -330,8 +324,7 @@ configuration line that can be directly used with the module. For
 additional information on the tool read the relative manpage (`man
 pamu2fcfg`).
 
-SSH Credentials
----------------
+=== SSH Credentials
 
 To generate SSH credentials OpenSSH version 8.2 or later is required.
 It is then possible to generate a credential file with:
@@ -349,8 +342,7 @@ the file `credential.ssh` and the `sshformat` option should also be set. If the
 `authfile` parameter is not set, it defaults to `~/.ssh/id_ecdsa_sk`.
 
 [[devices]]
-Multiple Devices
-----------------
+=== Multiple Devices
 
 Multiple devices are supported. If more than one device is specified,
 authentication against them is attempted sequentially as they are defined
@@ -358,8 +350,7 @@ in the configuration file of the module. If during an authentication
 attempt a connected device is removed or a new device is plugged in,
 the authentication restarts from the top of the list.
 
-SELinux Note
-------------
+== SELinux Note
 
 Due to an issue with Fedora Linux, and possibly with other
 distributions that use SELinux, a system configured with pam-u2f may
@@ -384,8 +375,7 @@ should be used.
 For more information see
 https://access.redhat.com/security/cve/CVE-2020-24612[HERE].
 
-FIDO U2F vs FIDO2
------------------
+== FIDO U2F vs FIDO2
 Devices that solely support FIDO U2F and not FIDO2, e.g. the YubiKey 4 series,
 can be used only in conjunction with compatible features. Enabling incompatible
 features, such as setting the `+pin` or the `+verification` flags in the
