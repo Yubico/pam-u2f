@@ -308,7 +308,7 @@ be dropped by default. Consider also setting `openasuser` in that
 case.
 
 [[registration]]
-Obtaining key-handles and Public Keys
+Obtaining Key Handles and Public Keys
 -------------------------------------
 
 In order to obtain the required information for the authentication procedure,
