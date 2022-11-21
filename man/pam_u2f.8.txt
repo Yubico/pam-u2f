@@ -75,9 +75,9 @@ Set to enable all authentication attempts to succeed (aka presentation
 mode).
 
 *max_devices*=_n_devices_::
-Maximum number of devices allowed per user (default is 24). Devices
-specified in the authentication file that exceed this value will be
-ignored.
+Maximum number of devices (credentials) allowed per user (default is 24).
+Devices specified in the authorization mapping file that exceed this value
+will be ignored.
 
 *interactive*::
 Set to prompt a message and wait before testing the presence of a U2F
