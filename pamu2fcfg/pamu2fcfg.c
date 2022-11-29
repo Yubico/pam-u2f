@@ -399,9 +399,6 @@ int main(int argc, char *argv[]) {
   parse_args(argc, argv, &args);
   fido_init(args.debug ? FIDO_DEBUG : 0);
 
-  if ((cred = prepare_cred(&args)) == NULL)
-    goto err;
-
   devlist = fido_dev_info_new(64);
   if (!devlist) {
     fprintf(stderr, "error: fido_dev_info_new failed\n");
@@ -467,6 +464,9 @@ int main(int argc, char *argv[]) {
     fprintf(stderr, "error: fido_dev_open (%d) %s\n", r, fido_strerr(r));
     goto err;
   }
+
+  if ((cred = prepare_cred(&args)) == NULL)
+    goto err;
 
   if (make_cred(path, dev, cred) != 0 || verify_cred(cred) != 0 ||
       print_authfile_line(&args, cred) != 0)
