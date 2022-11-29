@@ -30,6 +30,10 @@
 
 #include "openbsd-compat.h"
 
+#ifndef FIDO_ERR_UV_BLOCKED /* XXX: compat libfido2 <1.5.0 */
+#define FIDO_ERR_UV_BLOCKED 0x3c
+#endif
+
 struct args {
   const char *appid;
   const char *origin;
@@ -166,7 +170,8 @@ err:
   return cred;
 }
 
-static int make_cred(const char *path, fido_dev_t *dev, fido_cred_t *cred) {
+static int make_cred(const char *path, fido_dev_t *dev, fido_cred_t *cred,
+                     int devopts) {
   char prompt[BUFSIZE];
   char pin[BUFSIZE];
   int n;
@@ -177,8 +182,19 @@ static int make_cred(const char *path, fido_dev_t *dev, fido_cred_t *cred) {
     return -1;
   }
 
+  /* Some form of UV required; built-in UV is available. */
+  if ((devopts & (UV_SET | UV_NOT_REQD)) == UV_SET) {
+    if ((r = fido_cred_set_uv(cred, FIDO_OPT_TRUE)) != FIDO_OK) {
+      fprintf(stderr, "error: fido_cred_set_uv: %s (%d)\n", fido_strerr(r), r);
+      return -1;
+    }
+  }
+
   r = fido_dev_make_cred(dev, cred, NULL);
-  if (r == FIDO_ERR_PIN_REQUIRED) {
+
+  /* Some form of UV required; built-in UV failed or is not available. */
+  if ((devopts & PIN_SET) &&
+      (r == FIDO_ERR_PIN_REQUIRED || r == FIDO_ERR_UV_BLOCKED)) {
     n = snprintf(prompt, sizeof(prompt), "Enter PIN for %s: ", path);
     if (n < 0 || (size_t) n >= sizeof(prompt)) {
       fprintf(stderr, "error: snprintf prompt");
@@ -533,7 +549,7 @@ int main(int argc, char *argv[]) {
   if ((cred = prepare_cred(&args)) == NULL)
     goto err;
 
-  if (make_cred(path, dev, cred) != 0 || verify_cred(cred) != 0 ||
+  if (make_cred(path, dev, cred, devopts) != 0 || verify_cred(cred) != 0 ||
       print_authfile_line(&args, cred) != 0)
     goto err;
 
