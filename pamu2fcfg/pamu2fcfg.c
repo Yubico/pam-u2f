@@ -199,7 +199,8 @@ static int make_cred(const struct args *args, const char *path, fido_dev_t *dev,
 
   /* Some form of UV required; built-in UV failed or is not available. */
   if ((devopts & PIN_SET) &&
-      (r == FIDO_ERR_PIN_REQUIRED || r == FIDO_ERR_UV_BLOCKED)) {
+      (r == FIDO_ERR_PIN_REQUIRED || r == FIDO_ERR_UV_BLOCKED ||
+       r == FIDO_ERR_PIN_BLOCKED)) {
     n = snprintf(prompt, sizeof(prompt), "Enter PIN for %s: ", path);
     if (n < 0 || (size_t) n >= sizeof(prompt)) {
       fprintf(stderr, "error: snprintf prompt");
