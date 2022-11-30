@@ -365,6 +365,12 @@ configuration line that can be directly used with the module. For
 additional information on the tool read the relative manpage (`man
 pamu2fcfg`).
 
+For authenticator management (e.g. setting a PIN, enrolling fingerprints, and
+more), please refer to
+https://developers.yubico.com/libfido2/Manuals/fido2-token.html[`fido2-token`],
+https://developers.yubico.com/yubikey-manager[`yubikey-manager`], or some other
+suitable tool.
+
 === SSH Credentials
 
 To generate SSH credentials OpenSSH version 8.2 or later is required.

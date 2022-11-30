@@ -59,7 +59,7 @@ Useful for appending.
 Report pamu2fcfg bugs in the issue tracker: https://github.com/Yubico/pam-u2f/issues
 
 == SEE ALSO
-*pam_u2f*(8), *pam*(7)
+*pam_u2f*(8), *pam*(7), *fido2-token*(1)
 
 The pam-u2f home page: https://developers.yubico.com/pam-u2f/
 
