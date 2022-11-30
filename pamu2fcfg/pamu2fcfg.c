@@ -170,8 +170,8 @@ err:
   return cred;
 }
 
-static int make_cred(const char *path, fido_dev_t *dev, fido_cred_t *cred,
-                     int devopts) {
+static int make_cred(const struct args *args, const char *path, fido_dev_t *dev,
+                     fido_cred_t *cred, int devopts) {
   char prompt[BUFSIZE];
   char pin[BUFSIZE];
   int n;
@@ -183,14 +183,19 @@ static int make_cred(const char *path, fido_dev_t *dev, fido_cred_t *cred,
   }
 
   /* Some form of UV required; built-in UV is available. */
-  if ((devopts & (UV_SET | UV_NOT_REQD)) == UV_SET) {
+  if (args->user_verification || (devopts & (UV_SET | UV_NOT_REQD)) == UV_SET) {
     if ((r = fido_cred_set_uv(cred, FIDO_OPT_TRUE)) != FIDO_OK) {
       fprintf(stderr, "error: fido_cred_set_uv: %s (%d)\n", fido_strerr(r), r);
       return -1;
     }
   }
 
-  r = fido_dev_make_cred(dev, cred, NULL);
+  /* Let built-in UV have precedence over PIN. No UV also handled here. */
+  if (args->user_verification || !args->pin_verification) {
+    r = fido_dev_make_cred(dev, cred, NULL);
+  } else {
+    r = FIDO_ERR_PIN_REQUIRED;
+  }
 
   /* Some form of UV required; built-in UV failed or is not available. */
   if ((devopts & PIN_SET) &&
@@ -549,8 +554,8 @@ int main(int argc, char *argv[]) {
   if ((cred = prepare_cred(&args)) == NULL)
     goto err;
 
-  if (make_cred(path, dev, cred, devopts) != 0 || verify_cred(cred) != 0 ||
-      print_authfile_line(&args, cred) != 0)
+  if (make_cred(&args, path, dev, cred, devopts) != 0 ||
+      verify_cred(cred) != 0 || print_authfile_line(&args, cred) != 0)
     goto err;
 
   exit_code = EXIT_SUCCESS;
