@@ -5,6 +5,8 @@ on: [push, pull_request]
 jobs:
   format:
     runs-on: ubuntu-22.04
+    env:
+      CLANG_FORMAT_VERSION: -14
     steps:
     - uses: actions/checkout@v3
       with:
@@ -12,7 +14,7 @@ jobs:
     - name: Dependencies
       run: |
         sudo apt -q update
-        sudo apt install -q -y clang-format
+        sudo apt install -q -y "clang-format${CLANG_FORMAT_VERSION}"
     - name: Check
       run: |
         if [[ -n "${GITHUB_BASE_REF}" ]]; then
