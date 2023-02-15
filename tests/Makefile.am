@@ -13,4 +13,7 @@ dlsym_check_LDFLAGS = -ldl $(AM_LDFLAGS)
 check_PROGRAMS += get_devices
 get_devices_LDADD = $(top_builddir)/libmodule.la
 
+check_PROGRAMS += expand
+expand_LDADD = $(top_builddir)/libmodule.la
+
 TESTS = $(check_PROGRAMS)
