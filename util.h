@@ -35,6 +35,7 @@ typedef struct {
   int userverification;
   int pinverification;
   int sshformat;
+  int expand;
   const char *auth_file;
   const char *authpending_file;
   const char *origin;

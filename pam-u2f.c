@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2014-2021 Yubico AB - See COPYING
+ *  Copyright (C) 2014-2023 Yubico AB - See COPYING
  */
 
 /* Define which PAM interfaces we provide */
@@ -23,6 +23,8 @@
 #include "debug.h"
 #include "drop_privs.h"
 #include "util.h"
+
+#define free_const(a) free((void *) (uintptr_t) (a))
 
 /* If secure_getenv is not defined, define it here */
 #ifndef HAVE_SECURE_GETENV
@@ -61,6 +63,8 @@ static void parse_cfg(int flags, int argc, const char **argv, cfg_t *cfg) {
       cfg->cue = 1;
     } else if (strcmp(argv[i], "nodetect") == 0) {
       cfg->nodetect = 1;
+    } else if (strcmp(argv[i], "expand") == 0) {
+      cfg->expand = 1;
     } else if (strncmp(argv[i], "userpresence=", 13) == 0) {
       sscanf(argv[i], "userpresence=%d", &cfg->userpresence);
     } else if (strncmp(argv[i], "userverification=", 17) == 0) {
@@ -106,6 +110,7 @@ static void parse_cfg(int flags, int argc, const char **argv, cfg_t *cfg) {
   debug_dbg(cfg, "openasuser=%d", cfg->openasuser);
   debug_dbg(cfg, "alwaysok=%d", cfg->alwaysok);
   debug_dbg(cfg, "sshformat=%d", cfg->sshformat);
+  debug_dbg(cfg, "expand=%d", cfg->expand);
   debug_dbg(cfg, "authfile=%s", cfg->auth_file ? cfg->auth_file : "(null)");
   debug_dbg(cfg, "authpending_file=%s",
             cfg->authpending_file ? cfg->authpending_file : "(null)");
@@ -256,13 +261,27 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
   debug_dbg(cfg, "Found user %s", user);
   debug_dbg(cfg, "Home directory for %s is %s", user, pw->pw_dir);
 
+  // Perform variable expansion.
+  if (cfg->expand && cfg->auth_file) {
+    if ((cfg->auth_file = expand_variables(cfg->auth_file, user)) == NULL) {
+      debug_dbg(cfg, "Failed to perform variable expansion");
+      retval = PAM_AUTHINFO_UNAVAIL;
+      goto done;
+    }
+    should_free_auth_file = 1;
+  }
+  // Resolve default or relative paths.
   if (!cfg->auth_file || cfg->auth_file[0] != '/') {
-    if ((cfg->auth_file = resolve_authfile_path(cfg, pw, &openasuser)) ==
-        NULL) {
+    char *tmp = resolve_authfile_path(cfg, pw, &openasuser);
+    if (tmp == NULL) {
       debug_dbg(cfg, "Could not resolve authfile path");
       retval = PAM_IGNORE;
       goto done;
     }
+    if (should_free_auth_file) {
+      free_const(cfg->auth_file);
+    }
+    cfg->auth_file = tmp;
     should_free_auth_file = 1;
   }
 
@@ -380,7 +399,6 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
 done:
   free_devices(devices, n_devices);
 
-#define free_const(a) free((void *) (uintptr_t)(a))
   if (should_free_origin) {
     free_const(cfg->origin);
     cfg->origin = NULL;
