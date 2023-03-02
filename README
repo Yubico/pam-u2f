@@ -140,6 +140,11 @@ file>> may be configured relative to the users' home dirs, e.g.
 $XDG_CONFIG_HOME/Yubico/u2f_keys. If $XDG_CONFIG_HOME is not set,
 $HOME/.config/Yubico/u2f_keys is used.
 
+expand::
+Enables variable expansion within the authfile path: `%u` is expanded to the
+local user name (`PAM_USER`) and `%%` is expanded to `%`. Unknown expansion
+sequences result in an authentication error. See also `openasuser`.
+
 authpending_file=file::
 Set the location of the file that is used for touch request
 notifications. This file will be opened when pam-u2f starts waiting
