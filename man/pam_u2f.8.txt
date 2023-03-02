@@ -72,8 +72,8 @@ Setuid to the authenticating user when opening the authfile. Useful
 when the user's home is stored on an NFS volume mounted with the
 root_squash option (which maps root to nobody which will not be able
 to read the file). Note that after release 1.0.8 this is done by
-default when no global authfile or XDG_CONFIG_HOME environment
-variable has been set.
+default when no global authfile (path is absolute) or XDG_CONFIG_HOME
+environment variable has been set.
 
 *alwaysok*::
 Set to enable all authentication attempts to succeed (aka presentation
