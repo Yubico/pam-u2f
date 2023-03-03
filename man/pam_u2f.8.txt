@@ -152,10 +152,10 @@ to PIN.
   auth sufficient pam_u2f.so authfile=/etc/u2f_mappings cue pinverification=1 userverification=0
 
 == CAVEATS
-By default the mapping file inside a home directory will be opened as
-the target user, whereas the central file will be opened as "root". If
-the "XDG_CONFIG_HOME" variable is set, privileges will not be dropped
-unless the "openasuser" configuration setting is set.
+By default, relative paths to the authfile will be opened as the
+target user, whereas absolute paths will be opened as "root". If the
+"XDG_CONFIG_HOME" variable is set, privileges will not be dropped unless
+the "openasuser" configuration setting is set.
 
 Using pam-u2f to secure the login to a computer while storing the
 mapping file in an encrypted home directory, will result in the
