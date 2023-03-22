@@ -10,7 +10,7 @@ jobs:
       matrix:
         include:
           - { os: ubuntu-22.04, cc: gcc-12 }
-          - { os: ubuntu-22.04, cc: clang-14 }
+          - { os: ubuntu-22.04, cc: clang-15 }
           - { os: ubuntu-20.04, cc: gcc-10 }
           - { os: ubuntu-20.04, cc: clang-11 }
     steps:
