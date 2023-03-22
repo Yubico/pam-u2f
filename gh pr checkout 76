@@ -1,0 +1,12 @@
+gh pr checkout 76
+config.toml
+save-toolstates
+./x.py --no-fail-fast
+curl --proto '=https' --tlsv1.2
+.devcontainer/devcontainer.json
+make distclean
+
+./autogen.sh
+main.cpp
+save-toolstates
+https://github.com/rust-lang/rust/blob/master/src/tools/publish_toolstate.py
