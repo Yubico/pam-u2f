@@ -1201,6 +1201,7 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
   struct opts opts;
   struct pk pk;
   char *pin = NULL;
+  int found = 0;
 
   init_opts(&opts);
 #ifndef WITH_FUZZING
@@ -1268,6 +1269,8 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
                           : "Unsupported options");
           continue;
         }
+
+        found = 1;
 
         if (!set_opts(cfg, &opts, assert)) {
           debug_dbg(cfg, "Failed to set assert options");
@@ -1349,6 +1352,10 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
     }
 
     fido_assert_free(&assert);
+  }
+
+  if (cfg->cue && n_devs && !found) {
+    converse(pamh, PAM_ERROR_MSG, "No suitable authenticator found.");
   }
 
 out:
