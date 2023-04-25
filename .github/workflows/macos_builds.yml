@@ -8,7 +8,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ macos-11, macos-12 ]
+        os: [ macos-11, macos-12, macos-13 ]
         cc: [ clang ]
     steps:
     - uses: actions/checkout@v3
