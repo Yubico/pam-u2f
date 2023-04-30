@@ -30,6 +30,7 @@ typedef struct {
   char *keyHandle;
   char *coseType;
   char *attributes;
+  char *enc_authtok;
   int old_format;
 } device_t;
 

@@ -43,6 +43,8 @@ static void cfg_load_arg(cfg_t *cfg, const char *arg) {
     cfg->nodetect = 1;
   } else if (strcmp(arg, "expand") == 0) {
     cfg->expand = 1;
+  } else if (strcmp(arg, "allowauthtok") == 0) {
+    cfg->allowauthtok = 1;
   } else if (strncmp(arg, "userpresence=", strlen("userpresence=")) == 0) {
     sscanf(arg, "userpresence=%d", &cfg->userpresence);
   } else if (strncmp(arg, "userverification=", strlen("userverification=")) ==
@@ -288,6 +290,7 @@ exit:
     debug_dbg(cfg, "alwaysok=%d", cfg->alwaysok);
     debug_dbg(cfg, "sshformat=%d", cfg->sshformat);
     debug_dbg(cfg, "expand=%d", cfg->expand);
+    debug_dbg(cfg, "allowauthtok=%d", cfg->allowauthtok);
     debug_dbg(cfg, "authfile=%s", cfg->auth_file ? cfg->auth_file : "(null)");
     debug_dbg(cfg, "authpending_file=%s",
               cfg->authpending_file ? cfg->authpending_file : "(null)");
