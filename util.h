@@ -36,6 +36,7 @@ typedef struct {
   int pinverification;
   int sshformat;
   int expand;
+  int allowauthtok;
   const char *auth_file;
   const char *authpending_file;
   const char *origin;
@@ -50,6 +51,7 @@ typedef struct {
   char *keyHandle;
   char *coseType;
   char *attributes;
+  char *enc_authtok;
   int old_format;
 } device_t;
 

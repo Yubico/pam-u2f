@@ -65,6 +65,8 @@ static void parse_cfg(int flags, int argc, const char **argv, cfg_t *cfg) {
       cfg->nodetect = 1;
     } else if (strcmp(argv[i], "expand") == 0) {
       cfg->expand = 1;
+    } else if (strcmp(argv[i], "allowauthtok") == 0) {
+      cfg->allowauthtok = 1;
     } else if (strncmp(argv[i], "userpresence=", 13) == 0) {
       sscanf(argv[i], "userpresence=%d", &cfg->userpresence);
     } else if (strncmp(argv[i], "userverification=", 17) == 0) {
@@ -111,6 +113,7 @@ static void parse_cfg(int flags, int argc, const char **argv, cfg_t *cfg) {
   debug_dbg(cfg, "alwaysok=%d", cfg->alwaysok);
   debug_dbg(cfg, "sshformat=%d", cfg->sshformat);
   debug_dbg(cfg, "expand=%d", cfg->expand);
+  debug_dbg(cfg, "allowauthtok=%d", cfg->allowauthtok);
   debug_dbg(cfg, "authfile=%s", cfg->auth_file ? cfg->auth_file : "(null)");
   debug_dbg(cfg, "authpending_file=%s",
             cfg->authpending_file ? cfg->authpending_file : "(null)");
