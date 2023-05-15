@@ -95,8 +95,6 @@ int get_authtok(const fido_assert_t *assert, const char *enc_authtok,
   unsigned char *buf = NULL;
   size_t buf_len;
   const unsigned char *key;
-  size_t key_len;
-  size_t stmt_count;
   int ok = 0;
 
   *authtok = NULL;
@@ -106,14 +104,14 @@ int get_authtok(const fido_assert_t *assert, const char *enc_authtok,
     goto err;
   }
 
-  if ((stmt_count = fido_assert_count(assert)) != 1) {
+  if (fido_assert_count(assert) != 1) {
     goto err;
   }
 
   if ((key = fido_assert_hmac_secret_ptr(assert, 0)) == NULL) {
     goto err;
   }
-  if ((key_len = fido_assert_hmac_secret_len(assert, 0)) != HMAC_SECRET_SIZE) {
+  if (fido_assert_hmac_secret_len(assert, 0) != HMAC_SECRET_SIZE) {
     goto err;
   }
 

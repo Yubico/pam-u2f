@@ -190,9 +190,11 @@ static int parse_native_credential(const cfg_t *cfg, char *s, device_t *cred) {
     cred->old_format = 1;
     type = "es256";
     attr = "+presence";
+    enc_authtok = "*";
   } else if ((attr = strtok_r(NULL, delim, &saveptr)) == NULL) {
     debug_dbg(cfg, "Empty attributes");
     attr = "";
+    enc_authtok = "*";
   } else if ((enc_authtok = strtok_r(NULL, delim, &saveptr)) == NULL) {
     debug_dbg(cfg, "Missing encrypted auth token");
     enc_authtok = "*";
