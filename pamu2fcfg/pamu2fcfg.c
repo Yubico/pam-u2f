@@ -571,7 +571,7 @@ int main(int argc, char *argv[]) {
   int devopts = 0;
   int r;
   unsigned char *enc_authtok = NULL;
-  size_t enc_authtok_len;
+  size_t enc_authtok_len = 0;
 
   parse_args(argc, argv, &args);
   fido_init(args.debug ? FIDO_DEBUG : 0);
