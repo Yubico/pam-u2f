@@ -11,7 +11,7 @@ infrastructure.
 [[building]]
 == Building
 
-You may get the signed release tarballs from the Yubico's
+You may get signed release tarballs from Yubico's
 https://developers.yubico.com/pam-u2f/Releases['release page'].
 
 This project uses 'autoconf', 'automake', 'pkg-config' and 'libtool'
