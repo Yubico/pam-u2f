@@ -13,7 +13,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: dependencies
-      run: brew install check cmake help2man mandoc openssl@1.1 pkg-config automake
+      run: brew install check cmake help2man libfido2 mandoc pkg-config automake
     - name: build
       env:
         CC: ${{ matrix.cc }}
