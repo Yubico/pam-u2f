@@ -171,31 +171,31 @@ static void reset_device(device_t *device) {
 static int parse_native_credential(const cfg_t *cfg, char *s, device_t *cred) {
   const char *delim = ",";
   const char *kh, *pk, *type, *attr, *enc_authtok;
-  char *saveptr = NULL;
+  char *saveptr = s;
 
   memset(cred, 0, sizeof(*cred));
 
-  if ((kh = strtok_r(s, delim, &saveptr)) == NULL) {
+  if ((kh = strsep(&saveptr, delim)) == NULL) {
     debug_dbg(cfg, "Missing key handle");
     goto fail;
   }
 
-  if ((pk = strtok_r(NULL, delim, &saveptr)) == NULL) {
+  if ((pk = strsep(&saveptr, delim)) == NULL) {
     debug_dbg(cfg, "Missing public key");
     goto fail;
   }
 
-  if ((type = strtok_r(NULL, delim, &saveptr)) == NULL) {
+  if ((type = strsep(&saveptr, delim)) == NULL) {
     debug_dbg(cfg, "Old format, assume es256 and +presence");
     cred->old_format = 1;
     type = "es256";
     attr = "+presence";
     enc_authtok = "*";
-  } else if ((attr = strtok_r(NULL, delim, &saveptr)) == NULL) {
+  } else if ((attr = strsep(&saveptr, delim)) == NULL) {
     debug_dbg(cfg, "Empty attributes");
     attr = "";
     enc_authtok = "*";
-  } else if ((enc_authtok = strtok_r(NULL, delim, &saveptr)) == NULL) {
+  } else if ((enc_authtok = strsep(&saveptr, delim)) == NULL) {
     debug_dbg(cfg, "Missing encrypted auth token");
     enc_authtok = "*";
   }
@@ -228,13 +228,13 @@ static int parse_native_format(const cfg_t *cfg, const char *username,
   int r = 0;
 
   while ((len = getline(&buf, &bufsiz, opwfile)) != -1) {
-    char *saveptr = NULL;
+    char *saveptr = buf;
     if (len > 0 && buf[len - 1] == '\n')
       buf[len - 1] = '\0';
 
     debug_dbg(cfg, "Read %zu bytes", len);
 
-    s_user = strtok_r(buf, ":", &saveptr);
+    s_user = strsep(&saveptr, ":");
     if (s_user && strcmp(username, s_user) == 0) {
       debug_dbg(cfg, "Matched user: %s", s_user);
 
@@ -245,7 +245,7 @@ static int parse_native_format(const cfg_t *cfg, const char *username,
       *n_devs = 0;
 
       i = 0;
-      while ((s_credential = strtok_r(NULL, ":", &saveptr))) {
+      while ((s_credential = strsep(&saveptr, ":"))) {
         if ((*n_devs)++ > cfg->max_devs - 1) {
           *n_devs = cfg->max_devs;
           debug_dbg(cfg,
@@ -837,8 +837,7 @@ static int get_authenticators(const cfg_t *cfg, const fido_dev_info_t *devlist,
     } else {
       r = fido_dev_get_assert(dev, assert, NULL);
       if ((!fido_dev_is_fido2(dev) && r == FIDO_ERR_USER_PRESENCE_REQUIRED) ||
-          (fido_dev_is_fido2(dev) &&
-           (r == FIDO_OK || r == FIDO_ERR_UP_REQUIRED))) {
+          (fido_dev_is_fido2(dev) && r == FIDO_OK)) {
         authlist[j++] = dev;
         debug_dbg(cfg, "Found key in authenticator %zu", i);
         return (1);
@@ -973,13 +972,41 @@ static int set_cdh(const cfg_t *cfg, fido_assert_t *assert) {
   return 1;
 }
 
+static int set_hmac_secret(const cfg_t *cfg, fido_assert_t *assert,
+                           const char *b64_enc_authtok) {
+  unsigned char *enc_authtok = NULL;
+  size_t enc_authtok_len;
+  int ok = 0;
+
+  if (!b64_decode(b64_enc_authtok, (void **) &enc_authtok, &enc_authtok_len) ||
+      enc_authtok_len < HMAC_SALT_SIZE + AEAD_TAG_SIZE) {
+    debug_dbg(cfg, "Failed to decode encrypted auth token");
+    goto err;
+  }
+
+  if (fido_assert_set_extensions(assert, FIDO_EXT_HMAC_SECRET) != FIDO_OK) {
+    debug_dbg(cfg, "Failed to set extensions");
+    goto err;
+  }
+
+  if (fido_assert_set_hmac_salt(assert, enc_authtok, HMAC_SALT_SIZE) !=
+      FIDO_OK) {
+    debug_dbg(cfg, "Failed to set hmac salt");
+    goto err;
+  }
+
+  ok = 1;
+
+err:
+  free(enc_authtok);
+  return ok;
+}
+
 static fido_assert_t *prepare_assert(const cfg_t *cfg, const device_t *device,
                                      const struct opts *opts) {
   fido_assert_t *assert = NULL;
   unsigned char *buf = NULL;
   size_t buf_len;
-  unsigned char *enc_authtok = NULL;
-  size_t enc_authtok_len;
   int ok = 0;
   int r;
 
@@ -1024,26 +1051,6 @@ static fido_assert_t *prepare_assert(const cfg_t *cfg, const device_t *device,
     goto err;
   }
 
-  if (cfg->allowauthtok && strcmp(device->enc_authtok, "*") != 0) {
-    if (!b64_decode(device->enc_authtok, (void **) &enc_authtok,
-                    &enc_authtok_len) ||
-        enc_authtok_len < HMAC_SALT_SIZE + AEAD_TAG_SIZE) {
-      debug_dbg(cfg, "Failed to decode encrypted auth token");
-      goto err;
-    }
-
-    if (fido_assert_set_extensions(assert, FIDO_EXT_HMAC_SECRET) != FIDO_OK) {
-      debug_dbg(cfg, "Failed to set extensions");
-      goto err;
-    }
-
-    if (fido_assert_set_hmac_salt(assert, enc_authtok, HMAC_SALT_SIZE) !=
-        FIDO_OK) {
-      debug_dbg(cfg, "Failed to set hmac salt");
-      goto err;
-    }
-  }
-
   ok = 1;
 
 err:
@@ -1051,7 +1058,6 @@ err:
     fido_assert_free(&assert);
 
   free(buf);
-  free(enc_authtok);
 
   return assert;
 }
@@ -1258,6 +1264,13 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
         if (!set_cdh(cfg, assert)) {
           debug_dbg(cfg, "Failed to reset client data hash");
           goto out;
+        }
+
+        if (cfg->allowauthtok && strcmp(devices[i].enc_authtok, "*") != 0) {
+          if (!set_hmac_secret(cfg, assert, devices[i].enc_authtok)) {
+            debug_dbg(cfg, "Failed to set hmac secret");
+            goto out;
+          }
         }
 
         if (opts.pin == FIDO_OPT_TRUE) {

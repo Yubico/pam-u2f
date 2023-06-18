@@ -247,24 +247,32 @@ static int make_cred(const struct args *args, const char *path, fido_dev_t *dev,
       goto err;
     }
 
-    if (args->pam_userpresence == 0 && args->no_user_presence) {
-      fprintf(stderr, "error: user presence is required for auth token\n");
-      goto err;
-    }
-
-    if (args->pam_userverification == 1 || args->user_verification == 1) {
+    if (args->pam_userverification || args->user_verification) {
       uv = FIDO_OPT_TRUE;
-    } else if (args->pam_userverification == 0)
+    } else if (!args->pam_userverification)
       uv = FIDO_OPT_FALSE;
     else {
       uv = FIDO_OPT_OMIT;
     }
 
-    if (args->pam_pinverification == 1 || args->pin_verification == 1) {
+    if (args->pam_pinverification || args->pin_verification) {
+      /* Even if we didn't use a pin to make the credential, if eventually PAM
+       * requires a pin during authentication, we must use a pin to generate the
+       * HMAC secret. */
       if (pin == NULL) {
-        fprintf(stderr,
-                "error: pin verification is required but no pin is found\n");
-        goto err;
+        n = snprintf(prompt, sizeof(prompt), "Enter PIN for %s: ", path);
+        if (n < 0 || (size_t) n >= sizeof(prompt)) {
+          fprintf(stderr, "error: snprintf prompt\n");
+          goto err;
+        }
+        if ((pin = malloc(BUFSIZE)) == NULL) {
+          fprintf(stderr, "error: malloc\n");
+          goto err;
+        }
+        if (!readpassphrase(prompt, pin, BUFSIZE, RPP_ECHO_OFF)) {
+          fprintf(stderr, "error: failed to read pin\n");
+          goto err;
+        }
       }
       use_pin = 1;
     } else {
@@ -574,6 +582,11 @@ int main(int argc, char *argv[]) {
   size_t enc_authtok_len = 0;
 
   parse_args(argc, argv, &args);
+  if (args.authtok && args.no_user_presence) {
+    fprintf(stderr, "error: user presence is required for auth token\n");
+    goto err;
+  }
+
   fido_init(args.debug ? FIDO_DEBUG : 0);
 
   devlist = fido_dev_info_new(64);
