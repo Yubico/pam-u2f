@@ -1,7 +1,5 @@
 #include <fido.h>
-#include <fido/types.h>
 #include <openssl/evp.h>
-#include <stdio.h>
 
 #include "authtok.h"
 #include "b64.h"
@@ -13,7 +11,6 @@ encrypt_authtok(const unsigned char *plaintext, size_t plaintext_len,
                 unsigned char *ciphertext /* equal to plaintext_len */
 ) {
   EVP_CIPHER_CTX *ctx = NULL;
-  EVP_CIPHER *cipher = NULL;
   int len;
   int retval = 0;
   unsigned char iv[12] = {0};
@@ -21,10 +18,7 @@ encrypt_authtok(const unsigned char *plaintext, size_t plaintext_len,
   if (!(ctx = EVP_CIPHER_CTX_new())) {
     goto err;
   }
-  if (!(cipher = EVP_CIPHER_fetch(NULL, "AES-256-GCM", NULL))) {
-    goto err;
-  }
-  if (!EVP_EncryptInit_ex2(ctx, cipher, key, iv, NULL)) {
+  if (!EVP_EncryptInit_ex(ctx, EVP_aes_256_gcm(), NULL, key, iv)) {
     goto err;
   }
   if (plaintext_len > INT_MAX) {
@@ -44,7 +38,6 @@ encrypt_authtok(const unsigned char *plaintext, size_t plaintext_len,
 
 err:
   EVP_CIPHER_CTX_free(ctx);
-  EVP_CIPHER_free(cipher);
   return retval;
 }
 
@@ -55,7 +48,6 @@ decrypt_authtok(const unsigned char *ciphertext, size_t ciphertext_len,
                 unsigned char *plaintext  /* equal to ciphertext_len */
 ) {
   EVP_CIPHER_CTX *ctx = NULL;
-  EVP_CIPHER *cipher = NULL;
   int len;
   int retval = 0;
   unsigned char iv[12] = {0};
@@ -63,10 +55,7 @@ decrypt_authtok(const unsigned char *ciphertext, size_t ciphertext_len,
   if (!(ctx = EVP_CIPHER_CTX_new())) {
     goto err;
   }
-  if (!(cipher = EVP_CIPHER_fetch(NULL, "AES-256-GCM", NULL))) {
-    goto err;
-  }
-  if (!EVP_DecryptInit_ex2(ctx, cipher, key, iv, NULL)) {
+  if (!EVP_DecryptInit_ex(ctx, EVP_aes_256_gcm(), NULL, key, iv)) {
     goto err;
   }
   if (ciphertext_len > INT_MAX) {
@@ -86,7 +75,6 @@ decrypt_authtok(const unsigned char *ciphertext, size_t ciphertext_len,
 
 err:
   EVP_CIPHER_CTX_free(ctx);
-  EVP_CIPHER_free(cipher);
   return retval;
 }
 
@@ -146,13 +134,17 @@ static int get_hmac_secret(fido_dev_t *dev, fido_cred_t *cred, fido_opt_t uv,
                            const char *pin, const unsigned char *salt,
                            unsigned char *secret) {
   fido_assert_t *assert = NULL;
-  unsigned char cdh[32] = {0};
+  unsigned char cdh[32];
   const unsigned char *kh = NULL;
   const unsigned char *hmac_secret;
   size_t kh_len;
   size_t hmac_secret_len;
   const char *id;
   int retval = 0;
+
+  if (!random_bytes(cdh, sizeof(cdh))) {
+    goto err;
+  }
 
   if ((assert = fido_assert_new()) == NULL) {
     goto err;
@@ -199,6 +191,11 @@ static int get_hmac_secret(fido_dev_t *dev, fido_cred_t *cred, fido_opt_t uv,
   }
 
   if (fido_assert_count(assert) != 1) {
+    goto err;
+  }
+
+  if (fido_assert_verify(assert, 0, fido_cred_type(cred),
+                         fido_cred_pubkey_ptr(cred)) != FIDO_OK) {
     goto err;
   }
 
