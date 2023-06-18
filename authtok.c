@@ -1,3 +1,4 @@
+#include <string.h>
 #include <fido.h>
 #include <openssl/evp.h>
 
