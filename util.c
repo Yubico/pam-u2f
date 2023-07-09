@@ -1188,6 +1188,7 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
   char *pin = NULL;
   char *authtok;
   size_t authtok_len;
+  int enable_authtok;
 
   init_opts(&opts);
 #ifndef WITH_FUZZING
@@ -1266,7 +1267,17 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
           goto out;
         }
 
+        enable_authtok = 0;
         if (cfg->allowauthtok && strcmp(devices[i].enc_authtok, "*") != 0) {
+          if (opts.pin == FIDO_OPT_TRUE || opts.uv == FIDO_OPT_TRUE) {
+            enable_authtok = 1;
+          } else {
+            debug_dbg(cfg, "Skipping auth token decryption because neither PIN "
+                           "nor UV is set");
+          }
+        }
+
+        if (enable_authtok) {
           if (!set_hmac_secret(cfg, assert, devices[i].enc_authtok)) {
             debug_dbg(cfg, "Failed to set hmac secret");
             goto out;
@@ -1303,7 +1314,7 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
           }
           r = fido_assert_verify(assert, 0, pk.type, pk.ptr);
           if (r == FIDO_OK) {
-            if (cfg->allowauthtok && strcmp(devices[i].enc_authtok, "*") != 0) {
+            if (enable_authtok) {
               if (get_authtok(assert, devices[i].enc_authtok, &authtok,
                               &authtok_len)) {
                 pam_set_item(pamh, PAM_AUTHTOK, authtok);
