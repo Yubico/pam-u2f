@@ -200,8 +200,23 @@ static int make_cred(const struct args *args, const char *path, fido_dev_t *dev,
     goto err;
   }
 
+  /* Calculate the form of verification we need */
+  if (args->authtok) {
+    if (args->pam_userverification == 1 || args->user_verification) {
+      uv = FIDO_OPT_TRUE;
+    } else if (args->pam_userverification == 0)
+      uv = FIDO_OPT_FALSE;
+    else {
+      uv = FIDO_OPT_OMIT;
+    }
+    use_pin = args->pam_pinverification == 1 || args->pin_verification;
+  } else {
+    uv = args->user_verification ? FIDO_OPT_TRUE : FIDO_OPT_FALSE;
+    use_pin = args->pin_verification;
+  }
+
   /* Some form of UV required; built-in UV is available. */
-  if (args->user_verification || (devopts & (UV_SET | UV_NOT_REQD)) == UV_SET) {
+  if (uv == FIDO_OPT_TRUE || (devopts & (UV_SET | UV_NOT_REQD)) == UV_SET) {
     if ((r = fido_cred_set_uv(cred, FIDO_OPT_TRUE)) != FIDO_OK) {
       fprintf(stderr, "error: fido_cred_set_uv: %s (%d)\n", fido_strerr(r), r);
       goto err;
@@ -209,30 +224,35 @@ static int make_cred(const struct args *args, const char *path, fido_dev_t *dev,
   }
 
   /* Let built-in UV have precedence over PIN. No UV also handled here. */
-  if (args->user_verification || !args->pin_verification) {
+  if (uv == FIDO_OPT_TRUE || !use_pin) {
     r = fido_dev_make_cred(dev, cred, NULL);
   } else {
     r = FIDO_ERR_PIN_REQUIRED;
   }
 
   /* Some form of UV required; built-in UV failed or is not available. */
-  if ((devopts & PIN_SET) &&
-      (r == FIDO_ERR_PIN_REQUIRED || r == FIDO_ERR_UV_BLOCKED ||
-       r == FIDO_ERR_PIN_BLOCKED)) {
-    n = snprintf(prompt, sizeof(prompt), "Enter PIN for %s: ", path);
-    if (n < 0 || (size_t) n >= sizeof(prompt)) {
-      fprintf(stderr, "error: snprintf prompt\n");
+  if (r == FIDO_ERR_PIN_REQUIRED || r == FIDO_ERR_UV_BLOCKED ||
+      r == FIDO_ERR_PIN_BLOCKED) {
+    if (devopts & PIN_SET) {
+      n = snprintf(prompt, sizeof(prompt), "Enter PIN for %s: ", path);
+      if (n < 0 || (size_t) n >= sizeof(prompt)) {
+        fprintf(stderr, "error: snprintf prompt\n");
+        goto err;
+      }
+      if ((pin = malloc(BUFSIZE)) == NULL) {
+        fprintf(stderr, "error: malloc\n");
+        goto err;
+      }
+      if (!readpassphrase(prompt, pin, BUFSIZE, RPP_ECHO_OFF)) {
+        fprintf(stderr, "error: failed to read pin\n");
+        goto err;
+      }
+      r = fido_dev_make_cred(dev, cred, pin);
+    } else {
+      fprintf(stderr, "error: pin verification is required but no pin is set "
+                      "on the authenticator");
       goto err;
     }
-    if ((pin = malloc(BUFSIZE)) == NULL) {
-      fprintf(stderr, "error: malloc\n");
-      goto err;
-    }
-    if (!readpassphrase(prompt, pin, BUFSIZE, RPP_ECHO_OFF)) {
-      fprintf(stderr, "error: failed to read pin\n");
-      goto err;
-    }
-    r = fido_dev_make_cred(dev, cred, pin);
   }
 
   if (r != FIDO_OK) {
@@ -247,40 +267,7 @@ static int make_cred(const struct args *args, const char *path, fido_dev_t *dev,
       goto err;
     }
 
-    if (args->pam_userverification || args->user_verification) {
-      uv = FIDO_OPT_TRUE;
-    } else if (!args->pam_userverification)
-      uv = FIDO_OPT_FALSE;
-    else {
-      uv = FIDO_OPT_OMIT;
-    }
-
-    if (args->pam_pinverification || args->pin_verification) {
-      /* Even if we didn't use a pin to make the credential, if eventually PAM
-       * requires a pin during authentication, we must use a pin to generate the
-       * HMAC secret. */
-      if (pin == NULL) {
-        n = snprintf(prompt, sizeof(prompt), "Enter PIN for %s: ", path);
-        if (n < 0 || (size_t) n >= sizeof(prompt)) {
-          fprintf(stderr, "error: snprintf prompt\n");
-          goto err;
-        }
-        if ((pin = malloc(BUFSIZE)) == NULL) {
-          fprintf(stderr, "error: malloc\n");
-          goto err;
-        }
-        if (!readpassphrase(prompt, pin, BUFSIZE, RPP_ECHO_OFF)) {
-          fprintf(stderr, "error: failed to read pin\n");
-          goto err;
-        }
-      }
-      use_pin = 1;
-    } else {
-      use_pin = 0;
-    }
-
-    if (!generate_encrypted_authtok(dev, cred, authtok, uv,
-                                    use_pin ? pin : NULL, enc_authtok,
+    if (!generate_encrypted_authtok(dev, cred, authtok, uv, pin, enc_authtok,
                                     enc_authtok_len)) {
       fprintf(stderr, "error: failed to generate encrypted auth token\n");
       goto err;
