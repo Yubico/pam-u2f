@@ -361,7 +361,7 @@ configuration tool provided with the module:
 
 [source, console]
 ----
-$ pamu2fcfg -uusername -opam://myorigin -ipam://myappid
+$ pamu2fcfg --username -opam://myorigin -ipam://myappid
 ----
 
 the tool will register a connected token by using the specified origin
