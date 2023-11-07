@@ -2,7 +2,7 @@
 set -ex
 
 # Link to the same OpenSSL version as libfido2.
-OPENSSL="$(brew deps --installed libfido2 | grep openssl)"
+OPENSSL="$(brew deps libfido2 | grep openssl)"
 LIBFIDO2_PKGCONF="$(brew --prefix libfido2)/lib/pkgconfig"
 OPENSSL_PKGCONF="$(brew --prefix "${OPENSSL}")/lib/pkgconfig"
 export PKG_CONFIG_PATH="${LIBFIDO2_PKGCONF}:${OPENSSL_PKGCONF}"
