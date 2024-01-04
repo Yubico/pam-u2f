@@ -21,6 +21,8 @@
 #define DEFAULT_ORIGIN_PREFIX "pam://"
 #define SSH_ORIGIN "ssh:"
 
+#define DEVLIST_LEN 64
+
 typedef struct {
   unsigned max_devs;
   int manual;

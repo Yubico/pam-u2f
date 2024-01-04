@@ -467,13 +467,13 @@ int main(int argc, char *argv[]) {
   parse_args(argc, argv, &args);
   fido_init(args.debug ? FIDO_DEBUG : 0);
 
-  devlist = fido_dev_info_new(64);
+  devlist = fido_dev_info_new(DEVLIST_LEN);
   if (!devlist) {
     fprintf(stderr, "error: fido_dev_info_new failed\n");
     goto err;
   }
 
-  r = fido_dev_info_manifest(devlist, 64, &ndevs);
+  r = fido_dev_info_manifest(devlist, DEVLIST_LEN, &ndevs);
   if (r != FIDO_OK) {
     fprintf(stderr, "Unable to discover device(s), %s (%d)\n", fido_strerr(r),
             r);
@@ -489,7 +489,7 @@ int main(int argc, char *argv[]) {
       fflush(stderr);
       sleep(FREQUENCY);
 
-      r = fido_dev_info_manifest(devlist, 64, &ndevs);
+      r = fido_dev_info_manifest(devlist, DEVLIST_LEN, &ndevs);
       if (r != FIDO_OK) {
         fprintf(stderr, "\nUnable to discover device(s), %s (%d)",
                 fido_strerr(r), r);
