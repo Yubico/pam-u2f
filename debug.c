@@ -9,11 +9,13 @@
 #include <string.h>
 #include <syslog.h>
 #include <unistd.h>
+#include <time.h>
 
 #include "debug.h"
 
 #define DEBUG_FMT "debug(pam_u2f): %s:%d (%s): %s%s"
 #define MSGLEN 2048
+#define TIMELEN 20 // Length for timestamp buffer
 
 FILE *debug_open(const char *filename) {
   struct stat st;
@@ -51,18 +53,27 @@ void debug_close(FILE *f) {
     fclose(f);
 }
 
+static void get_timestamp(char *buffer, size_t buf_size) {
+  time_t now;
+  struct tm tm_info;
+
+  time(&now);
+  localtime_r(&now, &tm_info);
+
+  strftime(buffer, buf_size, "%Y-%m-%d %H:%M:%S", &tm_info);
+}
+
 static void do_log(FILE *debug_file, const char *file, int line,
                    const char *func, const char *msg, const char *suffix) {
-#ifndef WITH_FUZZING
+  char timestamp[TIMELEN];
+
+  get_timestamp(timestamp, sizeof(timestamp));
+
   if (debug_file == NULL) {
-    syslog(LOG_AUTHPRIV | LOG_DEBUG, DEBUG_FMT, file, line, func, msg, suffix);
+    syslog(LOG_AUTHPRIV | LOG_DEBUG, "[%s] " DEBUG_FMT, timestamp, file, line, func, msg, suffix);
   } else {
-    fprintf(debug_file, DEBUG_FMT "\n", file, line, func, msg, suffix);
+    fprintf(debug_file, "[%s] " DEBUG_FMT "\n", timestamp, file, line, func, msg, suffix);
   }
-#else
-  (void) debug_file;
-  snprintf(NULL, 0, DEBUG_FMT, file, line, func, msg, suffix);
-#endif
 }
 
 ATTRIBUTE_FORMAT(printf, 5, 0)
