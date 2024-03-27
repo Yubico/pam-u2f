@@ -1256,10 +1256,9 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
           }
           r = fido_assert_verify(assert, 0, pk.type, pk.ptr);
           if (r == FIDO_OK) {
-            pam_syslog(pamh, LOG_INFO,
-                      "Successful FIDO authentication with publicKey %s (idx "
-                      "%u)",
-                      devices[i].publicKey, i);
+            syslog(LOG_AUTHPRIV | LOG_INFO,
+                   "Successful FIDO authentication with publicKey %s (idx %u)",
+                   devices[i].publicKey, i);
             retval = 1;
             goto out;
           }
