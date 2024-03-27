@@ -7,7 +7,7 @@ LIBCBOR_URL="https://github.com/pjk/libcbor"
 LIBCBOR_TAG="v0.10.2"
 LIBCBOR_CFLAGS="-fsanitize=address,alignment,bounds"
 LIBFIDO2_URL="https://github.com/Yubico/libfido2"
-LIBFIDO2_TAG="1.13.0"
+LIBFIDO2_TAG="1.14.0"
 LIBFIDO2_CFLAGS="-fsanitize=address,alignment,bounds"
 
 COMMON_CFLAGS="-g2 -fno-omit-frame-pointer"

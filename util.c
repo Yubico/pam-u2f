@@ -1157,13 +1157,13 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
 #endif
   memset(&pk, 0, sizeof(pk));
 
-  devlist = fido_dev_info_new(64);
+  devlist = fido_dev_info_new(DEVLIST_LEN);
   if (!devlist) {
     debug_dbg(cfg, "Unable to allocate devlist");
     goto out;
   }
 
-  r = fido_dev_info_manifest(devlist, 64, &ndevs);
+  r = fido_dev_info_manifest(devlist, DEVLIST_LEN, &ndevs);
   if (r != FIDO_OK) {
     debug_dbg(cfg, "Unable to discover device(s), %s (%d)", fido_strerr(r), r);
     goto out;
@@ -1173,7 +1173,7 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
 
   debug_dbg(cfg, "Device max index is %zu", ndevs);
 
-  authlist = calloc(64 + 1, sizeof(fido_dev_t *));
+  authlist = calloc(DEVLIST_LEN + 1, sizeof(fido_dev_t *));
   if (!authlist) {
     debug_dbg(cfg, "Unable to allocate authenticator list");
     goto out;
@@ -1272,13 +1272,13 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
 
     fido_dev_info_free(&devlist, ndevs);
 
-    devlist = fido_dev_info_new(64);
+    devlist = fido_dev_info_new(DEVLIST_LEN);
     if (!devlist) {
       debug_dbg(cfg, "Unable to allocate devlist");
       goto out;
     }
 
-    r = fido_dev_info_manifest(devlist, 64, &ndevs);
+    r = fido_dev_info_manifest(devlist, DEVLIST_LEN, &ndevs);
     if (r != FIDO_OK) {
       debug_dbg(cfg, "Unable to discover device(s), %s (%d)", fido_strerr(r),
                 r);

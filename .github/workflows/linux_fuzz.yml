@@ -12,7 +12,7 @@ jobs:
         cc: [clang-15]
         sanitizer: [asan]
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Dependencies
       env:
         CC: ${{ matrix.cc }}

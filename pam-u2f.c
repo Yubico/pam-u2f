@@ -212,7 +212,7 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
   }
 
   if (!cfg->appid) {
-    debug_dbg(cfg, "Appid not specified, using the same value of origin (%s)",
+    debug_dbg(cfg, "Appid not specified, using the value of origin (%s)",
               cfg->origin);
     cfg->appid = strdup(cfg->origin);
     if (!cfg->appid) {
@@ -224,7 +224,7 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
   }
 
   if (cfg->max_devs == 0) {
-    debug_dbg(cfg, "Maximum devices number not set. Using default (%d)",
+    debug_dbg(cfg, "Maximum number of devices not set. Using default (%d)",
               MAX_DEVS);
     cfg->max_devs = MAX_DEVS;
   }
@@ -242,7 +242,7 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
 
   pgu_ret = pam_get_user(pamh, &user, NULL);
   if (pgu_ret != PAM_SUCCESS || user == NULL) {
-    debug_dbg(cfg, "Unable to access user %s", user);
+    debug_dbg(cfg, "Unable to get username from PAM");
     retval = PAM_CONV_ERR;
     goto done;
   }

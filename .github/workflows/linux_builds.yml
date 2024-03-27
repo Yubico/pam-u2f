@@ -14,7 +14,7 @@ jobs:
           - { os: ubuntu-20.04, cc: gcc-10 }
           - { os: ubuntu-20.04, cc: clang-11 }
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: dependencies
       env:
         CC: ${{ matrix.cc }}
