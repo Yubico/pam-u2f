@@ -20,6 +20,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <arpa/inet.h>
+#include <signal.h>
 
 #include "b64.h"
 #include "debug.h"
@@ -1146,6 +1147,7 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
   struct opts opts;
   struct pk pk;
   char *pin = NULL;
+  sigset_t mask, omask;
 
   init_opts(&opts);
 #ifndef WITH_FUZZING
@@ -1238,7 +1240,16 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
                      cfg->cue_prompt != NULL ? cfg->cue_prompt : DEFAULT_CUE);
           }
         }
+
+        sigemptyset(&mask);
+        sigaddset(&mask, SIGINT);
+        sigaddset(&mask, SIGQUIT);
+        (void) sigprocmask(SIG_UNBLOCK, &mask, &omask);
+
         r = fido_dev_get_assert(authlist[j], assert, pin);
+
+        (void) sigprocmask(SIG_SETMASK, &omask, NULL);
+
         if (pin) {
           explicit_bzero(pin, strlen(pin));
           free(pin);
