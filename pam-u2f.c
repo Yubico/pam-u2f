@@ -434,7 +434,16 @@ done:
 
 PAM_EXTERN int pam_sm_open_session(pam_handle_t *pamh, int flags, int argc,
                                    const char **argv) {
-  return pam_sm_authenticate(pamh, flags, argc, argv);
+  int retval;
+
+  retval = pam_sm_authenticate(pamh, flags, argc, argv);
+
+  if (retval != PAM_SUCCESS) {
+    // pam_sm_open_session() requires only PAM_SUCCESS or PAM_SESSION_ERR be returned.
+    retval = PAM_SESSION_ERR;
+  }
+
+  return retval;
 }
 
 PAM_EXTERN int pam_sm_close_session(pam_handle_t *pamh, int flags, int argc,
