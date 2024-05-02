@@ -4,6 +4,7 @@
 
 /* Define which PAM interfaces we provide */
 #define PAM_SM_AUTH
+#define PAM_SM_SESSION
 
 /* Include PAM headers */
 #include <security/pam_appl.h>
@@ -429,6 +430,20 @@ done:
   cfg->debug_file = DEFAULT_DEBUG_FILE;
 
   return retval;
+}
+
+PAM_EXTERN int pam_sm_open_session(pam_handle_t *pamh, int flags, int argc,
+                                   const char **argv) {
+  return pam_sm_authenticate(pamh, flags, argc, argv);
+}
+
+PAM_EXTERN int pam_sm_close_session(pam_handle_t *pamh, int flags, int argc,
+                                    const char **argv) {
+  (void) pamh;
+  (void) flags;
+  (void) argc;
+  (void) argv;
+  return PAM_SUCCESS;
 }
 
 PAM_EXTERN int pam_sm_setcred(pam_handle_t *pamh, int flags, int argc,

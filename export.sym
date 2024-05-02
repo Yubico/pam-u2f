@@ -1,2 +1,4 @@
 pam_sm_authenticate
 pam_sm_setcred
+pam_sm_open_session
+pam_sm_close_session

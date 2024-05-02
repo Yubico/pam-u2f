@@ -16,6 +16,8 @@ int main(void) {
   assert((module = dlopen(path, RTLD_NOW)) != NULL);
   assert(dlsym(module, "pam_sm_authenticate") != NULL);
   assert(dlsym(module, "pam_sm_setcred") != NULL);
+  assert(dlsym(module, "pam_sm_open_session") != NULL);
+  assert(dlsym(module, "pam_sm_close_session") != NULL);
   assert(dlsym(module, "nonexistent") == NULL);
   assert(dlclose(module) == 0);
 
