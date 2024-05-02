@@ -57,7 +57,16 @@ run_user_verification_tests() {
 	pamtester dummy root authenticate
 }
 
+run_session_tests() {
+	echo "session required pam_u2f.so" > /etc/pam.d/dummy
+	cp /tmp/es256 ~/.config/Yubico/u2f_keys
+	pamtester dummy root open_session
+	pamtester dummy root close_session
+}
+
+
 create_keys
 run_tests
 run_user_presence_tests
 run_user_verification_tests
+run_session_tests
