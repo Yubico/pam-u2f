@@ -62,8 +62,15 @@ run_session_tests() {
 	cp /tmp/es256 ~/.config/Yubico/u2f_keys
 	pamtester dummy root open_session
 	pamtester dummy root close_session
-}
 
+	rm ~/.config/Yubico/u2f_keys
+	if pamtester dummy root open_session > /dev/null 2>&1 ; then
+		>&2 echo Error: unexpectingly succeeding opening session when it shouldn\'t.
+		exit 1
+	else
+		echo Successfully prevented opening session because no key configured.
+	fi
+}
 
 create_keys
 run_tests
