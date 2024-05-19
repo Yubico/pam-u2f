@@ -1277,6 +1277,7 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
           }
         }
 
+        debug_dbg(cfg, "enable_authtok=%d", enable_authtok);
         if (enable_authtok) {
           if (!set_hmac_secret(cfg, assert, devices[i].enc_authtok)) {
             debug_dbg(cfg, "Failed to set hmac secret");
@@ -1320,6 +1321,7 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
                 pam_set_item(pamh, PAM_AUTHTOK, authtok);
                 explicit_bzero(authtok, authtok_len);
                 free(authtok);
+                debug_dbg(cfg, "Successfully decrypted auth token");
               } else {
                 debug_dbg(cfg, "Failed to decrypt auth token");
               }
