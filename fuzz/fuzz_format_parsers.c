@@ -19,10 +19,12 @@ static void cleanup(device_t *devs, unsigned int n_devs) {
     free(devs[i].publicKey);
     free(devs[i].coseType);
     free(devs[i].attributes);
+    free(devs[i].enc_authtok);
     devs[i].keyHandle = NULL;
     devs[i].publicKey = NULL;
     devs[i].coseType = NULL;
     devs[i].attributes = NULL;
+    devs[i].enc_authtok = NULL;
   }
 }
 

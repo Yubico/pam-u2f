@@ -27,6 +27,7 @@
 
 #include "b64.h"
 #include "util.h"
+#include "authtok.h"
 
 #include "openbsd-compat.h"
 
@@ -46,6 +47,10 @@ struct args {
   int debug;
   int verbose;
   int nouser;
+  int authtok;
+  int pam_userpresence;
+  int pam_userverification;
+  int pam_pinverification;
 };
 
 static fido_cred_t *prepare_cred(const struct args *const args) {
@@ -160,6 +165,14 @@ static fido_cred_t *prepare_cred(const struct args *const args) {
     goto err;
   }
 
+  if (args->authtok) {
+    if ((r = fido_cred_set_extensions(cred, FIDO_EXT_HMAC_SECRET)) != FIDO_OK) {
+      fprintf(stderr, "error: fido_cred_set_extensions (%d) %s\n", r,
+              fido_strerr(r));
+      goto err;
+    }
+  }
+
   ok = 0;
 
 err:
@@ -171,56 +184,105 @@ err:
 }
 
 static int make_cred(const struct args *args, const char *path, fido_dev_t *dev,
-                     fido_cred_t *cred, int devopts) {
+                     fido_cred_t *cred, int devopts,
+                     unsigned char **enc_authtok, size_t *enc_authtok_len) {
   char prompt[BUFSIZE];
-  char pin[BUFSIZE];
+  char authtok[BUFSIZE];
+  char *pin = NULL;
+  fido_opt_t uv;
+  int use_pin;
   int n;
   int r;
+  int retval = -1;
 
   if (path == NULL || dev == NULL || cred == NULL) {
     fprintf(stderr, "%s: args\n", __func__);
-    return -1;
+    goto err;
+  }
+
+  /* Calculate the form of verification we need */
+  if (args->authtok) {
+    if (args->pam_userverification == 1 || args->user_verification) {
+      uv = FIDO_OPT_TRUE;
+    } else if (args->pam_userverification == 0)
+      uv = FIDO_OPT_FALSE;
+    else {
+      uv = FIDO_OPT_OMIT;
+    }
+    use_pin = args->pam_pinverification == 1 || args->pin_verification;
+  } else {
+    uv = args->user_verification ? FIDO_OPT_TRUE : FIDO_OPT_FALSE;
+    use_pin = args->pin_verification;
   }
 
   /* Some form of UV required; built-in UV is available. */
-  if (args->user_verification || (devopts & (UV_SET | UV_NOT_REQD)) == UV_SET) {
+  if (uv == FIDO_OPT_TRUE || (devopts & (UV_SET | UV_NOT_REQD)) == UV_SET) {
     if ((r = fido_cred_set_uv(cred, FIDO_OPT_TRUE)) != FIDO_OK) {
       fprintf(stderr, "error: fido_cred_set_uv: %s (%d)\n", fido_strerr(r), r);
-      return -1;
+      goto err;
     }
   }
 
   /* Let built-in UV have precedence over PIN. No UV also handled here. */
-  if (args->user_verification || !args->pin_verification) {
+  if (uv == FIDO_OPT_TRUE || !use_pin) {
     r = fido_dev_make_cred(dev, cred, NULL);
   } else {
     r = FIDO_ERR_PIN_REQUIRED;
   }
 
   /* Some form of UV required; built-in UV failed or is not available. */
-  if ((devopts & PIN_SET) &&
-      (r == FIDO_ERR_PIN_REQUIRED || r == FIDO_ERR_UV_BLOCKED ||
-       r == FIDO_ERR_PIN_BLOCKED)) {
-    n = snprintf(prompt, sizeof(prompt), "Enter PIN for %s: ", path);
-    if (n < 0 || (size_t) n >= sizeof(prompt)) {
-      fprintf(stderr, "error: snprintf prompt");
-      return -1;
+  if (r == FIDO_ERR_PIN_REQUIRED || r == FIDO_ERR_UV_BLOCKED ||
+      r == FIDO_ERR_PIN_BLOCKED) {
+    if (devopts & PIN_SET) {
+      n = snprintf(prompt, sizeof(prompt), "Enter PIN for %s: ", path);
+      if (n < 0 || (size_t) n >= sizeof(prompt)) {
+        fprintf(stderr, "error: snprintf prompt\n");
+        goto err;
+      }
+      if ((pin = malloc(BUFSIZE)) == NULL) {
+        fprintf(stderr, "error: malloc\n");
+        goto err;
+      }
+      if (!readpassphrase(prompt, pin, BUFSIZE, RPP_ECHO_OFF)) {
+        fprintf(stderr, "error: failed to read pin\n");
+        goto err;
+      }
+      r = fido_dev_make_cred(dev, cred, pin);
+    } else {
+      fprintf(stderr, "error: pin verification is required but no pin is set "
+                      "on the authenticator");
+      goto err;
     }
-    if (!readpassphrase(prompt, pin, sizeof(pin), RPP_ECHO_OFF)) {
-      fprintf(stderr, "error: failed to read pin");
-      explicit_bzero(pin, sizeof(pin));
-      return -1;
-    }
-    r = fido_dev_make_cred(dev, cred, pin);
   }
-  explicit_bzero(pin, sizeof(pin));
 
   if (r != FIDO_OK) {
     fprintf(stderr, "error: fido_dev_make_cred (%d) %s\n", r, fido_strerr(r));
-    return -1;
+    goto err;
   }
 
-  return 0;
+  if (args->authtok) {
+    if (!readpassphrase("Enter auth token: ", authtok, sizeof(authtok),
+                        RPP_ECHO_OFF)) {
+      fprintf(stderr, "error: failed to read auth token\n");
+      goto err;
+    }
+
+    if (!generate_encrypted_authtok(dev, cred, authtok, uv, pin, enc_authtok,
+                                    enc_authtok_len)) {
+      fprintf(stderr, "error: failed to generate encrypted auth token\n");
+      goto err;
+    }
+  }
+
+  retval = 0;
+
+err:
+  explicit_bzero(authtok, BUFSIZE);
+  if (pin) {
+    explicit_bzero(pin, BUFSIZE);
+    free(pin);
+  }
+  return retval;
 }
 
 static int verify_cred(const fido_cred_t *const cred) {
@@ -248,12 +310,15 @@ static int verify_cred(const fido_cred_t *const cred) {
 }
 
 static int print_authfile_line(const struct args *const args,
-                               const fido_cred_t *const cred) {
+                               const fido_cred_t *const cred,
+                               const unsigned char *enc_authtok,
+                               size_t enc_authtok_len) {
   const unsigned char *kh = NULL;
   const unsigned char *pk = NULL;
   const char *user = NULL;
   char *b64_kh = NULL;
   char *b64_pk = NULL;
+  char *b64_enc_authtok = NULL;
   size_t kh_len;
   size_t pk_len;
   int ok = -1;
@@ -296,17 +361,26 @@ static int print_authfile_line(const struct args *const args,
     printf("%s", user);
   }
 
-  printf(":%s,%s,%s,%s%s%s", args->resident ? "*" : b64_kh, b64_pk,
+  if (args->authtok) {
+    if (!b64_encode(enc_authtok, enc_authtok_len, &b64_enc_authtok)) {
+      fprintf(stderr, "error: failed to encode PAM auth token\n");
+      goto err;
+    }
+  }
+
+  printf(":%s,%s,%s,%s%s%s,%s", args->resident ? "*" : b64_kh, b64_pk,
          cose_string(fido_cred_type(cred)),
          !args->no_user_presence ? "+presence" : "",
          args->user_verification ? "+verification" : "",
-         args->pin_verification ? "+pin" : "");
+         args->pin_verification ? "+pin" : "",
+         args->authtok ? b64_enc_authtok : "*");
 
   ok = 0;
 
 err:
   free(b64_kh);
   free(b64_pk);
+  free(b64_enc_authtok);
 
   return ok;
 }
@@ -369,6 +443,8 @@ static void parse_args(int argc, char *argv[], struct args *args) {
     { "verbose",           no_argument,       NULL, 'v'         },
     { "username",          required_argument, NULL, 'u'         },
     { "nouser",            no_argument,       NULL, 'n'         },
+    { "authtok",           no_argument,       NULL, 'a'         },
+    { "pam-arguments",     required_argument, NULL, 'p'         },
     { 0,                   0,                 0,    0           }
   };
   const char *usage =
@@ -395,11 +471,21 @@ static void parse_args(int argc, char *argv[], struct args *args) {
 "                             defaults to the current user name\n"
 "  -n, --nouser             Print only registration information (key handle,\n"
 "                             public key, and options), useful for appending\n"
+"  -a, --authtok            Read a PAM auth token (usually a password) that\n"
+"                             should be decrypted during authentication\n"
+"  -p, --pam-arguments      The arguments passed to the pam module, used for\n"
+"                             encryption key generation when --authtok is set\n"
 "\n"
 "Report bugs at <" PACKAGE_BUGREPORT ">.\n";
   /* clang-format on */
+  char *saveptr = NULL;
+  char *arg;
 
-  while ((c = getopt_long(argc, argv, "ho:i:t:rPNVdvu:n", options, NULL)) !=
+  args->pam_userpresence = -1;
+  args->pam_userverification = -1;
+  args->pam_pinverification = -1;
+
+  while ((c = getopt_long(argc, argv, "ho:i:t:rPNVdvu:nap:", options, NULL)) !=
          -1) {
     switch (c) {
       case 'h':
@@ -438,6 +524,22 @@ static void parse_args(int argc, char *argv[], struct args *args) {
       case 'n':
         args->nouser = 1;
         break;
+      case 'a':
+        args->authtok = 1;
+        break;
+      case 'p':
+        arg = strtok_r(optarg, " ", &saveptr);
+        while (arg != NULL) {
+          if (strncmp(arg, "userpresence=", 13) == 0) {
+            sscanf(arg, "userpresence=%d", &args->pam_userpresence);
+          } else if (strncmp(arg, "userverification=", 17) == 0) {
+            sscanf(arg, "userverification=%d", &args->pam_userverification);
+          } else if (strncmp(arg, "pinverification=", 16) == 0) {
+            sscanf(arg, "pinverification=%d", &args->pam_pinverification);
+          }
+          arg = strtok_r(NULL, " ", &saveptr);
+        }
+        break;
       case OPT_VERSION:
         printf("pamu2fcfg " PACKAGE_VERSION "\n");
         exit(EXIT_SUCCESS);
@@ -463,8 +565,15 @@ int main(int argc, char *argv[]) {
   size_t ndevs = 0;
   int devopts = 0;
   int r;
+  unsigned char *enc_authtok = NULL;
+  size_t enc_authtok_len = 0;
 
   parse_args(argc, argv, &args);
+  if (args.authtok && args.no_user_presence) {
+    fprintf(stderr, "error: user presence is required for auth token\n");
+    goto err;
+  }
+
   fido_init(args.debug ? FIDO_DEBUG : 0);
 
   devlist = fido_dev_info_new(DEVLIST_LEN);
@@ -555,8 +664,10 @@ int main(int argc, char *argv[]) {
   if ((cred = prepare_cred(&args)) == NULL)
     goto err;
 
-  if (make_cred(&args, path, dev, cred, devopts) != 0 ||
-      verify_cred(cred) != 0 || print_authfile_line(&args, cred) != 0)
+  if (make_cred(&args, path, dev, cred, devopts, &enc_authtok,
+                &enc_authtok_len) != 0 ||
+      verify_cred(cred) != 0 ||
+      print_authfile_line(&args, cred, enc_authtok, enc_authtok_len) != 0)
     goto err;
 
   exit_code = EXIT_SUCCESS;
@@ -567,6 +678,10 @@ err:
   fido_dev_info_free(&devlist, ndevs);
   fido_cred_free(&cred);
   fido_dev_free(&dev);
+
+  if (enc_authtok) {
+    free(enc_authtok);
+  }
 
   exit(exit_code);
 }
