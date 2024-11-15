@@ -59,6 +59,8 @@ static void parse_cfg(int flags, int argc, const char **argv, cfg_t *cfg) {
       cfg->alwaysok = 1;
     } else if (strcmp(argv[i], "interactive") == 0) {
       cfg->interactive = 1;
+    } else if (strcmp(argv[i], "interactivenodevice") == 0) {
+      cfg->interactivenodevice = 1;
     } else if (strcmp(argv[i], "cue") == 0) {
       cfg->cue = 1;
     } else if (strcmp(argv[i], "nodetect") == 0) {
@@ -100,6 +102,7 @@ static void parse_cfg(int flags, int argc, const char **argv, cfg_t *cfg) {
   debug_dbg(cfg, "max_devices=%d", cfg->max_devs);
   debug_dbg(cfg, "debug=%d", cfg->debug);
   debug_dbg(cfg, "interactive=%d", cfg->interactive);
+  debug_dbg(cfg, "interactivenodevice=%d", cfg->interactivenodevice);
   debug_dbg(cfg, "cue=%d", cfg->cue);
   debug_dbg(cfg, "nodetect=%d", cfg->nodetect);
   debug_dbg(cfg, "userpresence=%d", cfg->userpresence);
