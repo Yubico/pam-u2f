@@ -312,27 +312,8 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
     debug_dbg(cfg, "Restored privileges");
   }
 
-  if (retval != 1) {
-    // for nouserok; make sure errors in get_devices_from_authfile don't
-    // result in valid devices
-    n_devices = 0;
-  }
-
-  if (n_devices == 0) {
-    if (cfg->nouserok) {
-      debug_dbg(cfg, "Found no devices but nouserok specified. Skipping "
-                     "authentication");
-      retval = PAM_SUCCESS;
-      goto done;
-    } else if (retval != 1) {
-      debug_dbg(cfg, "Unable to get devices from authentication file");
-      retval = PAM_AUTHINFO_UNAVAIL;
-      goto done;
-    } else {
-      debug_dbg(cfg, "Found no devices. Aborting.");
-      retval = PAM_AUTHINFO_UNAVAIL;
-      goto done;
-    }
+  if (retval != PAM_SUCCESS) {
+    goto done;
   }
 
   // Determine the full path for authpending_file in order to emit touch request

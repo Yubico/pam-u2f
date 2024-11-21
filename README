@@ -161,9 +161,9 @@ disable this functionality, like so: `authpending_file=`. Default value:
 /var/run/user/$UID/pam-u2f-authpending
 
 nouserok::
-Set to enable authentication attempts to succeed even if the user
-trying to authenticate is not found inside `authfile` or if `authfile`
-is missing/malformed.
+Set to make authentication attempts not fail if the user trying to
+authenticate is not found inside `authfile`, is found but has no
+credentials, or if the `authfile` is missing.
 
 openasuser::
 Setuid to the authenticating user when opening the authfile. Useful
