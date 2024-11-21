@@ -371,13 +371,10 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
     }
   }
 
-  if (retval != 1) {
+  if (retval != PAM_SUCCESS) {
     debug_dbg(cfg, "do_authentication returned %d", retval);
-    retval = PAM_AUTH_ERR;
     goto done;
   }
-
-  retval = PAM_SUCCESS;
 
 done:
   free_devices(devices, n_devices);

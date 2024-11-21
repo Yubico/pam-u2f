@@ -748,7 +748,6 @@ int get_devices_from_authfile(const cfg_t *cfg, const char *username,
     }
   }
 
-
   debug_dbg(cfg, "Found %d device(s) for user %s", *n_devs, username);
   r = PAM_SUCCESS;
 
@@ -1139,7 +1138,7 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
   fido_dev_t **authlist = NULL;
   int cued = 0;
   int r;
-  int retval = -2;
+  int retval = PAM_AUTH_ERR;
   size_t ndevs = 0;
   size_t ndevs_prev = 0;
   unsigned i = 0;
@@ -1183,8 +1182,6 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
 
   i = 0;
   while (i < n_devs) {
-    retval = -2;
-
     debug_dbg(cfg, "Attempting authentication with device number %d", i + 1);
 
     init_opts(&opts); /* used during authenticator discovery */
@@ -1254,7 +1251,7 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
           }
           r = fido_assert_verify(assert, 0, pk.type, pk.ptr);
           if (r == FIDO_OK) {
-            retval = 1;
+            retval = PAM_SUCCESS;
             goto out;
           }
         }
@@ -1379,7 +1376,7 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
   char *b64_challenge = NULL;
   char prompt[MAX_PROMPT_LEN];
   char buf[MAX_PROMPT_LEN];
-  int retval = -2;
+  int retval = PAM_AUTH_ERR;
   int n;
   int r;
   unsigned i = 0;
@@ -1446,8 +1443,6 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
            "Please pass the challenge(s) above to fido2-assert, and "
            "paste the results in the prompt below.");
 
-  retval = -1;
-
   for (i = 0; i < n_devs; ++i) {
     n = snprintf(prompt, sizeof(prompt), "Response #%d: ", i + 1);
     if (n <= 0 || (size_t) n >= sizeof(prompt)) {
@@ -1462,7 +1457,7 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
 
     r = fido_assert_verify(assert[i], 0, pk[i].type, pk[i].ptr);
     if (r == FIDO_OK) {
-      retval = 1;
+      retval = PAM_SUCCESS;
       break;
     }
   }
