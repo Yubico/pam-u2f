@@ -8,8 +8,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04]
-        cc: [clang-15]
+        os: [ubuntu-24.04]
+        cc: [clang-18]
         sanitizer: [asan]
     steps:
     - uses: actions/checkout@v4
