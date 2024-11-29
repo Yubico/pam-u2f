@@ -1146,6 +1146,7 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
   struct opts opts;
   struct pk pk;
   char *pin = NULL;
+  int foundauth = 0;
 
   init_opts(&opts);
 #ifndef WITH_FUZZING
@@ -1200,7 +1201,21 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
       goto out;
     }
 
-    if (get_authenticators(cfg, devlist, ndevs, assert,
+    if((cfg->interactivenodevice) && !get_authenticators(cfg, devlist, ndevs, assert,
+                           is_resident(devices[i].keyHandle), authlist))
+    {
+	char *tmp = NULL;
+
+	tmp = converse(pamh, PAM_PROMPT_ECHO_ON,
+		cfg->prompt != NULL ? cfg->prompt : DEFAULT_PROMPT);
+
+	free(tmp);
+    }
+    else
+    {
+	    foundauth = 1;
+    }
+    if (foundauth || get_authenticators(cfg, devlist, ndevs, assert,
                            is_resident(devices[i].keyHandle), authlist)) {
       for (size_t j = 0; authlist[j] != NULL; j++) {
         /* options used during authentication */
