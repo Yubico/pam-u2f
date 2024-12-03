@@ -26,6 +26,7 @@ libmodule_la_SOURCES += drop_privs.h
 libmodule_la_SOURCES += expand.c
 libmodule_la_SOURCES += explicit_bzero.c
 libmodule_la_SOURCES += util.c util.h
+libmodule_la_SOURCES += cfg.c cfg.h
 libmodule_la_LIBADD = -lpam $(LIBFIDO2_LIBS) $(LIBCRYPTO_LIBS)
 
 pampluginexecdir = $(PAMDIR)
