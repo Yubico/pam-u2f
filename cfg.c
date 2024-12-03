@@ -1,10 +1,108 @@
 #include <string.h>
+#include <errno.h>
+#include <stdlib.h>
 
 #include "cfg.h"
 #include "debug.h"
 
+#define DEFAULT_CONFIG_PATH SYSCONFDIR "/security/pam_u2f.conf"
+
+static void cfg_load_arg(cfg_t *cfg, const char *source, const char *arg) {
+  if (strncmp(arg, "max_devices=", 12) == 0) {
+    sscanf(arg, "max_devices=%u", &cfg->max_devs);
+  } else if (strcmp(arg, "manual") == 0) {
+    cfg->manual = 1;
+  } else if (strcmp(arg, "debug") == 0) {
+    cfg->debug = 1;
+  } else if (strcmp(arg, "nouserok") == 0) {
+    cfg->nouserok = 1;
+  } else if (strcmp(arg, "openasuser") == 0) {
+    cfg->openasuser = 1;
+  } else if (strcmp(arg, "alwaysok") == 0) {
+    cfg->alwaysok = 1;
+  } else if (strcmp(arg, "interactive") == 0) {
+    cfg->interactive = 1;
+  } else if (strcmp(arg, "cue") == 0) {
+    cfg->cue = 1;
+  } else if (strcmp(arg, "nodetect") == 0) {
+    cfg->nodetect = 1;
+  } else if (strcmp(arg, "expand") == 0) {
+    cfg->expand = 1;
+  } else if (strncmp(arg, "userpresence=", 13) == 0) {
+    sscanf(arg, "userpresence=%d", &cfg->userpresence);
+  } else if (strncmp(arg, "userverification=", 17) == 0) {
+    sscanf(arg, "userverification=%d", &cfg->userverification);
+  } else if (strncmp(arg, "pinverification=", 16) == 0) {
+    sscanf(arg, "pinverification=%d", &cfg->pinverification);
+  } else if (strncmp(arg, "authfile=", 9) == 0) {
+    cfg->auth_file = arg + 9;
+  } else if (strcmp(arg, "sshformat") == 0) {
+    cfg->sshformat = 1;
+  } else if (strncmp(arg, "authpending_file=", 17) == 0) {
+    cfg->authpending_file = arg + 17;
+  } else if (strncmp(arg, "origin=", 7) == 0) {
+    cfg->origin = arg + 7;
+  } else if (strncmp(arg, "appid=", 6) == 0) {
+    cfg->appid = arg + 6;
+  } else if (strncmp(arg, "prompt=", 7) == 0) {
+    cfg->prompt = arg + 7;
+  } else if (strncmp(arg, "cue_prompt=", 11) == 0) {
+    cfg->cue_prompt = arg + 11;
+  } else if (strncmp(arg, "debug_file=", 11) == 0) {
+    const char *filename = arg + 11;
+    debug_close(cfg->debug_file);
+    cfg->debug_file = debug_open(filename);
+  } else {
+    debug_dbg(cfg, "WARNING: ignored config \"%s\" from %s", arg, source);
+  }
+}
+
+static void cfg_load_defaults(cfg_t *cfg, const char *config_path) {
+  int config_path_default = 0;
+  FILE *config_file;
+  char *buf = NULL;
+  size_t bufsiz = 0;
+  ssize_t len;
+
+  if (!config_path) {
+    config_path_default = 1;
+    config_path = DEFAULT_CONFIG_PATH;
+  } else if (*config_path != '/') {
+    debug_dbg(cfg, "WARNING: config path \"%s\": must be absolute.",
+              config_path);
+    config_path = DEFAULT_CONFIG_PATH;
+  }
+
+  if ((config_file = fopen(config_path, "r")) == NULL) {
+    if (errno != ENOENT || !config_path_default)
+      debug_dbg(cfg, "WARNING: could not parse %s: %s", config_path,
+                strerror(errno));
+    return;
+  }
+
+  debug_dbg(cfg, "loading defaults from %s", config_path);
+
+  while (errno = 0, (len = getline(&buf, &bufsiz, config_file)) != -1) {
+    if (len <= 1)
+      continue;
+    if (buf[len - 1] == '\n')
+      buf[--len] = '\0';
+
+    cfg_load_arg(cfg, config_path, buf);
+  }
+  if (errno)
+    debug_dbg(cfg, "WARNING: could not parse %s: %s", config_path,
+              strerror(errno));
+  free(buf);
+
+  if (config_file) {
+    fclose(config_file);
+  }
+}
+
 void cfg_init(cfg_t *cfg, int flags, int argc, const char **argv) {
   int i;
+  const char *config_path = NULL;
 
   memset(cfg, 0, sizeof(cfg_t));
   cfg->debug_file = DEFAULT_DEBUG_FILE;
@@ -13,51 +111,28 @@ void cfg_init(cfg_t *cfg, int flags, int argc, const char **argv) {
   cfg->pinverification = -1;
 
   for (i = 0; i < argc; i++) {
-    if (strncmp(argv[i], "max_devices=", 12) == 0) {
-      sscanf(argv[i], "max_devices=%u", &cfg->max_devs);
-    } else if (strcmp(argv[i], "manual") == 0) {
-      cfg->manual = 1;
-    } else if (strcmp(argv[i], "debug") == 0) {
+    if (strcmp(argv[i], "debug") == 0) {
       cfg->debug = 1;
-    } else if (strcmp(argv[i], "nouserok") == 0) {
-      cfg->nouserok = 1;
-    } else if (strcmp(argv[i], "openasuser") == 0) {
-      cfg->openasuser = 1;
-    } else if (strcmp(argv[i], "alwaysok") == 0) {
-      cfg->alwaysok = 1;
-    } else if (strcmp(argv[i], "interactive") == 0) {
-      cfg->interactive = 1;
-    } else if (strcmp(argv[i], "cue") == 0) {
-      cfg->cue = 1;
-    } else if (strcmp(argv[i], "nodetect") == 0) {
-      cfg->nodetect = 1;
-    } else if (strcmp(argv[i], "expand") == 0) {
-      cfg->expand = 1;
-    } else if (strncmp(argv[i], "userpresence=", 13) == 0) {
-      sscanf(argv[i], "userpresence=%d", &cfg->userpresence);
-    } else if (strncmp(argv[i], "userverification=", 17) == 0) {
-      sscanf(argv[i], "userverification=%d", &cfg->userverification);
-    } else if (strncmp(argv[i], "pinverification=", 16) == 0) {
-      sscanf(argv[i], "pinverification=%d", &cfg->pinverification);
-    } else if (strncmp(argv[i], "authfile=", 9) == 0) {
-      cfg->auth_file = argv[i] + 9;
-    } else if (strcmp(argv[i], "sshformat") == 0) {
-      cfg->sshformat = 1;
-    } else if (strncmp(argv[i], "authpending_file=", 17) == 0) {
-      cfg->authpending_file = argv[i] + 17;
-    } else if (strncmp(argv[i], "origin=", 7) == 0) {
-      cfg->origin = argv[i] + 7;
-    } else if (strncmp(argv[i], "appid=", 6) == 0) {
-      cfg->appid = argv[i] + 6;
-    } else if (strncmp(argv[i], "prompt=", 7) == 0) {
-      cfg->prompt = argv[i] + 7;
-    } else if (strncmp(argv[i], "cue_prompt=", 11) == 0) {
-      cfg->cue_prompt = argv[i] + 11;
-    } else if (strncmp(argv[i], "debug_file=", 11) == 0) {
+      continue;
+    }
+    if (strncmp(argv[i], "config=", 7) == 0) {
+      config_path = argv[i] + 7;
+      continue;
+    }
+    if (strncmp(argv[i], "debug_file=", 11) == 0) {
       const char *filename = argv[i] + 11;
       debug_close(cfg->debug_file);
       cfg->debug_file = debug_open(filename);
+      continue;
     }
+  }
+  cfg_load_defaults(cfg, config_path);
+
+  for (i = 0; i < argc; i++) {
+    if (strncmp(argv[i], "config=", 7) == 0) {
+      continue;
+    }
+    cfg_load_arg(cfg, "argv", argv[i]);
   }
 
   if (cfg->debug) {
