@@ -320,7 +320,7 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
     if (cfg->nouserok) {
       debug_dbg(cfg, "Found no devices but nouserok specified. Skipping "
                      "authentication");
-      retval = PAM_SUCCESS;
+      retval = PAM_IGNORE;
       goto done;
     } else if (retval != 1) {
       debug_dbg(cfg, "Unable to get devices from authentication file");
