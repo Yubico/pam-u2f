@@ -144,6 +144,7 @@ AC_CONFIG_FILES([tests/credentials/new_-V.cred])
 AC_CONFIG_FILES([tests/credentials/old_credential.cred])
 AC_CONFIG_FILES([tests/credentials/ssh_credential.cred])
 AC_CONFIG_FILES([tests/credentials/new_limited_count.cred])
+AC_CONFIG_FILES([tests/credentials/empty.cred])
 AC_OUTPUT
 
 

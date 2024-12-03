@@ -13,6 +13,34 @@
 #include <string.h>
 #include "../util.h"
 
+#include "openbsd-compat.h"
+
+static void test_nouserok(const char *username) {
+  device_t *dev;
+  unsigned ndevs;
+  cfg_t cfg;
+  int rc;
+
+  memset(&cfg, 0, sizeof(cfg_t));
+  cfg.auth_file = "credentials/this_file_does_not_exist.cred";
+  cfg.debug = 1;
+  cfg.debug_file = stderr;
+  cfg.max_devs = 1;
+  cfg.nouserok = 1;
+
+  dev = calloc(cfg.max_devs, sizeof(*dev));
+  assert(dev != NULL);
+
+  rc = get_devices_from_authfile(&cfg, username, dev, &ndevs);
+  assert(rc == PAM_IGNORE);
+
+  cfg.auth_file = "credentials/empty.cred";
+  rc = get_devices_from_authfile(&cfg, username, dev, &ndevs);
+  assert(rc == PAM_IGNORE);
+
+  free_devices(dev, ndevs);
+}
+
 static void test_ssh_credential(const char *username) {
   device_t *dev;
   unsigned ndevs;
@@ -727,6 +755,7 @@ int main(void) {
   assert((pwd = getpwuid(geteuid())) != NULL);
   assert((username = strdup(pwd->pw_name)) != NULL);
 
+  test_nouserok(username);
   test_ssh_credential(username);
   test_old_credential(username);
   test_limited_count(username);
