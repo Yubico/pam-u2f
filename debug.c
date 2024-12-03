@@ -4,6 +4,7 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <stdarg.h>
 #include <string.h>
@@ -27,9 +28,11 @@ FILE *debug_open(const char *filename) {
   if (strcmp(filename, "syslog") == 0)
     return NULL;
 
-  fd = open(filename, O_WRONLY | O_APPEND | O_CLOEXEC | O_NOFOLLOW | O_NOCTTY);
-  if (fd == -1 || fstat(fd, &st) != 0)
+  fd = open(filename, O_WRONLY | O_APPEND | O_CLOEXEC | O_NOFOLLOW | O_NOCTTY | O_CREAT);
+  if (fd == -1 || fstat(fd, &st) != 0) {
+    D(DEFAULT_DEBUG_FILE, "Could not open %s: %s", filename, strerror(errno));
     goto err;
+  }
 
 #ifndef WITH_FUZZING
   if (!S_ISREG(st.st_mode))
