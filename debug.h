@@ -31,6 +31,8 @@
 
 FILE *debug_open(const char *);
 void debug_close(FILE *f);
+FILE *debug_replace(FILE *old, const char *new_path);
+
 void debug_fprintf(FILE *, const char *, int, const char *, const char *, ...)
   ATTRIBUTE_FORMAT(printf, 5, 6);
 
