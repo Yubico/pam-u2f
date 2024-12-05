@@ -16,21 +16,28 @@
 #define DEBUG_FMT "debug(pam_u2f): %s:%d (%s): %s%s"
 #define MSGLEN 2048
 
-FILE *debug_open(const char *filename) {
+static int debug_get_file(const char *name, FILE **out)
+{
   struct stat st;
   FILE *file;
   int fd;
 
-  if (strcmp(filename, "stdout") == 0)
-    return stdout;
-  if (strcmp(filename, "stderr") == 0)
-    return stderr;
-  if (strcmp(filename, "syslog") == 0)
-    return NULL;
+  if (strcmp(name, "stdout") == 0) {
+    *out = stdout;
+    return 0;
+  }
+  if (strcmp(name, "stderr") == 0) {
+    *out = stderr;
+    return 0;
+  }
+  if (strcmp(name, "syslog") == 0) {
+    *out = NULL;
+    return 0;
+  }
 
-  fd = open(filename, O_WRONLY | O_APPEND | O_CLOEXEC | O_NOFOLLOW | O_NOCTTY | O_CREAT);
+  fd = open(name, O_WRONLY | O_APPEND | O_CLOEXEC | O_NOFOLLOW | O_NOCTTY | O_CREAT);
   if (fd == -1 || fstat(fd, &st) != 0) {
-    D(DEFAULT_DEBUG_FILE, "Could not open %s: %s", filename, strerror(errno));
+    D(DEFAULT_DEBUG_FILE, "Could not open %s: %s", name, strerror(errno));
     goto err;
   }
 
@@ -39,19 +46,45 @@ FILE *debug_open(const char *filename) {
     goto err;
 #endif
 
-  if ((file = fdopen(fd, "a")) != NULL)
-    return file;
+  if ((file = fdopen(fd, "a")) != NULL) {
+    *out = file;
+    return 0;
+  }
 
 err:
   if (fd != -1)
     close(fd);
 
-  return DEFAULT_DEBUG_FILE; /* fallback to default */
+  return -1;
+}
+
+FILE *debug_open(const char *name) {
+  FILE *ret;
+
+  if (debug_get_file(name, &ret))
+    return DEFAULT_DEBUG_FILE;
+
+  return ret;
 }
 
 void debug_close(FILE *f) {
-  if (f != NULL && f != stdout && f != stderr)
-    fclose(f);
+  if (f == NULL || f == stdout || f == stderr)
+    return;
+
+  if (fflush(f) == EOF)
+    D(DEFAULT_DEBUG_FILE, "Could not close debug file: %s", strerror(errno));
+
+  fclose(f);
+}
+
+FILE *debug_replace(FILE *old, const char *new_name) {
+  FILE *new;
+
+  if (debug_get_file(new_name, &new))
+    return old;
+
+  debug_close(old);
+  return new;
 }
 
 static void do_log(FILE *debug_file, const char *file, int line,

@@ -49,9 +49,7 @@ static void cfg_load_arg(cfg_t *cfg, const char *source, const char *arg) {
   } else if (strncmp(arg, "cue_prompt=", 11) == 0) {
     cfg->cue_prompt = arg + 11;
   } else if (strncmp(arg, "debug_file=", 11) == 0) {
-    const char *filename = arg + 11;
-    debug_close(cfg->debug_file);
-    cfg->debug_file = debug_open(filename);
+    cfg->debug_file = debug_replace(cfg->debug_file, arg + 11);
   } else {
     debug_dbg(cfg, "WARNING: ignored config \"%s\" from %s", arg, source);
   }
@@ -102,7 +100,7 @@ static void cfg_load_defaults(cfg_t *cfg, const char *config_path) {
 
 void cfg_init(cfg_t *cfg, int flags, int argc, const char **argv) {
   int i;
-  const char *config_path = NULL;
+  const char *config_path = NULL, *debug_file_path = NULL;
 
   memset(cfg, 0, sizeof(cfg_t));
   cfg->debug_file = DEFAULT_DEBUG_FILE;
@@ -110,6 +108,9 @@ void cfg_init(cfg_t *cfg, int flags, int argc, const char **argv) {
   cfg->userverification = -1;
   cfg->pinverification = -1;
 
+  // Early-loaded arguments
+  // 'config=', if existing, it supplies the default configuration.
+  // 'debug' is enabled immediately to avoid blind spots.
   for (i = 0; i < argc; i++) {
     if (strcmp(argv[i], "debug") == 0) {
       cfg->debug = 1;
@@ -120,12 +121,16 @@ void cfg_init(cfg_t *cfg, int flags, int argc, const char **argv) {
       continue;
     }
     if (strncmp(argv[i], "debug_file=", 11) == 0) {
-      const char *filename = argv[i] + 11;
-      debug_close(cfg->debug_file);
-      cfg->debug_file = debug_open(filename);
+      debug_file_path = argv[i] + 11;
       continue;
     }
   }
+
+  // 'debug_file' is loaded after the loop to make sure that
+  // debug_file opening issues can be debugged too.
+  if (debug_file_path)
+    cfg->debug_file = debug_open(debug_file_path);
+
   cfg_load_defaults(cfg, config_path);
 
   for (i = 0; i < argc; i++) {
