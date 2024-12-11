@@ -11,6 +11,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "cfg.h"
 #include "fuzz/fuzz.h"
 #include "fuzz/wiredata.h"
 #include "fuzz/authfile.h"
@@ -32,6 +33,7 @@ struct param {
   char conv[MAXSTR];
   struct blob authfile;
   struct blob wiredata;
+  struct blob conf_file;
 };
 
 struct conv_appdata {
@@ -47,6 +49,29 @@ static const char dummy_authfile[] = AUTHFILE_SSH;
 
 /* module configuration split by fuzzer on semicolon */
 static const char *dummy_conf = "sshformat;pinverification=0;manual;";
+
+/* module configuration file */
+static const char dummy_conf_file[] = "max_devices=10\n"
+                                      "manual\n"
+                                      "debug\n"
+                                      "nouserok\n"
+                                      "openasuser\n"
+                                      "alwaysok\n"
+                                      "interactive\n"
+                                      "cue\n"
+                                      "nodetect\n"
+                                      "expand\n"
+                                      "userpresence=0\n"
+                                      "userverification=0\n"
+                                      "pinverification=0\n"
+                                      "authfile=/foo/bar\n"
+                                      "sshformat\n"
+                                      "authpending_file=/baz/quux\n"
+                                      "origin=pam://lolcalhost\n"
+                                      "appid=pam://lolcalhost\n"
+                                      "prompt=hello\n"
+                                      "cue_prompt=howdy\n"
+                                      "debug_file=stdout\n";
 
 /* conversation dummy for manual authentication */
 static const char *dummy_conv =
@@ -72,7 +97,8 @@ static size_t pack(uint8_t *data, size_t len, const struct param *p) {
       pack_string(&data, &len, p->conf) != 1 ||
       pack_string(&data, &len, p->conv) != 1 ||
       pack_blob(&data, &len, &p->authfile) != 1 ||
-      pack_blob(&data, &len, &p->wiredata) != 1) {
+      pack_blob(&data, &len, &p->wiredata) != 1 ||
+      pack_blob(&data, &len, &p->conf_file) != 1) {
     return 0;
   }
 
@@ -106,7 +132,8 @@ static size_t pack_dummy(uint8_t *data, size_t len) {
       !set_string(dummy.conf, dummy_conf, MAXSTR) ||
       !set_string(dummy.conv, dummy_conv, MAXSTR) ||
       !set_blob(&dummy.authfile, dummy_authfile, sizeof(dummy_authfile)) ||
-      !set_blob(&dummy.wiredata, dummy_wiredata, sizeof(dummy_wiredata))) {
+      !set_blob(&dummy.wiredata, dummy_wiredata, sizeof(dummy_wiredata)) ||
+      !set_blob(&dummy.conf_file, dummy_conf_file, sizeof(dummy_conf_file))) {
     assert(0); /* dummy couldn't be prepared */
     return 0;
   }
@@ -125,7 +152,8 @@ static struct param *unpack(const uint8_t *data, size_t len) {
       unpack_string(&data, &len, p->conf) != 1 ||
       unpack_string(&data, &len, p->conv) != 1 ||
       unpack_blob(&data, &len, &p->authfile) != 1 ||
-      unpack_blob(&data, &len, &p->wiredata) != 1) {
+      unpack_blob(&data, &len, &p->wiredata) != 1 ||
+      unpack_blob(&data, &len, &p->conf_file) != 1) {
     free(p);
     return NULL;
   }
@@ -153,6 +181,7 @@ static void mutate(struct param *p, uint32_t seed) {
     mutate_string(p->conf, MAXSTR);
     mutate_string(p->conv, MAXSTR);
     mutate_blob(&p->authfile);
+    mutate_blob(&p->conf_file);
   }
   if (flags & MUTATE_WIREDATA)
     mutate_blob(&p->wiredata);
@@ -231,14 +260,47 @@ static int prepare_authfile(const unsigned char *data, size_t len) {
   return fd;
 }
 
+static int prepare_conf_file(const struct blob *conf_file, int argc,
+                             const char **argv, const char **conf_file_path) {
+  int i, fd;
+  ssize_t w;
+
+  *conf_file_path = CFG_DEFAULT_PATH;
+  for (i = 0; i < argc; i++) {
+    const char *value;
+
+    if (strncmp(argv[i], "conf=", strlen("conf=")))
+      continue;
+
+    value = argv[i] + strlen("conf=");
+    *conf_file_path = value;
+  }
+
+  if ((fd = memfd_create("pam_u2f.conf", MFD_CLOEXEC)) == -1)
+    return -1;
+
+  w = write(fd, conf_file->body, conf_file->len);
+  if (w == -1 || (size_t) w != conf_file->len)
+    goto fail;
+
+  if (lseek(fd, 0, SEEK_SET) == -1)
+    goto fail;
+
+  return fd;
+
+fail:
+  close(fd);
+  return -1;
+}
+
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
 
   struct param *param = NULL;
   struct pam_conv conv;
   struct conv_appdata conv_data;
-  const char *argv[32];
+  const char *argv[32], *conf_file_path;
   int argc = 32;
-  int fd = -1;
+  int authfile_fd = -1, conf_file_fd = -1;
 
   memset(&argv, 0, sizeof(*argv));
   memset(&conv, 0, sizeof(conv));
@@ -256,16 +318,26 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   set_user(param->user);
   set_wiredata(param->wiredata.body, param->wiredata.len);
 
-  if ((fd = prepare_authfile(param->authfile.body, param->authfile.len)) == -1)
+  if ((authfile_fd =
+         prepare_authfile(param->authfile.body, param->authfile.len)) == -1)
     goto err;
-  set_authfile(fd);
+  set_authfile(authfile_fd);
 
   prepare_argv(param->conf, &argv[0], &argc);
+
+  if ((conf_file_fd = prepare_conf_file(&param->conf_file, argc, argv,
+                                        &conf_file_path)) == -1)
+    goto err;
+  set_conf_file_path(conf_file_path);
+  set_conf_file_fd(conf_file_fd);
+
   pam_sm_authenticate((void *) FUZZ_PAM_HANDLE, 0, argc, argv);
 
 err:
-  if (fd != -1)
-    close(fd);
+  if (authfile_fd != -1)
+    close(authfile_fd);
+  if (conf_file_fd != -1)
+    close(conf_file_fd);
   free(param);
   return 0;
 }

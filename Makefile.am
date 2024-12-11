@@ -46,6 +46,7 @@ pam_u2f_la_LDFLAGS += -Wl,--wrap=strdup
 pam_u2f_la_LDFLAGS += -Wl,--wrap=calloc
 pam_u2f_la_LDFLAGS += -Wl,--wrap=malloc
 pam_u2f_la_LDFLAGS += -Wl,--wrap=open
+pam_u2f_la_LDFLAGS += -Wl,--wrap=openat
 pam_u2f_la_LDFLAGS += -Wl,--wrap=close
 pam_u2f_la_LDFLAGS += -Wl,--wrap=fdopen
 pam_u2f_la_LDFLAGS += -Wl,--wrap=fstat
