@@ -101,7 +101,9 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
   int should_free_auth_file = 0;
   int should_free_authpending_file = 0;
 
-  cfg_init(cfg, flags, argc, argv);
+  retval = cfg_init(cfg, flags, argc, argv);
+  if (retval != PAM_SUCCESS)
+    goto done;
 
   PAM_MODUTIL_DEF_PRIVS(privs);
 

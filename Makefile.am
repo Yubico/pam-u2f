@@ -17,6 +17,7 @@ AM_CPPFLAGS = $(LIBFIDO2_CFLAGS) $(LIBCRYPTO_CFLAGS)
 if ENABLE_FUZZING
 AM_CPPFLAGS += -fsanitize=fuzzer-no-link
 endif
+AM_CPPFLAGS += -D SYSCONFDIR='"$(sysconfdir)"'
 
 noinst_LTLIBRARIES = libmodule.la
 libmodule_la_SOURCES = pam-u2f.c

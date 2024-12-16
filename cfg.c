@@ -1,63 +1,282 @@
+/* Copyright (C) 2021-2024 Yubico AB - See COPYING */
+#include <ctype.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
+#include <security/pam_modules.h>
 
 #include "cfg.h"
 #include "debug.h"
 
-int cfg_init(cfg_t *cfg, int flags, int argc, const char **argv) {
-  int i;
+static void cfg_load_arg(cfg_t *cfg, const char *arg) {
+  if (strncmp(arg, "max_devices=", 12) == 0) {
+    sscanf(arg, "max_devices=%u", &cfg->max_devs);
+  } else if (strcmp(arg, "manual") == 0) {
+    cfg->manual = 1;
+  } else if (strcmp(arg, "debug") == 0) {
+    cfg->debug = 1;
+  } else if (strcmp(arg, "nouserok") == 0) {
+    cfg->nouserok = 1;
+  } else if (strcmp(arg, "openasuser") == 0) {
+    cfg->openasuser = 1;
+  } else if (strcmp(arg, "alwaysok") == 0) {
+    cfg->alwaysok = 1;
+  } else if (strcmp(arg, "interactive") == 0) {
+    cfg->interactive = 1;
+  } else if (strcmp(arg, "cue") == 0) {
+    cfg->cue = 1;
+  } else if (strcmp(arg, "nodetect") == 0) {
+    cfg->nodetect = 1;
+  } else if (strcmp(arg, "expand") == 0) {
+    cfg->expand = 1;
+  } else if (strncmp(arg, "userpresence=", 13) == 0) {
+    sscanf(arg, "userpresence=%d", &cfg->userpresence);
+  } else if (strncmp(arg, "userverification=", 17) == 0) {
+    sscanf(arg, "userverification=%d", &cfg->userverification);
+  } else if (strncmp(arg, "pinverification=", 16) == 0) {
+    sscanf(arg, "pinverification=%d", &cfg->pinverification);
+  } else if (strncmp(arg, "authfile=", 9) == 0) {
+    cfg->auth_file = arg + 9;
+  } else if (strcmp(arg, "sshformat") == 0) {
+    cfg->sshformat = 1;
+  } else if (strncmp(arg, "authpending_file=", 17) == 0) {
+    cfg->authpending_file = arg + 17;
+  } else if (strncmp(arg, "origin=", 7) == 0) {
+    cfg->origin = arg + 7;
+  } else if (strncmp(arg, "appid=", 6) == 0) {
+    cfg->appid = arg + 6;
+  } else if (strncmp(arg, "prompt=", 7) == 0) {
+    cfg->prompt = arg + 7;
+  } else if (strncmp(arg, "cue_prompt=", 11) == 0) {
+    cfg->cue_prompt = arg + 11;
+  } else if (strncmp(arg, "debug_file=", 11) == 0) {
+    const char *filename = arg + 11;
+    debug_close(cfg->debug_file);
+    cfg->debug_file = debug_open(filename);
+  }
+}
 
+static int slurp(int fd, size_t to_read, char **dst) {
+  char *buffer, *w;
+
+  if (to_read > CFG_MAX_FILE_SIZE)
+    return PAM_SERVICE_ERR;
+
+  buffer = malloc(to_read + 1);
+  if (!buffer)
+    return PAM_BUF_ERR;
+
+  w = buffer;
+  while (to_read) {
+    ssize_t r;
+
+    r = read(fd, w, to_read);
+    if (r < 0) {
+      free(buffer);
+      return PAM_SYSTEM_ERR;
+    }
+
+    if (r == 0)
+      break;
+
+    w += r;
+    to_read -= r;
+  }
+
+  *w = '\0';
+  *dst = buffer;
+  return PAM_SUCCESS;
+}
+
+static int check_path_safe(const struct stat *st) {
+  int r = PAM_SERVICE_ERR;
+
+  if (!S_ISREG(st->st_mode))
+    return r;
+
+  if (st->st_mode & (S_IWGRP | S_IWOTH))
+    return r;
+
+  return PAM_SUCCESS;
+}
+
+// Remove heading space, trailing spaces and comments.
+static char *chomp(char *str) {
+  size_t len;
+  char *p;
+
+  while (isspace((unsigned char) *str))
+    str++;
+
+  p = strchr(str, '#');
+  if (p) {
+    *p = '\0';
+    len = p - str;
+  } else
+    len = strlen(str);
+
+  while (len && (str[len - 1] == '#' || isspace((unsigned char) str[len - 1])))
+    str[--len] = '\0';
+
+  return str;
+}
+
+// Packs together a line from the configuration file
+// e.g. 'foo = bar' => 'foo=bar'
+static char *pack(char *str) {
+  char *ahead = str, *behind = str;
+
+  enum {
+    S_KEY,
+    S_SKIP_1, // between key and '='
+    S_SKIP_2, // between '=' and value
+    S_VALUE,
+  } state = S_KEY;
+
+  while (*ahead) {
+    char c = *ahead++;
+
+    switch (state) {
+      case S_KEY:
+        if (c != '=' && !isspace((unsigned char) c)) {
+          *behind++ = c;
+          continue;
+        }
+        state = S_SKIP_1;
+        // fallthrough
+
+      case S_SKIP_1:
+        if (isspace((unsigned char) c))
+          continue;
+
+        if (c == '=')
+          state = S_SKIP_2;
+        else
+          state = S_VALUE;
+        continue;
+
+      case S_SKIP_2:
+        if (isspace((unsigned char) c))
+          continue;
+
+        state = S_VALUE;
+        *behind++ = '=';
+        // fallthrough
+
+      case S_VALUE:
+        *behind++ = c;
+    }
+  }
+  *behind = '\0';
+
+  return str;
+}
+
+static void cfg_load_buffer(cfg_t *cfg, char *buffer) {
+  char *saveptr_out = NULL, *line;
+
+  line = strtok_r(buffer, "\n", &saveptr_out);
+  while (line) {
+    char *arg;
+
+    // Pin the next line before messing with the buffer.
+    arg = line;
+    line = strtok_r(NULL, "\n", &saveptr_out);
+
+    arg = chomp(arg);
+    if (!*arg)
+      continue;
+
+    cfg_load_arg(cfg, pack(arg));
+  }
+}
+
+static int cfg_load_defaults(cfg_t *cfg, const char *config_path) {
+  int fd, r;
+  struct stat st;
+  char *buffer = NULL;
+
+  // If a config file other than the default is provided,
+  // the path must be absolute.
+  if (config_path && *config_path != '/')
+    return PAM_SERVICE_ERR;
+
+  fd = open(config_path ? config_path : CFG_DEFAULT_PATH,
+            O_RDONLY | O_CLOEXEC | O_NOCTTY | O_NOFOLLOW, 0);
+  if (fd == -1) {
+
+    // Only the default config file is allowed to be missing.
+    if (errno == ENOENT && !config_path)
+      return PAM_SUCCESS;
+
+    return PAM_SERVICE_ERR;
+  }
+
+  if (fstat(fd, &st)) {
+    r = PAM_SYSTEM_ERR;
+    goto exit;
+  }
+
+  r = check_path_safe(&st);
+  if (r)
+    goto exit;
+
+  if (st.st_size == 0) {
+    r = PAM_SUCCESS;
+    goto exit;
+  }
+
+  r = slurp(fd, st.st_size, &buffer);
+  if (r)
+    goto exit;
+
+  cfg_load_buffer(cfg, buffer);
+
+  // Transfer buffer ownership
+  cfg->defaults_buffer = buffer;
+  buffer = NULL;
+  r = PAM_SUCCESS;
+
+exit:
+  free(buffer);
+  close(fd);
+  return r;
+}
+
+static void cfg_reset(cfg_t *cfg) {
   memset(cfg, 0, sizeof(cfg_t));
   cfg->debug_file = DEFAULT_DEBUG_FILE;
   cfg->userpresence = -1;
   cfg->userverification = -1;
   cfg->pinverification = -1;
+}
+
+int cfg_init(cfg_t *cfg, int flags, int argc, const char **argv) {
+  int i, r;
+  const char *config_path = NULL;
+
+  cfg_reset(cfg);
+
+  for (i = argc - 1; i >= 0; i--) {
+    if (strncmp(argv[i], "conf=", strlen("conf=")) == 0) {
+      config_path = argv[i] + strlen("conf=");
+      break;
+    }
+  }
+
+  r = cfg_load_defaults(cfg, config_path);
+  if (r != PAM_SUCCESS)
+    goto fail;
 
   for (i = 0; i < argc; i++) {
-    if (strncmp(argv[i], "max_devices=", 12) == 0) {
-      sscanf(argv[i], "max_devices=%u", &cfg->max_devs);
-    } else if (strcmp(argv[i], "manual") == 0) {
-      cfg->manual = 1;
-    } else if (strcmp(argv[i], "debug") == 0) {
-      cfg->debug = 1;
-    } else if (strcmp(argv[i], "nouserok") == 0) {
-      cfg->nouserok = 1;
-    } else if (strcmp(argv[i], "openasuser") == 0) {
-      cfg->openasuser = 1;
-    } else if (strcmp(argv[i], "alwaysok") == 0) {
-      cfg->alwaysok = 1;
-    } else if (strcmp(argv[i], "interactive") == 0) {
-      cfg->interactive = 1;
-    } else if (strcmp(argv[i], "cue") == 0) {
-      cfg->cue = 1;
-    } else if (strcmp(argv[i], "nodetect") == 0) {
-      cfg->nodetect = 1;
-    } else if (strcmp(argv[i], "expand") == 0) {
-      cfg->expand = 1;
-    } else if (strncmp(argv[i], "userpresence=", 13) == 0) {
-      sscanf(argv[i], "userpresence=%d", &cfg->userpresence);
-    } else if (strncmp(argv[i], "userverification=", 17) == 0) {
-      sscanf(argv[i], "userverification=%d", &cfg->userverification);
-    } else if (strncmp(argv[i], "pinverification=", 16) == 0) {
-      sscanf(argv[i], "pinverification=%d", &cfg->pinverification);
-    } else if (strncmp(argv[i], "authfile=", 9) == 0) {
-      cfg->auth_file = argv[i] + 9;
-    } else if (strcmp(argv[i], "sshformat") == 0) {
-      cfg->sshformat = 1;
-    } else if (strncmp(argv[i], "authpending_file=", 17) == 0) {
-      cfg->authpending_file = argv[i] + 17;
-    } else if (strncmp(argv[i], "origin=", 7) == 0) {
-      cfg->origin = argv[i] + 7;
-    } else if (strncmp(argv[i], "appid=", 6) == 0) {
-      cfg->appid = argv[i] + 6;
-    } else if (strncmp(argv[i], "prompt=", 7) == 0) {
-      cfg->prompt = argv[i] + 7;
-    } else if (strncmp(argv[i], "cue_prompt=", 11) == 0) {
-      cfg->cue_prompt = argv[i] + 11;
-    } else if (strncmp(argv[i], "debug_file=", 11) == 0) {
-      const char *filename = argv[i] + 11;
-      debug_close(cfg->debug_file);
-      cfg->debug_file = debug_open(filename);
-    }
+    if (strncmp(argv[i], "conf=", strlen("conf=")) == 0)
+      continue;
+
+    cfg_load_arg(cfg, argv[i]);
   }
 
   if (cfg->debug) {
@@ -87,11 +306,15 @@ int cfg_init(cfg_t *cfg, int flags, int argc, const char **argv) {
     debug_dbg(cfg, "appid=%s", cfg->appid ? cfg->appid : "(null)");
     debug_dbg(cfg, "prompt=%s", cfg->prompt ? cfg->prompt : "(null)");
   }
+  return PAM_SUCCESS;
 
-  return 0;
+fail:
+  cfg_free(cfg);
+  return r;
 }
 
 void cfg_free(cfg_t *cfg) {
   debug_close(cfg->debug_file);
-  cfg->debug_file = DEFAULT_DEBUG_FILE;
+  free(cfg->defaults_buffer);
+  cfg_reset(cfg);
 }
