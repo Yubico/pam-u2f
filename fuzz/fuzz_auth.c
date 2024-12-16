@@ -164,6 +164,8 @@ static void consume(const void *body, size_t len) {
 
   while (len--)
     x ^= *ptr++;
+
+  (void) x;
 }
 
 static int conv_cb(int num_msg, const struct pam_message **msg,
