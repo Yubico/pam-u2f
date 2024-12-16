@@ -1,4 +1,4 @@
-#  Copyright (C) 2014-2022 Yubico AB
+#Copyright(C) 2014 - 2022 Yubico AB
 AC_PREREQ([2.65])
 AC_INIT([pam_u2f], [1.3.3], [https://github.com/Yubico/pam-u2f/issues],
   [pam_u2f], [https://developers.yubico.com/pam-u2f/])
@@ -46,7 +46,7 @@ AC_CHECK_HEADERS([security/pam_appl.h], [],
   [AC_MSG_ERROR([[PAM header files not found, install libpam-dev.]])])
 AC_CHECK_HEADERS([security/pam_modules.h security/pam_modutil.h security/openpam.h], [], [],
   [#include <sys/types.h>
-   #include <security/pam_appl.h>])
+#include <security/pam_appl.h>])
 AC_CHECK_LIB([pam], [pam_start])
 AC_CHECK_FUNCS([pam_modutil_drop_priv openpam_borrow_cred])
 
@@ -64,6 +64,20 @@ AC_ARG_WITH(pam-dir,
   esac
 ])
 AC_SUBST(PAMDIR, "$PAMDIR")
+
+SCONFDIR="${sysconfdir}/security"
+AC_ARG_WITH(sconf-dir,
+  AS_HELP_STRING(
+    [--with-sconf-dir=DIR],
+    [Path to module conf file]
+  ), [
+    case "${withval}" in
+      /*) SCONFDIR="${withval}";;
+      *) AC_MSG_ERROR(expected an absolute directory name for --with-sconf-dir: ${withval});;
+    esac
+  ]
+)
+AC_SUBST(SCONFDIR, "$SCONFDIR")
 
 PKG_CHECK_MODULES([LIBCRYPTO], [libcrypto], [], [])
 PKG_CHECK_MODULES([LIBFIDO2], [libfido2 >= 1.3.0], [], [])
@@ -169,4 +183,5 @@ AC_MSG_NOTICE([Summary of build options:
   LIBCRYPTO CFLAGS:    $LIBCRYPTO_CFLAGS
   LIBCRYPTO LIBS:      $LIBCRYPTO_LIBS
   PAMDIR:              $PAMDIR
+  SCONFDIR:            $SCONFDIR
 ])

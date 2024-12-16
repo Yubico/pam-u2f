@@ -7,6 +7,9 @@
 
 #include <stdio.h>
 
+#define CFG_DEFAULT_PATH (SCONFDIR "/pam_u2f.conf")
+#define CFG_MAX_FILE_SIZE 4096
+
 typedef struct {
   unsigned max_devs;
   int manual;
@@ -29,6 +32,7 @@ typedef struct {
   const char *prompt;
   const char *cue_prompt;
   FILE *debug_file;
+  char *defaults_buffer;
 } cfg_t;
 
 int cfg_init(cfg_t *cfg, int flags, int argc, const char **argv);
