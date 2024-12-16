@@ -15,6 +15,7 @@
 #include <openssl/ec.h>
 #include <fido.h>
 
+#include "debug.h"
 #include "drop_privs.h"
 #include "fuzz/fuzz.h"
 
@@ -82,7 +83,8 @@ extern ssize_t __wrap_read(int fildes, void *buf, size_t nbyte) {
   return __real_read(fildes, buf, nbyte);
 }
 
-extern int __wrap_asprintf(char **strp, const char *fmt, ...);
+extern int __wrap_asprintf(char **strp, const char *fmt, ...)
+  ATTRIBUTE_FORMAT(printf, 2, 3);
 extern int __wrap_asprintf(char **strp, const char *fmt, ...) {
   va_list ap;
   int r;
