@@ -108,6 +108,7 @@ recommended that you start a separate shell with root privileges while
 configuring PAM to be able to revert changes if something goes wrong.
 Test your configuration thoroughly before closing the root shell.
 
+[[moduleArguments]]
 === Module Arguments
 
 [horizontal]
@@ -239,6 +240,14 @@ Use credentials produced by versions of OpenSSH that have support for
 FIDO devices. It is not possible to mix native credentials and SSH
 credentials. Once this option is enabled all credentials will be parsed
 as SSH.
+
+conf=/path/to/pam_u2f.conf::
+Set an alternative location for the <<confFile,configuration file>>.
+The supplied path must be absolute and must correspond to an existing
+regular file.
+
+The options specified on the module command line override the values
+from the <<confFile,configuration file>>.
 
 IMPORTANT: On dynamic networks (e.g. where hostnames are set by DHCP),
 users should not rely on the default origin and appid
@@ -403,6 +412,30 @@ specified, authentication against them is attempted sequentially as they are
 defined in the authorization mapping file. If during an authentication attempt
 a connected device is removed or a new device is plugged in, the authentication
 restarts from the top of the list.
+
+[[confFile]]
+== Configuration file
+
+A configuration file can be used to set the default
+<<moduleArguments,module arguments>>.
+
+- The file has a `name = value` format, with comments starting with the `#`
+  character.
+
+- White spaces at the beginning of line, end of line, and around the `=` sign
+  are ignored.
+
+- Any `conf` argument in the configuration file is ignored.
+
+- The maximum size for the configuration file is 4 KiB.
+
+- The default path for the configuration file is `/etc/security/pam_u2f.conf`.
+  Note that it may have been set to another value by the distribution. The
+  default file is allowed to not exist. An alternative path may be set in the
+  module command line options.
+
+- The options specified on the module command line override the values from the
+  configuration file.
 
 == SELinux Note
 
