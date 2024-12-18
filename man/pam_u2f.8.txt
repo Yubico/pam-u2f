@@ -134,6 +134,12 @@ FIDO devices. It is not possible to mix native credentials and SSH
 credentials. Once this option is enabled all credentials will be parsed
 as SSH.
 
+*conf*=_path/to/pam_u2f.conf_::
+Set an alternative location for the configuration file.
+The supplied path must be absolute and must correspond to an existing
+regular file.
+See *CONFIGURATION FILE*.
+
 == EXAMPLES
 
 Second factor authentication deferring user verification configuration to the
@@ -161,6 +167,27 @@ Using pam-u2f to secure the login to a computer while storing the
 mapping file in an encrypted home directory, will result in the
 impossibility of logging into the system. The partition is decrypted
 after login and the mapping file can not be accessed.
+
+== CONFIGURATION FILE
+
+A configuration file can be used to set the default module arguments.
+
+- The file has a `name = value` format, with comments starting with the `#`
+  character.
+
+- White spaces at the beginning of line, end of line, and around the `=` sign
+  are ignored.
+
+- Any `conf` argument in the configuration file is ignored.
+
+- The maximum size for the configuration file is 4 KiB.
+
+- The default path for the configuration file is +{sconfdir}/pam_u2f.conf+.
+  The default file is allowed to not exist. An alternative path may be set in
+  the module command line options.
+
+- The options specified on the module command line override the values from the
+  configuration file.
 
 == NOTES
 
