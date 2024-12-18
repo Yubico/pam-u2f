@@ -31,6 +31,7 @@ typedef struct {
   int openasuser;
   int alwaysok;
   int interactive;
+  int interactivenodevice;
   int cue;
   int nodetect;
   int userpresence;
