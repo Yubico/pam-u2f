@@ -16,4 +16,7 @@ get_devices_LDADD = $(top_builddir)/libmodule.la
 check_PROGRAMS += expand
 expand_LDADD = $(top_builddir)/libmodule.la
 
+check_PROGRAMS += cfg
+cfg_LDADD = $(top_builddir)/libmodule.la
+
 TESTS = $(check_PROGRAMS)
