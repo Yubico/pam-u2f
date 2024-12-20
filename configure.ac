@@ -44,11 +44,7 @@ AC_CHECK_HEADERS([security/pam_modules.h security/pam_modutil.h security/openpam
 AC_CHECK_LIB([pam], [pam_start])
 AC_CHECK_FUNCS([pam_modutil_drop_priv openpam_borrow_cred])
 
-case "$host" in
-     *darwin*)  PAMDIR="/usr/lib/pam";;
-     *linux*)   PAMDIR="/lib/x86_64-linux-gnu/security";;
-     *)         PAMDIR="/usr/lib"
-esac
+PAMDIR='${libdir}/security'
 AC_ARG_WITH(pam-dir,
   AS_HELP_STRING([--with-pam-dir=DIR], [Where to install the PAM module]), [
     case "${withval}" in
