@@ -41,4 +41,5 @@ pamu2fcfg/cmdline.h
 pamu2fcfg/pamu2fcfg
 man/pamu2fcfg.1
 tests/get_devices
+tests/cfg
 fuzz/fuzz_format_parsers

@@ -35,6 +35,8 @@ static const char *user_ptr = NULL;
 static struct pam_conv *conv_ptr = NULL;
 static uint8_t *wiredata_ptr = NULL;
 static size_t wiredata_len = 0;
+static const char *conf_file_path = NULL;
+static int conf_file_fd = -1;
 static int authfile_fd = -1;
 static char env[] = "value";
 
@@ -56,6 +58,8 @@ void set_wiredata(uint8_t *data, size_t len) {
 }
 void set_user(const char *user) { user_ptr = user; }
 void set_conv(struct pam_conv *conv) { conv_ptr = conv; }
+void set_conf_file_path(const char *path) { conf_file_path = path; }
+void set_conf_file_fd(int fd) { conf_file_fd = fd; }
 void set_authfile(int fd) { authfile_fd = fd; }
 
 WRAP(int, close, (int fd), -1, (fd))
@@ -109,19 +113,26 @@ extern uid_t __wrap_geteuid(void) {
 extern int __real_open(const char *pathname, int flags);
 extern int __wrap_open(const char *pathname, int flags);
 extern int __wrap_open(const char *pathname, int flags) {
+
   if (prng_up && uniform_random(400) < 1)
     return -1;
+
   /* open write-only files as /dev/null */
   if ((flags & O_ACCMODE) == O_WRONLY)
     return __real_open("/dev/null", flags);
+
+  assert((flags & O_ACCMODE) == O_RDONLY);
+
   /* FIXME: special handling for /dev/random */
   if (strcmp(pathname, "/dev/urandom") == 0)
     return __real_open(pathname, flags);
-  /* open read-only files using a shared fd for the authfile */
-  if ((flags & O_ACCMODE) == O_RDONLY)
-    return dup(authfile_fd);
-  assert(0); /* unsupported */
-  return -1;
+
+  if (conf_file_path && strcmp(pathname, conf_file_path) == 0) {
+    assert(*pathname == '/'); /* should not load config from relative path */
+    return dup(conf_file_fd);
+  }
+
+  return dup(authfile_fd);
 }
 
 extern int __wrap_getpwuid_r(uid_t, struct passwd *, char *, size_t,
