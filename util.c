@@ -710,6 +710,11 @@ int get_devices_from_authfile(const cfg_t *cfg, const char *username,
     goto err;
   }
 
+  if ((st.st_mode & (S_IWGRP | S_IWOTH)) != 0) {
+    debug_dbg(cfg, "Authentication file has insecure permissions");
+    goto err;
+  }
+
   opwfile_size = st.st_size;
 
   gpu_ret = getpwuid_r(st.st_uid, &pw_s, buffer, sizeof(buffer), &pw);
