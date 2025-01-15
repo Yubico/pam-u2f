@@ -6,6 +6,7 @@
 #include <fido/es256.h>
 #include <fido/rs256.h>
 #include <fido/eddsa.h>
+#include <syslog.h>
 
 #include <openssl/ec.h>
 #include <openssl/obj_mac.h>
@@ -711,8 +712,22 @@ int get_devices_from_authfile(const cfg_t *cfg, const char *username,
   }
 
   if ((st.st_mode & (S_IWGRP | S_IWOTH)) != 0) {
-    debug_dbg(cfg, "Authentication file has insecure permissions");
-    goto err;
+    /* XXX: attempt to prevent two messages to syslog */
+    if (cfg->debug_file) {
+      debug_dbg(cfg,
+                "Permissions %04o for '%s' are too open. Please change the "
+                "file mode bits to 0644 or more restrictive. This may become "
+                "an error in the future!",
+                (unsigned int) st.st_mode & 0777, cfg->auth_file);
+    }
+#ifndef WITH_FUZZING
+    /* XXX: force a message to syslog, regardless of the debug level */
+    syslog(LOG_AUTHPRIV | LOG_WARNING,
+           "warning(pam_u2f): Permissions %04o for '%s' are too open. Please "
+           "change the file mode bits to 0644 or more restrictive. This may "
+           "become an error in the future!",
+           (unsigned int) st.st_mode & 0777, cfg->auth_file);
+#endif
   }
 
   opwfile_size = st.st_size;
