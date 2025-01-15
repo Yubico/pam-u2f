@@ -128,11 +128,6 @@ static void config_flip_all(const struct conf_file *cf, const cfg_t *cfg) {
 
   fprintf(conf_out, "max_devices=%d\n", cfg->max_devs + 1);
 
-  if (cfg->debug_file)
-    fprintf(conf_out, "debug_file=syslog\n");
-  else
-    fprintf(conf_out, "debug_file=stderr\n");
-
   fflush(conf_out);
 }
 
@@ -194,8 +189,6 @@ static void test_regular(void) {
   assert(str_opt_cmp(cfg.appid, cfg_defaults.appid));
   assert(str_opt_cmp(cfg.prompt, cfg_defaults.prompt));
   assert(str_opt_cmp(cfg.cue_prompt, cfg_defaults.cue_prompt));
-
-  assert(cfg.debug_file != cfg_defaults.debug_file);
 
   cfg_free(&cfg_defaults);
   cfg_free(&cfg);

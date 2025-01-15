@@ -18,10 +18,6 @@
 static void cfg_load_arg_debug(cfg_t *cfg, const char *arg) {
   if (strcmp(arg, "debug") == 0)
     cfg->debug = 1;
-  else if (strncmp(arg, "debug_file=", strlen("debug_file=")) == 0) {
-    debug_close(cfg->debug_file);
-    cfg->debug_file = debug_open(arg + strlen("debug_file="));
-  }
 }
 
 static void cfg_load_arg(cfg_t *cfg, const char *arg) {
@@ -239,7 +235,6 @@ exit:
 
 static void cfg_reset(cfg_t *cfg) {
   memset(cfg, 0, sizeof(cfg_t));
-  cfg->debug_file = DEFAULT_DEBUG_FILE;
   cfg->userpresence = -1;
   cfg->userverification = -1;
   cfg->pinverification = -1;
@@ -303,7 +298,6 @@ exit:
 }
 
 void cfg_free(cfg_t *cfg) {
-  debug_close(cfg->debug_file);
   free(cfg->defaults_buffer);
   cfg_reset(cfg);
 }
