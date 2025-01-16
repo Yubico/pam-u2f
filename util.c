@@ -899,13 +899,14 @@ static void parse_opts(const cfg_t *cfg, const char *attr, struct opts *opts) {
 
 static int get_device_opts(fido_dev_t *dev, int *pin, int *uv) {
   fido_cbor_info_t *info = NULL;
-  char *const *ptr;
   const bool *val;
-  size_t len;
 
   *pin = *uv = -1; /* unsupported */
 
   if (fido_dev_is_fido2(dev)) {
+    char *const *ptr;
+    size_t len;
+
     if ((info = fido_cbor_info_new()) == NULL ||
         fido_dev_get_cbor_info(dev, info) != FIDO_OK) {
       fido_cbor_info_free(&info);
