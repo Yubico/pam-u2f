@@ -212,8 +212,8 @@ static int parse_native_format(const cfg_t *cfg, const char *username,
                                FILE *opwfile, device_t *devices,
                                unsigned *n_devs) {
 
-  char *s_user, *s_credential;
-  char *buf = NULL;
+  const char *s_user;
+  char *buf = NULL, *s_credential;
   size_t bufsiz = 0;
   ssize_t len;
   unsigned i;
