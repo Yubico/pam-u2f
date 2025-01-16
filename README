@@ -149,15 +149,7 @@ Test your configuration thoroughly before closing the root shell.
 
 [horizontal]
 debug::
-Enables debug output
-
-debug_file::
-Filename to write debugging messages to. **If this file is missing,
-nothing will be logged**. This regular file **has to be created by the
-user** or **must exist and be a regular file** for anything getting
-logged to it. It is not created by pam-u2f on purpose (for security
-considerations). This filename may be alternatively set to "stderr"
-(default), "stdout", or "syslog".
+Enables debug output to syslog.
 
 origin=origin::
 Set the relying party ID for the FIDO authentication procedure. If no
