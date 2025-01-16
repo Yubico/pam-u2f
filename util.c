@@ -801,7 +801,6 @@ void free_devices(device_t *devices, const unsigned n_devs) {
   }
 
   free(devices);
-  devices = NULL;
 }
 
 static int get_authenticators(const cfg_t *cfg, const fido_dev_info_t *devlist,
