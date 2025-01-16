@@ -15,7 +15,7 @@
 #include <openssl/ec.h>
 #include <fido.h>
 
-#include "debug.h"
+#include "logging.h"
 #include "drop_privs.h"
 #include "fuzz/fuzz.h"
 

@@ -2,8 +2,8 @@
  * Copyright (C) 2021-2025 Yubico AB - See COPYING
  */
 
-#ifndef DEBUG_H
-#define DEBUG_H
+#ifndef LOGGING_H
+#define LOGGING_H
 
 #include <stdio.h>
 
@@ -29,4 +29,4 @@
 void debug_printf(const char *, int, const char *, const char *, ...)
   ATTRIBUTE_FORMAT(printf, 4, 5);
 
-#endif /* DEBUG_H */
+#endif /* LOGGING_H */

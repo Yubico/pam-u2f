@@ -15,13 +15,12 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <syslog.h>
 #include <pwd.h>
 #include <string.h>
 #include <errno.h>
 
-#include "debug.h"
 #include "drop_privs.h"
+#include "logging.h"
 #include "util.h"
 
 #define free_const(a) free((void *) (uintptr_t) (a))

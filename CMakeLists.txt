@@ -154,11 +154,11 @@ set(PAM_U2F_SOURCES
 	pam-u2f.c
 	b64.c
 	cfg.c
-	debug.c
 	drop_privs.h
 	expand.c
-	util.c
 	explicit_bzero.c
+	logging.c
+	util.c
 )
 list(TRANSFORM PAM_U2F_SOURCES PREPEND ${CMAKE_CURRENT_SOURCE_DIR}/)
 

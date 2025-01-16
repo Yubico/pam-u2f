@@ -19,7 +19,7 @@ check_PROGRAMS += expand
 expand_LDADD = $(top_builddir)/libmodule.la
 
 check_PROGRAMS += cfg
-cfg_SOURCES = ./cfg.c ../cfg.c ../debug.c
+cfg_SOURCES = ./cfg.c ../cfg.c ../logging.c
 cfg_CFLAGS = -DPAM_U2F_TESTING -DSCONFDIR='"@SCONFDIR@"' $(AM_CFLAGS)
 
 TESTS = $(check_PROGRAMS)
