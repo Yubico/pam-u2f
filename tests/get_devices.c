@@ -749,7 +749,7 @@ static void test_new_credentials(const char *username) {
 }
 
 int main(void) {
-  struct passwd *pwd;
+  const struct passwd *pwd;
   char *username;
 
   assert((pwd = getpwuid(geteuid())) != NULL);
