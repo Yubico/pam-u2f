@@ -12,7 +12,7 @@ dlsym_check_LDFLAGS = -ldl $(AM_LDFLAGS)
 
 # XXX move openbsd-compat
 check_PROGRAMS += get_devices
-get_devices_SOURCES = get_devices.c
+get_devices_SOURCES = get_devices.c mock_syslog.c
 get_devices_LDADD = $(top_builddir)/libmodule.la
 
 check_PROGRAMS += expand
