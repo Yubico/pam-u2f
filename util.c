@@ -23,7 +23,7 @@
 #include <arpa/inet.h>
 
 #include "b64.h"
-#include "debug.h"
+#include "logging.h"
 #include "util.h"
 
 #define SSH_MAX_SIZE 8192

@@ -6,7 +6,7 @@
 #include <string.h>
 #include <syslog.h>
 
-#include "debug.h"
+#include "logging.h"
 
 #define DEBUG_FMT "debug(pam_u2f): %s:%d (%s): %s%s"
 #define MSGLEN 2048

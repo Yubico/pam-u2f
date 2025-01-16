@@ -13,7 +13,7 @@
 #include <security/pam_modules.h>
 
 #include "cfg.h"
-#include "debug.h"
+#include "logging.h"
 
 static void cfg_load_arg_debug(cfg_t *cfg, const char *arg) {
   if (strcmp(arg, "debug") == 0)
