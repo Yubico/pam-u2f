@@ -1423,7 +1423,7 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
 
     debug_dbg(cfg, "Challenge: %s", b64_challenge);
 
-    n = snprintf(prompt, sizeof(prompt), "Challenge #%d:", i + 1);
+    n = snprintf(prompt, sizeof(prompt), "Challenge #%u:", i + 1);
     if (n <= 0 || (size_t) n >= sizeof(prompt)) {
       debug_dbg(cfg, "Failed to print challenge prompt");
       goto out;
@@ -1449,7 +1449,7 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
            "paste the results in the prompt below.");
 
   for (i = 0; i < n_devs; ++i) {
-    n = snprintf(prompt, sizeof(prompt), "Response #%d: ", i + 1);
+    n = snprintf(prompt, sizeof(prompt), "Response #%u: ", i + 1);
     if (n <= 0 || (size_t) n >= sizeof(prompt)) {
       debug_dbg(cfg, "Failed to print response prompt");
       goto out;
