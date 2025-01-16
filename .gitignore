@@ -41,4 +41,5 @@ pamu2fcfg/cmdline.h
 pamu2fcfg/pamu2fcfg
 tests/.deps/
 tests/dlsym_check
+tests/expand
 tests/get_devices
