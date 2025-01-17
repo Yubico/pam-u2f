@@ -11,7 +11,7 @@
 #include "cfg.h"
 
 #define BUFSIZE 1024
-#define MAX_DEVS 24
+#define MAX_DEVS 24U
 #define DEFAULT_AUTHFILE_DIR_VAR "XDG_CONFIG_HOME"
 #define DEFAULT_AUTHFILE "Yubico/u2f_keys"
 #define DEFAULT_AUTHFILE_SSH "id_ecdsa_sk"
