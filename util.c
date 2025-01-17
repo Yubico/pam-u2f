@@ -712,6 +712,11 @@ int get_devices_from_authfile(const cfg_t *cfg, const char *username,
   }
 
   if ((st.st_mode & (S_IWGRP | S_IWOTH)) != 0) {
+    /* FIXME: make this a hard error (goto err).
+     *
+     * Currently not the case, since treating this as error has proven to
+     * break existing installations.
+     */
 #ifndef WITH_FUZZING
     syslog(LOG_AUTHPRIV | LOG_WARNING,
            "warning(pam_u2f): Permissions %04o for '%s' are too open. Please "
