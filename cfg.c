@@ -264,31 +264,31 @@ int cfg_init(cfg_t *cfg, int flags, int argc, const char **argv) {
 
 exit:
   if (cfg->debug) {
-    debug_dbg(cfg, "called.");
-    debug_dbg(cfg, "flags %d argc %d", flags, argc);
+    LOG(LOG_DEBUG, "called.");
+    LOG(LOG_DEBUG, "flags %d argc %d", flags, argc);
     for (i = 0; i < argc; i++) {
-      debug_dbg(cfg, "argv[%d]=%s", i, argv[i]);
+      LOG(LOG_DEBUG, "argv[%d]=%s", i, argv[i]);
     }
-    debug_dbg(cfg, "max_devices=%d", cfg->max_devs);
-    debug_dbg(cfg, "debug=%d", cfg->debug);
-    debug_dbg(cfg, "interactive=%d", cfg->interactive);
-    debug_dbg(cfg, "cue=%d", cfg->cue);
-    debug_dbg(cfg, "nodetect=%d", cfg->nodetect);
-    debug_dbg(cfg, "userpresence=%d", cfg->userpresence);
-    debug_dbg(cfg, "userverification=%d", cfg->userverification);
-    debug_dbg(cfg, "pinverification=%d", cfg->pinverification);
-    debug_dbg(cfg, "manual=%d", cfg->manual);
-    debug_dbg(cfg, "nouserok=%d", cfg->nouserok);
-    debug_dbg(cfg, "openasuser=%d", cfg->openasuser);
-    debug_dbg(cfg, "alwaysok=%d", cfg->alwaysok);
-    debug_dbg(cfg, "sshformat=%d", cfg->sshformat);
-    debug_dbg(cfg, "expand=%d", cfg->expand);
-    debug_dbg(cfg, "authfile=%s", cfg->auth_file ? cfg->auth_file : "(null)");
-    debug_dbg(cfg, "authpending_file=%s",
-              cfg->authpending_file ? cfg->authpending_file : "(null)");
-    debug_dbg(cfg, "origin=%s", cfg->origin ? cfg->origin : "(null)");
-    debug_dbg(cfg, "appid=%s", cfg->appid ? cfg->appid : "(null)");
-    debug_dbg(cfg, "prompt=%s", cfg->prompt ? cfg->prompt : "(null)");
+    LOG(LOG_DEBUG, "max_devices=%u", cfg->max_devs);
+    LOG(LOG_DEBUG, "debug=%d", cfg->debug);
+    LOG(LOG_DEBUG, "interactive=%d", cfg->interactive);
+    LOG(LOG_DEBUG, "cue=%d", cfg->cue);
+    LOG(LOG_DEBUG, "nodetect=%d", cfg->nodetect);
+    LOG(LOG_DEBUG, "userpresence=%d", cfg->userpresence);
+    LOG(LOG_DEBUG, "userverification=%d", cfg->userverification);
+    LOG(LOG_DEBUG, "pinverification=%d", cfg->pinverification);
+    LOG(LOG_DEBUG, "manual=%d", cfg->manual);
+    LOG(LOG_DEBUG, "nouserok=%d", cfg->nouserok);
+    LOG(LOG_DEBUG, "openasuser=%d", cfg->openasuser);
+    LOG(LOG_DEBUG, "alwaysok=%d", cfg->alwaysok);
+    LOG(LOG_DEBUG, "sshformat=%d", cfg->sshformat);
+    LOG(LOG_DEBUG, "expand=%d", cfg->expand);
+    LOG(LOG_DEBUG, "authfile=%s", cfg->auth_file ? cfg->auth_file : "(null)");
+    LOG(LOG_DEBUG, "authpending_file=%s",
+        cfg->authpending_file ? cfg->authpending_file : "(null)");
+    LOG(LOG_DEBUG, "origin=%s", cfg->origin ? cfg->origin : "(null)");
+    LOG(LOG_DEBUG, "appid=%s", cfg->appid ? cfg->appid : "(null)");
+    LOG(LOG_DEBUG, "prompt=%s", cfg->prompt ? cfg->prompt : "(null)");
   }
 
   if (r != PAM_SUCCESS)

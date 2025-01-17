@@ -25,10 +25,4 @@ void log_printf(int level, const char *, int, const char *, const char *, ...)
 
 void log_debug_enable(void);
 
-#define debug_dbg(cfg, ...)                                                    \
-  do {                                                                         \
-    (void) cfg;                                                                \
-    LOG(LOG_DEBUG, __VA_ARGS__);                                               \
-  } while (0)
-
 #endif /* LOGGING_H */

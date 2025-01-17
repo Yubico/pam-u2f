@@ -77,7 +77,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   fp_len = size - offset;
   fp = tmpfile();
   if (fp == NULL || (fwrite(&data[offset], 1, fp_len, fp)) != fp_len) {
-    fprintf(stderr, "failed to create file for parser: %s\n", strerror(errno));
+    fprintf(stderr, "failed to create file for parser (errno=%d)\n", errno);
     if (fp != NULL) {
       fclose(fp);
     }
