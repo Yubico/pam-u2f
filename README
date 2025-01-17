@@ -186,6 +186,11 @@ interactive::
 Set to prompt a message and wait before testing the presence of a FIDO
 device. Recommended if your device doesn't have a tactile trigger.
 
+interactivenodevice::
+Set to prompt a message and wait if no FIDO device is detected.
+Avoids silent authentication failures at the cost of notifying attackers
+fido devices are used for authentication
+
 [prompt=your prompt here]::
 Set individual prompt message for interactive mode. Watch the square
 brackets around this parameter to get spaces correctly recognized by
