@@ -16,6 +16,7 @@ get_devices_SOURCES = get_devices.c mock_syslog.c
 get_devices_LDADD = $(top_builddir)/libmodule.la
 
 check_PROGRAMS += expand
+expand_SOURCES = expand.c mock_syslog.c
 expand_LDADD = $(top_builddir)/libmodule.la
 
 check_PROGRAMS += cfg

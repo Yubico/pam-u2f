@@ -73,9 +73,13 @@ static char *resolve_authfile_path(const cfg_t *cfg, const struct passwd *user,
     path = cfg->auth_file;
   }
 
-  if (dir == NULL || *dir != '/' || path == NULL ||
-      asprintf(&authfile, "%s/%s", dir, path) == -1)
-    authfile = NULL;
+  if (dir == NULL || *dir != '/' || path == NULL)
+    return NULL;
+
+  if (asprintf(&authfile, "%s/%s", dir, path) == -1) {
+    LOG(LOG_CRIT, "Unable to allocate memory (errno=%d)", errno);
+    return NULL;
+  }
 
   return authfile;
 }
