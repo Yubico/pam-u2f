@@ -11,6 +11,8 @@
 #include <unistd.h>
 
 #include <string.h>
+
+#include "../logging.h"
 #include "../util.h"
 
 static void test_nouserok(const char *username) {
@@ -744,6 +746,8 @@ static void test_new_credentials(const char *username) {
 int main(void) {
   const struct passwd *pwd;
   char *username;
+
+  log_debug_enable();
 
   assert((pwd = getpwuid(geteuid())) != NULL);
   assert((username = strdup(pwd->pw_name)) != NULL);
