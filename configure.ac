@@ -18,6 +18,12 @@ AM_PROG_AR
 LT_INIT([disable-static])
 AC_PROG_CC
 
+AX_CHECK_COMPILE_FLAG(
+  [-std=c11 -pedantic],
+  [CFLAGS="${CFLAGS} -std=c11 -pedantic"],
+  [AC_MSG_ERROR([C compiled does not support C11])]
+)
+
 AC_ARG_ENABLE([man],
   [AS_HELP_STRING([--disable-man], [Disable man page generation])],
   [:],
