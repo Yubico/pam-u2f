@@ -88,7 +88,7 @@ AX_CHECK_COMPILE_FLAG([-Wall], [CWFLAGS="-Wall"], [], [$check_extra_flags])
 AX_CHECK_COMPILE_FLAG([-Wextra], [CWFLAGS="$CWFLAGS -Wextra"], [], [$check_extra_flags])
 AX_CHECK_COMPILE_FLAG([-Wconversion], [CWFLAGS="$CWFLAGS -Wconversion"], [], [$check_extra_flags])
 # Because pam headers are doing sign-conversion, see PAM_MODUTIL_DEF_PRIVS in pam_modutil.h
-AX_CHECK_COMPILE_FLAG([-Wconversion], [CWFLAGS="$CWFLAGS -Wno-sign-conversion"], [], [$check_extra_flags])
+AX_CHECK_COMPILE_FLAG([-Wsign-conversion], [CWFLAGS="$CWFLAGS -Wno-sign-conversion"], [], [$check_extra_flags])
 AX_CHECK_COMPILE_FLAG([-Wpedantic], [CWFLAGS="$CWFLAGS -Wpedantic"], [], [$check_extra_flags])
 AX_CHECK_COMPILE_FLAG([-Wformat=2], [CWFLAGS="$CWFLAGS -Wformat=2"], [], [$check_extra_flags])
 AX_CHECK_COMPILE_FLAG([-Wstrict-prototypes], [CWFLAGS="$CWFLAGS -Wstrict-prototypes"], [], [$check_extra_flags])
