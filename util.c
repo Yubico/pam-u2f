@@ -730,7 +730,12 @@ int get_devices_from_authfile(const cfg_t *cfg, const char *username,
 #endif
   }
 
-  opwfile_size = st.st_size;
+  if (st.st_size < 0) {
+    debug_dbg(cfg, "Invalid stat size for %s: %jd", cfg->auth_file,
+              (intmax_t) st.st_size);
+    goto err;
+  }
+  opwfile_size = (size_t) st.st_size;
 
   gpu_ret = getpwuid_r(st.st_uid, &pw_s, buffer, sizeof(buffer), &pw);
   if (gpu_ret != 0 || pw == NULL) {
