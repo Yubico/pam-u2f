@@ -21,6 +21,8 @@ void set_wiredata(uint8_t *, size_t);
 void set_user(const char *);
 void set_conv(struct pam_conv *);
 void set_authfile(int);
+void set_conf_file_path(const char *);
+void set_conf_file_fd(int);
 
 int pack_u32(uint8_t **, size_t *, uint32_t);
 int unpack_u32(const uint8_t **, size_t *, uint32_t *);

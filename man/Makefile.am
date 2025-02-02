@@ -8,4 +8,7 @@ EXTRA_DIST = $(MANS:=.txt)
 SUFFIXES = .1.txt .1 .8.txt .8
 
 .1.txt.1 .8.txt.8:
-	$(AM_V_GEN)$(A2X) --format=manpage -L -a revdate="Version $(VERSION)" $<
+	$(AM_V_GEN)$(A2X) --format=manpage -L   \
+		-a sconfdir="$(SCONFDIR)"       \
+		-a revdate="Version $(VERSION)" \
+		$<

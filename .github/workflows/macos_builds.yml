@@ -8,12 +8,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ macos-11, macos-12, macos-13 ]
+        os: [ macos-13, macos-14, macos-15 ]
         cc: [ clang ]
     steps:
     - uses: actions/checkout@v4
     - name: dependencies
-      run: brew install check cmake help2man libfido2 mandoc pkg-config automake
+      run: brew install check cmake help2man libfido2 mandoc libtool automake
     - name: build
       env:
         CC: ${{ matrix.cc }}

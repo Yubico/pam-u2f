@@ -6,6 +6,7 @@
 #include <fido/es256.h>
 #include <fido/rs256.h>
 #include <fido/eddsa.h>
+#include <syslog.h>
 
 #include <openssl/ec.h>
 #include <openssl/obj_mac.h>
@@ -214,8 +215,8 @@ static int parse_native_format(const cfg_t *cfg, const char *username,
                                FILE *opwfile, device_t *devices,
                                unsigned *n_devs) {
 
-  char *s_user, *s_credential;
-  char *buf = NULL;
+  const char *s_user;
+  char *buf = NULL, *s_credential;
   size_t bufsiz = 0;
   ssize_t len;
   unsigned i;
@@ -680,7 +681,7 @@ out:
 int get_devices_from_authfile(const cfg_t *cfg, const char *username,
                               device_t *devices, unsigned *n_devs) {
 
-  int retval = 0;
+  int r = PAM_AUTHINFO_UNAVAIL;
   int fd = -1;
   struct stat st;
   struct passwd *pw = NULL, pw_s;
@@ -695,6 +696,9 @@ int get_devices_from_authfile(const cfg_t *cfg, const char *username,
 
   fd = open(cfg->auth_file, O_RDONLY | O_CLOEXEC | O_NOCTTY);
   if (fd < 0) {
+    if (errno == ENOENT && cfg->nouserok) {
+      r = PAM_IGNORE;
+    }
     debug_dbg(cfg, "Cannot open authentication file: %s", strerror(errno));
     goto err;
   }
@@ -709,11 +713,31 @@ int get_devices_from_authfile(const cfg_t *cfg, const char *username,
     goto err;
   }
 
-  if (st.st_size == 0) {
-    debug_dbg(cfg, "Authentication file is empty");
+  if ((st.st_mode & (S_IWGRP | S_IWOTH)) != 0) {
+    /* XXX: attempt to prevent two messages to syslog */
+    if (cfg->debug_file) {
+      debug_dbg(cfg,
+                "Permissions %04o for '%s' are too open. Please change the "
+                "file mode bits to 0644 or more restrictive. This may become "
+                "an error in the future!",
+                (unsigned int) st.st_mode & 0777, cfg->auth_file);
+    }
+#ifndef WITH_FUZZING
+    /* XXX: force a message to syslog, regardless of the debug level */
+    syslog(LOG_AUTHPRIV | LOG_WARNING,
+           "warning(pam_u2f): Permissions %04o for '%s' are too open. Please "
+           "change the file mode bits to 0644 or more restrictive. This may "
+           "become an error in the future!",
+           (unsigned int) st.st_mode & 0777, cfg->auth_file);
+#endif
+  }
+
+  if (st.st_size < 0) {
+    debug_dbg(cfg, "Invalid stat size for %s: %jd", cfg->auth_file,
+              (intmax_t) st.st_size);
     goto err;
   }
-  opwfile_size = st.st_size;
+  opwfile_size = (size_t) st.st_size;
 
   gpu_ret = getpwuid_r(st.st_uid, &pw_s, buffer, sizeof(buffer), &pw);
   if (gpu_ret != 0 || pw == NULL) {
@@ -742,26 +766,26 @@ int get_devices_from_authfile(const cfg_t *cfg, const char *username,
   }
 
   if (cfg->sshformat == 0) {
-    retval = parse_native_format(cfg, username, opwfile, devices, n_devs);
+    if (parse_native_format(cfg, username, opwfile, devices, n_devs) != 1) {
+      goto err;
+    }
   } else {
-    retval = parse_ssh_format(cfg, opwfile, opwfile_size, devices, n_devs);
-  }
-
-  if (retval != 1) {
-    // NOTE(adma): error message is logged by the previous function
-    goto err;
+    if (parse_ssh_format(cfg, opwfile, opwfile_size, devices, n_devs) != 1) {
+      goto err;
+    }
   }
 
   debug_dbg(cfg, "Found %d device(s) for user %s", *n_devs, username);
-
-  retval = 1;
+  r = PAM_SUCCESS;
 
 err:
-  if (retval != 1) {
+  if (r != PAM_SUCCESS) {
     for (i = 0; i < *n_devs; i++) {
       reset_device(&devices[i]);
     }
     *n_devs = 0;
+  } else if (*n_devs == 0) {
+    r = cfg->nouserok ? PAM_IGNORE : PAM_USER_UNKNOWN;
   }
 
   if (opwfile)
@@ -770,7 +794,7 @@ err:
   if (fd != -1)
     close(fd);
 
-  return retval;
+  return r;
 }
 
 void free_devices(device_t *devices, const unsigned n_devs) {
@@ -784,7 +808,6 @@ void free_devices(device_t *devices, const unsigned n_devs) {
   }
 
   free(devices);
-  devices = NULL;
 }
 
 static int get_authenticators(const cfg_t *cfg, const fido_dev_info_t *devlist,
@@ -883,13 +906,14 @@ static void parse_opts(const cfg_t *cfg, const char *attr, struct opts *opts) {
 
 static int get_device_opts(fido_dev_t *dev, int *pin, int *uv) {
   fido_cbor_info_t *info = NULL;
-  char *const *ptr;
   const bool *val;
-  size_t len;
 
   *pin = *uv = -1; /* unsupported */
 
   if (fido_dev_is_fido2(dev)) {
+    char *const *ptr;
+    size_t len;
+
     if ((info = fido_cbor_info_new()) == NULL ||
         fido_dev_get_cbor_info(dev, info) != FIDO_OK) {
       fido_cbor_info_free(&info);
@@ -1141,7 +1165,7 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
   fido_dev_t **authlist = NULL;
   int cued = 0;
   int r;
-  int retval = -2;
+  int retval = PAM_AUTH_ERR;
   size_t ndevs = 0;
   size_t ndevs_prev = 0;
   unsigned i = 0;
@@ -1185,8 +1209,6 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
 
   i = 0;
   while (i < n_devs) {
-    retval = -2;
-
     debug_dbg(cfg, "Attempting authentication with device number %d", i + 1);
 
     init_opts(&opts); /* used during authenticator discovery */
@@ -1259,7 +1281,7 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
             syslog(LOG_AUTHPRIV | LOG_INFO,
                    "Successful FIDO authentication with publicKey %s (idx %u)",
                    devices[i].publicKey, i);
-            retval = 1;
+            retval = PAM_SUCCESS;
             goto out;
           }
         }
@@ -1384,7 +1406,7 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
   char *b64_challenge = NULL;
   char prompt[MAX_PROMPT_LEN];
   char buf[MAX_PROMPT_LEN];
-  int retval = -2;
+  int retval = PAM_AUTH_ERR;
   int n;
   int r;
   unsigned i = 0;
@@ -1426,7 +1448,7 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
 
     debug_dbg(cfg, "Challenge: %s", b64_challenge);
 
-    n = snprintf(prompt, sizeof(prompt), "Challenge #%d:", i + 1);
+    n = snprintf(prompt, sizeof(prompt), "Challenge #%u:", i + 1);
     if (n <= 0 || (size_t) n >= sizeof(prompt)) {
       debug_dbg(cfg, "Failed to print challenge prompt");
       goto out;
@@ -1451,10 +1473,8 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
            "Please pass the challenge(s) above to fido2-assert, and "
            "paste the results in the prompt below.");
 
-  retval = -1;
-
   for (i = 0; i < n_devs; ++i) {
-    n = snprintf(prompt, sizeof(prompt), "Response #%d: ", i + 1);
+    n = snprintf(prompt, sizeof(prompt), "Response #%u: ", i + 1);
     if (n <= 0 || (size_t) n >= sizeof(prompt)) {
       debug_dbg(cfg, "Failed to print response prompt");
       goto out;
@@ -1467,7 +1487,7 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
 
     r = fido_assert_verify(assert[i], 0, pk[i].type, pk[i].ptr);
     if (r == FIDO_OK) {
-      retval = 1;
+      retval = PAM_SUCCESS;
       break;
     }
   }

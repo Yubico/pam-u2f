@@ -1,6 +1,6 @@
-#  Copyright (C) 2014-2022 Yubico AB
+#Copyright(C) 2014 - 2022 Yubico AB
 AC_PREREQ([2.65])
-AC_INIT([pam_u2f], [1.3.1], [https://github.com/Yubico/pam-u2f/issues],
+AC_INIT([pam_u2f], [1.3.3], [https://github.com/Yubico/pam-u2f/issues],
   [pam_u2f], [https://developers.yubico.com/pam-u2f/])
 
 AC_CONFIG_AUX_DIR([build-aux])
@@ -17,6 +17,12 @@ AM_PROG_CC_C_O
 AM_PROG_AR
 LT_INIT([disable-static])
 AC_PROG_CC
+
+AX_CHECK_COMPILE_FLAG(
+  [-std=c11 -pedantic],
+  [CFLAGS="${CFLAGS} -std=c11 -pedantic"],
+  [AC_MSG_ERROR([C compiled does not support C11])]
+)
 
 AC_ARG_ENABLE([man],
   [AS_HELP_STRING([--disable-man], [Disable man page generation])],
@@ -40,7 +46,7 @@ AC_CHECK_HEADERS([security/pam_appl.h], [],
   [AC_MSG_ERROR([[PAM header files not found, install libpam-dev.]])])
 AC_CHECK_HEADERS([security/pam_modules.h security/pam_modutil.h security/openpam.h], [], [],
   [#include <sys/types.h>
-   #include <security/pam_appl.h>])
+#include <security/pam_appl.h>])
 AC_CHECK_LIB([pam], [pam_start])
 AC_CHECK_FUNCS([pam_modutil_drop_priv openpam_borrow_cred])
 
@@ -58,6 +64,20 @@ AC_ARG_WITH(pam-dir,
   esac
 ])
 AC_SUBST(PAMDIR, "$PAMDIR")
+
+SCONFDIR="${sysconfdir}/security"
+AC_ARG_WITH(sconf-dir,
+  AS_HELP_STRING(
+    [--with-sconf-dir=DIR],
+    [Path to module conf file]
+  ), [
+    case "${withval}" in
+      /*) SCONFDIR="${withval}";;
+      *) AC_MSG_ERROR(expected an absolute directory name for --with-sconf-dir: ${withval});;
+    esac
+  ]
+)
+AC_SUBST(SCONFDIR, "$SCONFDIR")
 
 PKG_CHECK_MODULES([LIBCRYPTO], [libcrypto], [], [])
 PKG_CHECK_MODULES([LIBFIDO2], [libfido2 >= 1.3.0], [], [])
@@ -82,7 +102,7 @@ AX_CHECK_COMPILE_FLAG([-Wall], [CWFLAGS="-Wall"], [], [$check_extra_flags])
 AX_CHECK_COMPILE_FLAG([-Wextra], [CWFLAGS="$CWFLAGS -Wextra"], [], [$check_extra_flags])
 AX_CHECK_COMPILE_FLAG([-Wconversion], [CWFLAGS="$CWFLAGS -Wconversion"], [], [$check_extra_flags])
 # Because pam headers are doing sign-conversion, see PAM_MODUTIL_DEF_PRIVS in pam_modutil.h
-AX_CHECK_COMPILE_FLAG([-Wconversion], [CWFLAGS="$CWFLAGS -Wno-sign-conversion"], [], [$check_extra_flags])
+AX_CHECK_COMPILE_FLAG([-Wsign-conversion], [CWFLAGS="$CWFLAGS -Wno-sign-conversion"], [], [$check_extra_flags])
 AX_CHECK_COMPILE_FLAG([-Wpedantic], [CWFLAGS="$CWFLAGS -Wpedantic"], [], [$check_extra_flags])
 AX_CHECK_COMPILE_FLAG([-Wformat=2], [CWFLAGS="$CWFLAGS -Wformat=2"], [], [$check_extra_flags])
 AX_CHECK_COMPILE_FLAG([-Wstrict-prototypes], [CWFLAGS="$CWFLAGS -Wstrict-prototypes"], [], [$check_extra_flags])
@@ -144,6 +164,7 @@ AC_CONFIG_FILES([tests/credentials/new_-V.cred])
 AC_CONFIG_FILES([tests/credentials/old_credential.cred])
 AC_CONFIG_FILES([tests/credentials/ssh_credential.cred])
 AC_CONFIG_FILES([tests/credentials/new_limited_count.cred])
+AC_CONFIG_FILES([tests/credentials/empty.cred])
 AC_OUTPUT
 
 
@@ -162,4 +183,5 @@ AC_MSG_NOTICE([Summary of build options:
   LIBCRYPTO CFLAGS:    $LIBCRYPTO_CFLAGS
   LIBCRYPTO LIBS:      $LIBCRYPTO_LIBS
   PAMDIR:              $PAMDIR
+  SCONFDIR:            $SCONFDIR
 ])

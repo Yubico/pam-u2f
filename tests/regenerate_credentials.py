@@ -6,8 +6,9 @@ import os
 import re
 import subprocess
 import sys
+import os
 
-PUC = "../pamu2fcfg/pamu2fcfg"
+PUC = os.getenv("PAMU2FCFG", "../pamu2fcfg/pamu2fcfg")
 
 resident = ["", "-r"]
 
@@ -46,7 +47,7 @@ def print_test_case(filename, credentials):
   assert(dev != NULL);
   cfg.auth_file = "{authfile}";
   rc = get_devices_from_authfile(&cfg, username, dev, &n_devs);
-  assert(rc == 1);
+  assert(rc == PAM_SUCCESS);
   assert(n_devs == {devices});
 """
 
