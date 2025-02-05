@@ -379,8 +379,7 @@ and appid. If neither are specified they will default to
 to require user presence (touch), PIN verification and resident
 credentials. On success the tool prints to standard output a
 configuration line that can be directly used with the module. For
-additional information on the tool read the relative manpage (`man
-pamu2fcfg`).
+additional information on the tool read the relative manpage (`man pamu2fcfg`).
 
 For authenticator management (e.g. setting a PIN, enrolling fingerprints, and
 more), please refer to
