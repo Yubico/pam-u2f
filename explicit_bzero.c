@@ -51,4 +51,6 @@ void explicit_bzero(void *p, size_t n) {
 
 #endif /* HAVE_MEMSET_S */
 
+#else  /* HAVE_EXPLICIT_BZERO */
+typedef int make_iso_compilers_happy;
 #endif /* HAVE_EXPLICIT_BZERO */
