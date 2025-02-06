@@ -1,3 +1,4 @@
+/* clang-format off */
 /*	$OpenBSD: readpassphrase.c,v 1.26 2016/10/18 12:47:18 millert Exp $	*/
 
 /*
@@ -211,4 +212,8 @@ static void handler(int s)
 
 	signo[s] = 1;
 }
+
+#else  /* HAVE_READPASSPHRASE */
+typedef int make_iso_compilers_happy;
 #endif /* HAVE_READPASSPHRASE */
+/* clang-format on */
