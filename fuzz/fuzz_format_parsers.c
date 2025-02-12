@@ -10,6 +10,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "fuzz/fido_fuzz.h"
 #include "fuzz/fuzz.h"
 #include "util.h"
 

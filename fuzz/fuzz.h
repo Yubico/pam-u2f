@@ -31,8 +31,4 @@ int unpack_blob(const uint8_t **, size_t *, struct blob *);
 int pack_string(uint8_t **, size_t *, const char *);
 int unpack_string(const uint8_t **, size_t *, char *);
 
-/* part of libfido2's fuzzing instrumentation, requires build with -DFUZZ=1 */
-void prng_init(unsigned long);
-uint32_t uniform_random(uint32_t);
-
 #endif
