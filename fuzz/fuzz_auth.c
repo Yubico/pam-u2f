@@ -12,9 +12,11 @@
 #include <unistd.h>
 
 #include "cfg.h"
+
+#include "fuzz/authfile.h"
+#include "fuzz/fido_fuzz.h"
 #include "fuzz/fuzz.h"
 #include "fuzz/wiredata.h"
-#include "fuzz/authfile.h"
 
 #define MUTATE_SEED 0x01
 #define MUTATE_PARAM 0x02

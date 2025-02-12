@@ -17,9 +17,8 @@
 
 #include "debug.h"
 #include "drop_privs.h"
+#include "fuzz/fido_fuzz.h"
 #include "fuzz/fuzz.h"
-
-extern int prng_up;
 
 #ifdef HAVE_PAM_MODUTIL_DROP_PRIV
 typedef struct pam_modutil_privs fuzz_privs_t;

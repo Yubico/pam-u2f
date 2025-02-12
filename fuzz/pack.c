@@ -4,6 +4,7 @@
 #include <string.h>
 #include <arpa/inet.h>
 
+#include "fuzz/fido_fuzz.h"
 #include "fuzz/fuzz.h"
 
 static int do_unpack(const uint8_t **buf, size_t *rem, uint8_t *dst,
