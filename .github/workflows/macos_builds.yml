@@ -13,8 +13,12 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: dependencies
-      run: brew install check cmake help2man libfido2 mandoc libtool automake
+      run: brew install check cmake help2man libfido2 mandoc ninja libtool automake
     - name: build
       env:
         CC: ${{ matrix.cc }}
       run: ./build-aux/ci/build-osx.sh
+    - name: build_cmake
+      env:
+        CC: ${{ matrix.cc }}
+      run: . ./build-aux/ci/cmake.sh

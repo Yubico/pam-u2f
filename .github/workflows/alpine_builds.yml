@@ -14,8 +14,8 @@ jobs:
     - name: dependencies
       run: |
         apk -q update
-        apk add autoconf automake bash build-base clang clang-analyzer git \
-          libfido2-dev libtool linux-pam-dev openssl-dev pkgconfig
+        apk add autoconf automake bash build-base clang clang-analyzer cmake \
+          git libfido2-dev libtool linux-pam-dev ninja openssl-dev pkgconfig
     - name: checkout pam-u2f
       uses: actions/checkout@v4
     - name: mark workspace as safe
@@ -25,3 +25,7 @@ jobs:
         CC: ${{ matrix.cc }}
       run: |
         ./build-aux/ci/build-linux-${CC%-*}.sh
+    - name: build_cmake
+      env:
+        CC: ${{ matrix.cc }}
+      run: . ./build-aux/ci/cmake.sh

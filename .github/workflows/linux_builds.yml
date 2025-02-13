@@ -23,8 +23,8 @@ jobs:
       run: |
         sudo apt -q update
         sudo apt install --no-install-recommends -q -y \
-          autoconf automake libtool pkg-config libfido2-dev libpam-dev \
-          git2cl asciidoc-base xsltproc docbook-xsl
+          asciidoc-base autoconf automake cmake docbook-xsl git2cl libfido2-dev \
+          libpam-dev libtool ninja-build pkg-config xsltproc
         if [ "${CC%-*}" == "clang" ]; then
           sudo apt install -q -y ${CC%-*}-tools-${CC#clang-}
         else
@@ -40,3 +40,7 @@ jobs:
         CC: ${{ matrix.cc }}
       run: |
         /bin/bash -eux build-aux/ci/distcheck.sh
+    - name: build_cmake
+      env:
+        CC: ${{ matrix.cc }}
+      run: . ./build-aux/ci/cmake.sh
