@@ -113,9 +113,6 @@ AX_CHECK_COMPILE_FLAG([-Wnull-dereference], [CWFLAGS="$CWFLAGS -Wnull-dereferenc
 AX_CHECK_COMPILE_FLAG([-Wshadow], [CWFLAGS="$CWFLAGS -Wshadow"], [], [$check_extra_flags])
 AX_CHECK_COMPILE_FLAG([-Wpointer-arith], [CWFLAGS="$CWFLAGS -Wpointer-arith"], [], [$check_extra_flags])
 
-AC_ARG_VAR([CSFLAGS], [Warning suppression flags])
-AX_CHECK_COMPILE_FLAG([-Wno-unused-but-set-variable], [CSFLAGS="-Wno-unused-but-set-variable"], [], [$check_extra_flags])
-
 AC_CONFIG_FILES([
   Makefile
   pamu2fcfg/Makefile
@@ -177,7 +174,6 @@ AC_MSG_NOTICE([Summary of build options:
   Compiler:            ${CC}
   CFLAGS:              ${CFLAGS}
   CWFLAGS:             ${CWFLAGS}
-  CSFLAGS:             ${CSFLAGS}
   Library types:       Shared=${enable_shared}, Static=${enable_static}
   LIBFIDO2 CFLAGS:     $LIBFIDO2_CFLAGS
   LIBFIDO2 LIBS:       $LIBFIDO2_LIBS

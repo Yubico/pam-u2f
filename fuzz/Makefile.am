@@ -1,5 +1,5 @@
 # Copyright (C) 2020 Yubico AB - See COPYING
-AM_CFLAGS    = $(CWFLAGS) $(CSFLAGS) -fsanitize=fuzzer
+AM_CFLAGS    = $(CWFLAGS) -fsanitize=fuzzer
 AM_CPPFLAGS  = $(LIBFIDO2_CFLAGS) $(LIBCRYPTO_CFLAGS) -I$(srcdir)/..
 AM_CPPFLAGS += -D SCONFDIR='"@SCONFDIR@"'
 AM_LDFLAGS   = -no-install -fsanitize=fuzzer

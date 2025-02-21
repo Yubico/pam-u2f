@@ -2,7 +2,7 @@
 
 AM_TESTS_ENVIRONMENT = PAM_U2F_MODULE='$(top_builddir)/.libs/pam_u2f.so'
 
-AM_CFLAGS = $(CWFLAGS) $(CSFLAGS)
+AM_CFLAGS = $(CWFLAGS)
 AM_CPPFLAGS = -I$(srcdir)/..
 
 AM_LDFLAGS = -no-install
