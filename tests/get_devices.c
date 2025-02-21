@@ -13,8 +13,6 @@
 #include <string.h>
 #include "../util.h"
 
-#include "openbsd-compat.h"
-
 static void test_nouserok(const char *username) {
   device_t *dev;
   unsigned ndevs;

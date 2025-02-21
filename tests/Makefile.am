@@ -12,8 +12,7 @@ dlsym_check_LDFLAGS = -ldl $(AM_LDFLAGS)
 
 # XXX move openbsd-compat
 check_PROGRAMS += get_devices
-get_devices_SOURCES = get_devices.c ../pamu2fcfg/strlcpy.c
-get_devices_CPPFLAGS = -I$(srcdir)/../pamu2fcfg
+get_devices_SOURCES = get_devices.c
 get_devices_LDADD = $(top_builddir)/libmodule.la
 
 check_PROGRAMS += expand
