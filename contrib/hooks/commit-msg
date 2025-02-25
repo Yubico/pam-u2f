@@ -11,10 +11,17 @@ exec 1>&2
 # See: git-interpret-trailers(1)
 ALLOWED_TRAILERS="$GIT_TOPLEVEL/contrib/allowed-trailers.txt"
 
-if BAD_TRAILERS="$(
-  git interpret-trailers --only-trailers "$@" |
-  grep -v -f "$ALLOWED_TRAILERS"
-)"; then
+select_trailers() {
+  set - $(sed 's/^/-e/; s/:.*/:/' "$ALLOWED_TRAILERS" | sort -u)
+  grep -F "$@"
+}
+
+bad_trailers() {
+  select_trailers | grep -v -f "$ALLOWED_TRAILERS"
+}
+
+if BAD_TRAILERS="$(git interpret-trailers --only-trailers "$@" | bad_trailers)"
+then
   echo "Invalid git trailers:"
   printf '%s\n' "$BAD_TRAILERS" | sed 's/^/  /'
 

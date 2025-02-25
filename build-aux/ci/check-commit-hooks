@@ -1,0 +1,42 @@
+#!/usr/bin/env sh
+# Copyright (C) 2025 Yubico AB - See COPYING
+#
+# This script checks that the individual commits within a given revision range
+# respect desired properties.
+
+set -eu
+exec 1>&2
+
+: "${1:?revision range}"
+
+: "${GIT_TOPLEVEL:=$(git rev-parse --show-toplevel)}"
+export GIT_TOPLEVEL
+
+COMMIT_MSG_HOOK="$GIT_TOPLEVEL/contrib/hooks/commit-msg"
+
+check_commit() {
+  git show --pretty='%B' --no-patch "$1" | "$COMMIT_MSG_HOOK"
+} 2>&1
+
+CHECKED=0
+EXVAL=0
+
+for HASH in $(git log --no-merges --oneline --format=%H "$1"); do
+  SUBJECT="$(git show --pretty='%s' --no-patch "$HASH")"
+
+  if ERROR_MSG="$(check_commit "$HASH")"
+  then
+    echo "$HASH (\"$SUBJECT\"): OK"
+  else
+    echo "$HASH (\"$SUBJECT\"): NOK"
+    printf "%s\n" "$ERROR_MSG" | sed "s/^/  Error:   /"
+    printf "\n"
+
+    EXVAL=1
+  fi
+
+  CHECKED=$((CHECKED + 1))
+done
+
+echo "Checked $CHECKED commits"
+exit $EXVAL

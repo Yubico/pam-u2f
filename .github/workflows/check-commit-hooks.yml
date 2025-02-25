@@ -1,0 +1,31 @@
+name: Check commit hooks
+
+on: [push, pull_request]
+
+jobs:
+  commit_msg:
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - name: Check
+      run: |
+        if [ -n "${GITHUB_BASE_REF}" ]; then
+          # pull request, check head branch against base branch
+          GITHUB_BEFORE="$(git ls-remote origin "${GITHUB_BASE_REF}" | cut -f1)"
+        elif [[ "${GITHUB_REF}" != "refs/heads/main" ]]; then
+          # workflow triggered from some branch other than main, assume that
+          # the branch will eventually be merged into main
+          GITHUB_BEFORE="$(git ls-remote origin refs/heads/main | cut -f1)"
+        else
+          # main branch, compare against previous state
+          # (jq comes preinstalled on github runners)
+          GITHUB_BEFORE="$(jq -r '.before' "${GITHUB_EVENT_PATH}")"
+        fi
+
+        # github interleaves stderr and stdout, redirect everything to stdout
+        exec 2>&1
+
+        export GIT_TOPLEVEL="$PWD"
+        ./build-aux/ci/check-commit-hooks "${GITHUB_BEFORE}..${GITHUB_REF}"
