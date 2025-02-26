@@ -13,6 +13,42 @@ infrastructure.
 You may get signed release source tarballs from Yubico's
 https://developers.yubico.com/pam-u2f/Releases[release page].
 
+== Installation
+
+pam-u2f comes readily packaged for a number of systems. A non-exhaustive
+list is available below.
+
+=== Ubuntu
+
+[source, console]
+----
+$ sudo apt install libpam-u2f pamu2fcfg
+----
+
+Additionally, Yubico maintains a PPA with up-to-date versions of pam-u2f.
+
+[source, console]
+----
+$ sudo apt install software-properties-common
+$ sudo apt-add-repository ppa:yubico/stable
+$ sudo apt update
+$ sudo apt install libpam-u2f pamu2fcfg
+----
+
+=== Fedora
+
+[source, console]
+----
+$ sudo dnf install pam-u2f pamu2fcfg
+----
+
+=== macOS
+
+[source, console]
+----
+$ brew install pam-u2f
+----
+
 [[building]]
 == Building
 
