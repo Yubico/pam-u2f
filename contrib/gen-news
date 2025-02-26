@@ -1,0 +1,24 @@
+#!/usr/bin/env sh
+# Copyright (C) 2025 Yubico AB - See COPYING
+#
+# Generate content for the NEWS file from git history.
+#
+# Commits that are relevant for the NEWS file should be marked by
+# means of their "Changelog" trailer (see git-interpret-trailers).
+#
+# A list of allowed values is available in contrib/allowed-trailers.txt
+
+set -eu
+
+if [ -n "${1-}" ]; then
+  range="$1"
+  git rev-list --quiet "$range" --
+else
+  range="$(git describe --abbrev=0 --match 'pam_u2f-*')..HEAD"
+fi
+
+git log \
+  --oneline \
+  --pretty="%(trailers:key=Changelog,valueonly,separator=%x2C): %s" \
+  "$range" |
+sed -n '/^\w\+:/s/^/** /p'
