@@ -1,0 +1,18 @@
+#!/usr/bin/env sh
+#
+# Copyright (C) 2025 Yubico AB - See COPYING
+#
+# Run this script after cloning the repository to
+# enable the git hooks within this directory.
+
+set -eu
+
+GIT_DIR="$(git rev-parse --git-dir)"
+GIT_HOOKS_DIR="$GIT_DIR/hooks"
+
+GIT_TOPLEVEL="$(git rev-parse --show-toplevel)"
+HOOKS_REPO="$GIT_TOPLEVEL/contrib/hooks"
+
+for h in "$HOOKS_REPO/"*; do
+  ln -vsfr "$HOOKS_REPO/$h" "$GIT_HOOKS_DIR/"
+done

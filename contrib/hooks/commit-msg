@@ -1,0 +1,25 @@
+#!/usr/bin/env sh
+#
+# Copyright (C) 2025 Yubico AB - See COPYING
+
+set -eu
+exec 1>&2
+
+: "${GIT_TOPLEVEL:=$(git rev-parse --show-toplevel)}"
+
+# Check commit message for the presence of required trailers.
+# See: git-interpret-trailers(1)
+ALLOWED_TRAILERS="$GIT_TOPLEVEL/contrib/allowed-trailers.txt"
+
+if BAD_TRAILERS="$(
+  git interpret-trailers --only-trailers "$@" |
+  grep -v -f "$ALLOWED_TRAILERS"
+)"; then
+  echo "Invalid git trailers:"
+  printf '%s\n' "$BAD_TRAILERS" | sed 's/^/  /'
+
+  echo "Note: valid trailers are:"
+  sed 's/^/  /' <"$ALLOWED_TRAILERS";
+
+  exit 1
+fi
