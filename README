@@ -50,8 +50,7 @@ $ brew install pam-u2f
 ----
 
 [[building]]
-== Building
-
+== Building from a source tarball
 
 This project uses 'autoconf', 'automake', 'pkg-config' and 'libtool'
 to achieve portability and ease of use.
