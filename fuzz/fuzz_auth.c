@@ -70,8 +70,7 @@ static const char dummy_conf_file[] = "max_devices=10\n"
                                       "origin=pam://lolcalhost\n"
                                       "appid=pam://lolcalhost\n"
                                       "prompt=hello\n"
-                                      "cue_prompt=howdy\n"
-                                      "debug_file=stdout\n";
+                                      "cue_prompt=howdy\n";
 
 /* conversation dummy for manual authentication */
 static const char *dummy_conv =
