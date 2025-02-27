@@ -48,26 +48,25 @@ $ brew install pam-u2f
 [[building]]
 == Building from a source tarball
 
-This project uses 'autoconf', 'automake', 'pkg-config' and 'libtool'
-to achieve portability and ease of use.
+This project depends on https://developers.yubico.com/libfido2[`libfido2`]
+(>= 1.3.0).
+Versions of this project up to 1.0.8 used `libu2f-host` and
+`libu2f-server`.
 
-In addition, https://developers.yubico.com/libfido2['libfido2'] (>=
-1.3.0) is needed. Versions of this project up to 1.0.8 used
-`libu2f-host` and `libu2f-server`. On Ubuntu, the necessary dependencies can be
-installed using
+On Ubuntu, the dependencies needed to build the source tarball can be installed
+using:
 
 ----
 # apt install --no-install-recommends \
-    autoconf \
-    automake \
+    gcc \
     libfido2-dev \
     libpam-dev \
     libssl-dev \
-    libtool \
+    make \
     pkg-config
 ----
 
-If you downloaded a tarball, build it as follows.
+The project can be built as follows:
 
 ----
 $ ./configure
@@ -95,9 +94,11 @@ This will create a directory 'pam-u2f'. Enter the directory:
 $ cd pam-u2f
 ----
 
-`autoconf`, `automake`, `libtool`, and `libpam` must be installed.
-`AsciiDoc` and `xsltproc` are used to generate the manpages. On Ubuntu,
-the necessary dependencies can be installed using
+This project uses `autoconf`, `automake`, `pkg-config` and `libtool`
+to achieve portability and ease of use.
+`AsciiDoc` and `xsltproc` are used to generate the manpages.
+
+On Ubuntu, the dependencies needed to build from Git can be installed using:
 
 ----
 # apt install --no-install-recommends
@@ -114,7 +115,7 @@ the necessary dependencies can be installed using
     xsltproc
 ----
 
-On Fedora, the necessary dependencies can be installed using
+On Fedora, the necessary dependencies can be installed using:
 
 ----
 # dnf -y install \
