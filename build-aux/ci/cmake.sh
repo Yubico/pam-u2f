@@ -1,4 +1,4 @@
-#!/bin/env sh
+#!/usr/bin/env sh
 # Copyright (C) 2025 Yubico AB - See COPYING
 
 set -exu
