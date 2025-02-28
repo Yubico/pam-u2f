@@ -57,7 +57,7 @@ On Ubuntu, the dependencies needed to build the source tarball can be installed
 using:
 
 ----
-# apt install --no-install-recommends \
+# apt install --no-install-recommends --no-install-suggests \
     gcc \
     libfido2-dev \
     libpam-dev \
@@ -101,18 +101,16 @@ to achieve portability and ease of use.
 On Ubuntu, the dependencies needed to build from Git can be installed using:
 
 ----
-# apt install --no-install-recommends
+# apt install --no-install-recommends --no-install-suggests \
     asciidoc \
     autoconf \
     automake \
-    docbook-xml \
     libfido2-dev \
     libpam-dev \
     libssl-dev \
     libtool \
-    libxml2-utils \
-    pkg-config \
-    xsltproc
+    make \
+    pkg-config
 ----
 
 On Fedora, the necessary dependencies can be installed using:
