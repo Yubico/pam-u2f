@@ -145,6 +145,43 @@ $ autoreconf --install
 
 Then build as usual, see above under <<building,Building from a source tarball>>.
 
+== Building with CMake
+
+A migration of the build system from GNU Autotools to CMake is currently in
+process.
+Versions from 1.4.0 and above can be built using CMake, while
+GNU Autotools will be deprecated in a future release.
+
+Building with CMake requires a different set of dependencies, that
+are needed both when compiling from a source tarball and when building from Git.
+
+On Ubuntu, the dependencies needed to build with CMake can be installed using:
+
+----
+# apt install --no-install-recommends --no-install-suggests \
+    asciidoc \
+    cmake \
+    gcc \
+    libfido2-dev \
+    libpam-dev \
+    make \
+    pkg-config
+----
+
+The project can be built as follows:
+
+----
+$ cmake .
+$ cmake --build .
+$ cmake --build . -t test   # Optional: run unit tests
+----
+
+The obtained artifacts can be installed as follows:
+
+----
+# cmake --install .
+----
+
 == Service Configuration
 
 Create a file for a new service in `/etc/pam.d/` or edit an already
