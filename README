@@ -77,8 +77,8 @@ Once the module is built, copy the file `pam_u2f.so` to the correct
 directory for your system. Typically `/lib/security/` or
 `/lib/x86_64-linux-gnu/security/`. This is automated by `make install`
 assuming that the pam directory chosen by `configure` is correct. If
-that is not the case it can be specified with `./configure
---with-pam-dir=`.
+that is not the case it can be specified with
+`./configure --with-pam-dir=`.
 
 == Building from Git
 
