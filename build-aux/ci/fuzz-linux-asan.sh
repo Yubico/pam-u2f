@@ -1,5 +1,8 @@
-#!/usr/bin/env bash
-set -euxo pipefail
+#!/usr/bin/env sh
+#
+# Copyright (C) 2025 Yubico AB - See COPYING
+
+set -eux
 
 CORPUS_URL="https://storage.googleapis.com/yubico-pam-u2f/corpus.tgz"
 
