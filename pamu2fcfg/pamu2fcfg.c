@@ -391,8 +391,8 @@ static void parse_args(int argc, char *argv[], struct args *args) {
 "  -V, --user-verification  Require user verification during authentication\n"
 "  -d, --debug              Print debug information\n"
 "  -v, --verbose            Print information about chosen origin and appid\n"
-"  -u, --username=STRING    The name of the user registering the device,\n"
-"                             defaults to the current user name\n"
+"  -u, --username=STRING    The name of the user registering the FIDO\n"
+"                             authenticator, defaults to the current user name\n"
 "  -n, --nouser             Print only registration information (key handle,\n"
 "                             public key, and options), useful for appending\n"
 "\n"
@@ -475,15 +475,15 @@ int main(int argc, char *argv[]) {
 
   r = fido_dev_info_manifest(devlist, DEVLIST_LEN, &ndevs);
   if (r != FIDO_OK) {
-    fprintf(stderr, "Unable to discover device(s), %s (%d)\n", fido_strerr(r),
-            r);
+    fprintf(stderr, "Unable to discover FIDO authenticator(s), %s (%d)\n",
+            fido_strerr(r), r);
     goto err;
   }
 
   if (ndevs == 0) {
     for (int i = 0; i < TIMEOUT; i += FREQUENCY) {
       fprintf(stderr,
-              "\rNo U2F device available, please insert one now, you "
+              "\rNo FIDO authenticator available, please insert one now, you "
               "have %2d seconds",
               TIMEOUT - i);
       fflush(stderr);
@@ -491,21 +491,21 @@ int main(int argc, char *argv[]) {
 
       r = fido_dev_info_manifest(devlist, DEVLIST_LEN, &ndevs);
       if (r != FIDO_OK) {
-        fprintf(stderr, "\nUnable to discover device(s), %s (%d)",
+        fprintf(stderr, "\nUnable to discover FIDO authenticator(s), %s (%d)\n",
                 fido_strerr(r), r);
         goto err;
       }
 
       if (ndevs != 0) {
-        fprintf(stderr, "\nDevice found!\n");
+        fprintf(stderr, "\nFIDO authenticator found!\n");
         break;
       }
     }
   }
 
   if (ndevs == 0) {
-    fprintf(stderr, "\rNo device found. Aborting.                              "
-                    "           \n");
+    fprintf(stderr, "\rNo FIDO authenticator found. Aborting.                  "
+                    "                   \n");
     goto err;
   }
 
@@ -537,14 +537,16 @@ int main(int argc, char *argv[]) {
     goto err;
   }
   if (args.pin_verification && !(devopts & PIN_SET)) {
-    warnx("%s", devopts & PIN_UNSET ? "device has no PIN"
-                                    : "device does not support PIN");
+    warnx("%s", devopts & PIN_UNSET
+                  ? "FIDO authenticator has no PIN"
+                  : "FIDO authenticator does not support PIN");
     goto err;
   }
   if (args.user_verification && !(devopts & UV_SET)) {
-    warnx("%s", devopts & UV_UNSET
-                  ? "device has no built-in user verification configured"
-                  : "device does not support built-in user verification");
+    warnx("%s",
+          devopts & UV_UNSET
+            ? "FIDO authenticator has no built-in user verification configured"
+            : "FIDO authenticator does not support built-in user verification");
     goto err;
   }
   if ((devopts & (UV_REQD | PIN_SET | UV_SET)) == UV_REQD) {

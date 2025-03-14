@@ -18,8 +18,8 @@
 #define DEFAULT_AUTHFILE_DIR ".config"
 #define DEFAULT_AUTHFILE_DIR_SSH ".ssh"
 #define DEFAULT_AUTHPENDING_FILE_PATH "/var/run/user/%d/pam-u2f-authpending"
-#define DEFAULT_PROMPT "Insert your U2F device, then press ENTER."
-#define DEFAULT_CUE "Please touch the device."
+#define DEFAULT_PROMPT "Insert your FIDO authenticator, then press ENTER."
+#define DEFAULT_CUE "Please touch the FIDO authenticator."
 #define DEFAULT_ORIGIN_PREFIX "pam://"
 #define SSH_ORIGIN "ssh:"
 
