@@ -215,7 +215,7 @@ appid=appid::
 Set the https://developers.yubico.com/U2F/App_ID.html[application ID]
 for the FIDO authentication procedure. If no value is specified, the
 same value used for origin is taken ("pam://$HOSTNAME" if also origin
-is not specified). This setting is only applicable for U2F credentials
+is not specified). This setting is only applicable for FIDO credentials
 created with pamu2fcfg versions v1.0.8 or earlier. Note that on v1.1.0
 and v1.1.1 of pam-u2f, handling of this setting was temporarily broken
 if the value was not the same as the value of origin.
@@ -236,8 +236,8 @@ sequences result in an authentication error. See also `openasuser`.
 authpending_file=file::
 Set the location of the file that is used for touch request
 notifications. This file will be opened when pam-u2f starts waiting
-for a user to touch the device, and will be closed when it no longer
-waits for a touch. Use inotify to listen on these events, or a more
+for a user to touch the FIDO authenticator, and will be closed when it no
+longer waits for a touch. Use inotify to listen on these events, or a more
 high-level tool like
 https://github.com/maximbaz/yubikey-touch-detector[yubikey-touch-detector].
 Note that yubikey-touch-detector v1.5.1 and later no longer rely on the
@@ -263,13 +263,14 @@ Set to enable all authentication attempts to succeed (aka presentation
 mode).
 
 max_devices=n_devices::
-Maximum number of devices (credentials) allowed per user (default is 24).
-Devices specified in the authorization mapping file that exceed this value will
-be ignored.
+Maximum number of FIDO authenticators allowed per user (default is 24).
+Authenticators specified in the authorization mapping file that exceed
+this value will be ignored.
 
 interactive::
 Set to prompt a message and wait before testing the presence of a FIDO
-device. Recommended if your device doesn't have a tactile trigger.
+authenticator. Recommended if your authenticator doesn't have a tactile
+trigger.
 
 [prompt=your prompt here]::
 Set individual prompt message for interactive mode. Watch the square
@@ -279,11 +280,11 @@ PAM.
 manual::
 Set to drop to a manual console where challenges are printed on screen
 and response read from standard input. Useful for debugging and SSH
-sessions without U2F-support from the SSH client/server. If enabled,
+sessions without FIDO support from the SSH client/server. If enabled,
 interactive mode becomes redundant and has no effect.
 
 cue::
-Set to prompt a message to remind to touch the device.
+Set to prompt a message to remind to touch the FIDO authenticator.
 
 [cue_prompt=your prompt here]::
 Set individual prompt message for the cue option. Watch the square
@@ -291,7 +292,7 @@ brackets around this parameter to get spaces correctly recognized by
 PAM.
 
 nodetect::
-Set to skip detecting if a suitable FIDO token is inserted before
+Set to skip detecting if a suitable FIDO authenticator is inserted before
 performing the full tactile authentication. This detection was created
 to avoid emitting the "cue" message if no suitable token exists,
 because doing so leaks information about the authentication stack if a
@@ -321,7 +322,7 @@ with support for a FIDO2 PIN is required.
 
 sshformat::
 Use credentials produced by versions of OpenSSH that have support for
-FIDO devices. It is not possible to mix native credentials and SSH
+FIDO authenticators. It is not possible to mix native credentials and SSH
 credentials. Once this option is enabled all credentials will be parsed
 as SSH.
 
@@ -486,12 +487,12 @@ To use this credential the `authfile` parameter should be set to the path of
 the file `credential.ssh` and the `sshformat` option should also be set. If the
 `authfile` parameter is not set, it defaults to `~/.ssh/id_ecdsa_sk`.
 
-=== Multiple Devices
+=== Multiple FIDO Authenticators
 
-Multiple devices (credentials) are supported. If more than one credential is
+Multiple FIDO authenticators are supported. If more than one authenticator is
 specified, authentication against them is attempted sequentially as they are
 defined in the authorization mapping file. If during an authentication attempt
-a connected device is removed or a new device is plugged in, the authentication
+a connected authenticator is removed or a new one is plugged in, the authentication
 restarts from the top of the list.
 
 [[confFile]]
@@ -543,8 +544,8 @@ For more information see
 https://access.redhat.com/security/cve/CVE-2020-24612[HERE].
 
 == FIDO U2F vs FIDO2
-Devices that solely support FIDO U2F and not FIDO2, e.g. the YubiKey 4 series,
-can be used only in conjunction with compatible features. Enabling incompatible
-features, such as setting the `+pin` or the `+verification` flags in the
-`authfile` or the corresponding options in the PAM service configuration causes
-the device to be ignored.
+Authenticators that solely support FIDO U2F and not FIDO2, e.g. the YubiKey 4
+series, can be used only in conjunction with compatible features. Enabling
+incompatible features, such as setting the `+pin` or the `+verification` flags
+in the `authfile` or the corresponding options in the PAM service configuration
+causes the authenticator to be ignored.
