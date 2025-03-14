@@ -31,10 +31,10 @@ Set the relying party ID for the FIDO authentication procedure. If no
 value is specified, the identifier "pam://$HOSTNAME" is used.
 
 *appid*=_appid_::
-Set the application ID for the U2F authentication
+Set the application ID for the FIDO authentication
 procedure. If no value is specified, the same value used for origin is
 taken ("pam://$HOSTNAME" if also origin is not specified). This setting
-is only applicable for U2F credentials created with pamu2fcfg versions
+is only applicable for FIDO credentials created with pamu2fcfg versions
 v1.0.8 or earlier. Note that on v1.1.0 and v1.1.1 of pam-u2f, handling
 of this setting was temporarily broken if the value was not the same as
 the value of origin.
@@ -54,13 +54,14 @@ local user name (`PAM_USER`) and `%%` is expanded to `%`. Unknown expansion
 sequences result in an authentication error. See also `openasuser`.
 
 *authpending_file*=_file_::
-Set the location of the file that is used for touch request
-notifications. This file will be opened when pam-u2f starts waiting
-for a user to touch the device, and will be closed when it no longer
-waits for a touch. Use inotify to listen on these events, or a more
-high-level tool like yubikey-touch-detector. Default value:
-/var/run/user/$UID/pam-u2f-authpending. Set an empty value in order to
-disable this functionality, like so: "authpending_file=".
+Set the location of the file that is used for touch request notifications. This
+file will be opened when pam-u2f starts waiting for a user to touch the FIDO
+authenticator, and will be closed when it no longer waits for a touch. Use
+inotify to listen on these events, or a more high-level tool like
+yubikey-touch-detector.
+Default value: /var/run/user/$UID/pam-u2f-authpending.
+Set an empty value in order to disable this functionality, like so:
+"authpending_file=".
 
 *nouserok*::
 Set to enable authentication attempts to succeed even if the user
@@ -80,13 +81,13 @@ Set to enable all authentication attempts to succeed (aka presentation
 mode).
 
 *max_devices*=_n_devices_::
-Maximum number of devices (credentials) allowed per user (default is 24).
-Devices specified in the authorization mapping file that exceed this value
-will be ignored.
+Maximum number of FIDO authenticators allowed per user (default is 24).
+FIDO authenticators specified in the authorization mapping file that exceed
+this value will be ignored.
 
 *interactive*::
-Set to prompt a message and wait before testing the presence of a U2F
-device. Recommended if your device doesn't have tactile trigger.
+Set to prompt a message and wait before testing the presence of a FIDO
+authenticator. Recommended if your authenticator doesn't have tactile trigger.
 
 *[prompt=your prompt here]*::
 Set individual prompt message for interactive mode. Watch the square
@@ -96,11 +97,11 @@ PAM.
 *manual*::
 Set to drop to a manual console where challenges are printed on screen
 and response read from standard input. Useful for debugging and SSH
-sessions without U2F-support from the SSH client/server. If enabled,
+sessions without FIDO support from the SSH client/server. If enabled,
 interactive mode becomes redundant and has no effect.
 
 *cue*::
-Set to prompt a message to remind to touch the device.
+Set to prompt a message to remind to touch the FIDO authenticator.
 
 *[cue_prompt=your prompt here]*::
 Set individual prompt message for the cue option. Watch the square
@@ -108,8 +109,8 @@ brackets around this parameter to get spaces correctly recognized by
 PAM.
 
 *nodetect*::
-Skip detecting if a suitable key is inserted before performing a full
-authentication. See *NOTES* below.
+Skip detecting if a suitable FIDO authenticator is inserted before performing a
+full authentication. See *NOTES* below.
 
 *userpresence*=_int_::
 If 1, require user presence during authentication. If 0, do not
@@ -130,7 +131,7 @@ support for a FIDO2 PIN is required.
 
 *sshformat*::
 Use credentials produced by versions of OpenSSH that have support for
-FIDO devices. It is not possible to mix native credentials and SSH
+FIDO authenticator. It is not possible to mix native credentials and SSH
 credentials. Once this option is enabled all credentials will be parsed
 as SSH.
 
@@ -210,8 +211,8 @@ determine that pam_u2f is part of the authentication stack by
 inserting any random U2F token and performing an authentication
 attempt. In this scenario, the attacker would see the cue message
 followed by an immediate failure, whereas with detection enabled, the
-U2F authentication will fail silently. Understand that an attacker
-could choose a U2F token that alerts him or her in some way to the
+authentication will fail silently. Understand that an attacker
+could choose an authenticator that alerts him or her in some way to the
 "check-only" authentication attempt, so this precaution only pushes
 the issue back a step.
 
