@@ -633,10 +633,11 @@ static int parse_ssh_format(const cfg_t *cfg, FILE *opwfile,
     goto out;
   }
 
-  debug_dbg(cfg, "KeyHandle for device number 1: %s", devices[0].keyHandle);
-  debug_dbg(cfg, "publicKey for device number 1: %s", devices[0].publicKey);
-  debug_dbg(cfg, "COSE type for device number 1: %s", devices[0].coseType);
-  debug_dbg(cfg, "Attributes for device number 1: %s", devices[0].attributes);
+  debug_dbg(cfg, "KeyHandle for device number %u: %s", 1, devices[0].keyHandle);
+  debug_dbg(cfg, "publicKey for device number %u: %s", 1, devices[0].publicKey);
+  debug_dbg(cfg, "COSE type for device number %u: %s", 1, devices[0].coseType);
+  debug_dbg(cfg, "Attributes for device number %u: %s", 1,
+            devices[0].attributes);
 
   // reserved (skip)
   if (!ssh_get_string_ref(&decoded, &decoded_len, NULL, NULL)) {
