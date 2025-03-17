@@ -66,19 +66,20 @@ cmake --build build.libfido2 -j "$NPROC"
 cmake --install build.libfido2
 
 # pam-u2f
-mkdir build
-(
-cd build
-autoreconf -i "${WORKDIR}"
-"${WORKDIR}"/configure --enable-fuzzing --disable-silent-rules \
-	--disable-man CFLAGS="${PAM_U2F_CFLAGS} ${COMMON_CFLAGS}"
-make -j "$NPROC"
+cmake -B build.pam_u2f -S "$WORKDIR" \
+	-DBUILD_FUZZER=ON \
+	-DBUILD_MANPAGES=OFF \
+	-DBUILD_MODULE=OFF \
+	-DBUILD_PAMU2FCFG=OFF \
+	-DBUILD_TESTING=OFF \
+	-DCMAKE_BUILD_TYPE=Debug \
+	-DCMAKE_C_FLAGS_DEBUG="${PAM_U2F_CFLAGS} ${COMMON_CFLAGS}"
+cmake --build build.pam_u2f -j "$NPROC"
 
 # fuzz
 curl --retry 4 -s -o corpus.tgz "${CORPUS_URL}"
 tar xzf corpus.tgz
-fuzz/fuzz_format_parsers corpus/format_parsers \
+build.pam_u2f/fuzz/fuzz_format_parsers corpus/format_parsers \
 	-reload=30 -print_pcs=1 -print_funcs=30 -timeout=10 -runs=1
-fuzz/fuzz_auth corpus/auth \
+build.pam_u2f/fuzz/fuzz_auth corpus/auth \
 	-reload=30 -print_pcs=1 -print_funcs=30 -timeout=10 -runs=1
-)
