@@ -48,7 +48,8 @@ cmake -B libcbor.build -S libcbor \
 	-DCMAKE_INSTALL_LIBDIR=lib \
 	-DCMAKE_INSTALL_PREFIX="${FAKEROOT}" \
 	-DSANITIZE=OFF \
-	-DWITH_EXAMPLES=OFF
+	-DWITH_EXAMPLES=OFF \
+	-GNinja
 cmake --build libcbor.build -j "$NPROC"
 cmake --install libcbor.build
 
@@ -61,7 +62,8 @@ cmake -B build.libfido2 -S libfido2 \
 	-DCMAKE_INSTALL_LIBDIR=lib \
 	-DCMAKE_INSTALL_PREFIX="${FAKEROOT}" \
 	-DFUZZ=1 \
-	-DFUZZ_LDFLAGS="-fsanitize=fuzzer"
+	-DFUZZ_LDFLAGS="-fsanitize=fuzzer" \
+	-GNinja
 cmake --build build.libfido2 -j "$NPROC"
 cmake --install build.libfido2
 
@@ -73,7 +75,8 @@ cmake -B build.pam_u2f -S "$WORKDIR" \
 	-DBUILD_PAMU2FCFG=OFF \
 	-DBUILD_TESTING=OFF \
 	-DCMAKE_BUILD_TYPE=Debug \
-	-DCMAKE_C_FLAGS_DEBUG="${PAM_U2F_CFLAGS} ${COMMON_CFLAGS}"
+	-DCMAKE_C_FLAGS_DEBUG="${PAM_U2F_CFLAGS} ${COMMON_CFLAGS}" \
+	-GNinja
 cmake --build build.pam_u2f -j "$NPROC"
 
 # fuzz

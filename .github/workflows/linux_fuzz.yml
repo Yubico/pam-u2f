@@ -18,7 +18,7 @@ jobs:
         CC: ${{ matrix.cc }}
       run: |
         sudo apt -q update
-        sudo apt install -q -y autoconf automake libtool pkg-config \
+        sudo apt install -q -y ninja-build pkg-config \
           libpam-dev libz-dev libudev-dev libpcsclite-dev
           sudo apt install -q -y ${CC%-*}-tools-${CC#clang-}
     - name: Fuzz
