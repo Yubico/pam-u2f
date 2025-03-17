@@ -18,7 +18,14 @@ PAM_U2F_CFLAGS="${PAM_U2F_CFLAGS} -fno-sanitize-recover=all"
 
 ${CC} --version
 WORKDIR="${WORKDIR:-$(pwd)}"
-FAKEROOT="${FAKEROOT:-$(mktemp -d)}"
+
+if [ -n "${FAKEROOT:-}" ]; then
+	mkdir -p "${FAKEROOT}"
+	FAKEROOT="$(cd "$FAKEROOT" && pwd)" # Must be absolute
+else
+	FAKEROOT="$(mktemp -d)"
+	trap 'rm -rf "$FAKEROOT"' 0
+fi
 
 export LD_LIBRARY_PATH="${FAKEROOT}/lib"
 export PKG_CONFIG_PATH="${FAKEROOT}/lib/pkgconfig"
