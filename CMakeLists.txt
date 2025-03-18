@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.18.0)
 
 project(
 	pam_u2f
-	VERSION 1.3.3
+	VERSION 1.4.0
 	HOMEPAGE_URL https://developers.yubico.com/pam-u2f/
 	LANGUAGES C
 )
