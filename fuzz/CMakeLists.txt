@@ -35,13 +35,15 @@ target_link_options(pam_u2f_fuzz PRIVATE
 	-Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/export.gnu
 )
 
+target_compile_options(pam_u2f_fuzz PRIVATE -fsanitize=fuzzer-no-link)
 target_compile_definitions(pam_u2f_fuzz PRIVATE WITH_FUZZING)
 target_link_libraries(pam_u2f_fuzz PUBLIC pam_u2f_base)
 
 function(add_fuzzer NAME)
 	add_executable(${NAME} ${ARGN})
+	target_compile_options(${NAME} PRIVATE -fsanitize=fuzzer)
 	target_link_libraries(${NAME} PRIVATE common pam_u2f_fuzz)
-	target_link_options(${NAME} PRIVATE -fsanitize=fuzzer -fsanitize=fuzzer-no-link)
+	target_link_options(${NAME} PRIVATE -fsanitize=fuzzer)
 endfunction()
 
 add_fuzzer(fuzz_format_parsers fuzz_format_parsers.c)
