@@ -39,11 +39,14 @@ export ASAN_OPTIONS="detect_leaks=1:detect_invalid_pointer_pairs=2"
 
 cd "${FAKEROOT}"
 
-git clone --depth 1 "${LIBFIDO2_URL}" -b "${LIBFIDO2_TAG}"
-git clone --depth 1 "${LIBCBOR_URL}" -b "${LIBCBOR_TAG}"
+[ -e libcbor ]  || git clone --depth 1 "${LIBCBOR_URL}" -b "${LIBCBOR_TAG}"
+[ -e libfido2 ] || {
+	git clone --depth 1 "${LIBFIDO2_URL}" -b "${LIBFIDO2_TAG}"
 
-# libcbor (with libfido2 patch)
-patch -d libcbor -p0 -s <libfido2/fuzz/README
+	# libcbor (with libfido2 patch)
+	patch -d libcbor -p0 -s <libfido2/fuzz/README
+}
+
 cmake -B libcbor.build -S libcbor \
 	-DBUILD_SHARED_LIBS=ON \
 	-DCMAKE_BUILD_TYPE=Debug \
