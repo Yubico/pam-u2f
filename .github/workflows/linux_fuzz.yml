@@ -20,7 +20,7 @@ jobs:
         sudo apt -q update
         sudo apt install -q -y ninja-build pkg-config \
           libpam-dev libz-dev libudev-dev libpcsclite-dev
-          sudo apt install -q -y ${CC%-*}-tools-${CC#clang-}
+        sudo apt install -q -y ${CC%-*}-tools-${CC#clang-} llvm
     - name: Fuzz
       env:
         CC: ${{ matrix.cc }}
