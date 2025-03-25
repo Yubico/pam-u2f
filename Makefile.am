@@ -116,7 +116,7 @@ release:
 		(echo 'error: Update date/version in $(srcdir)/NEWS.'; exit 1)
 	rm -f $(srcdir)/ChangeLog
 	make ChangeLog distcheck
-	gpg --detach-sign --default-key $(KEYID) $(PACKAGE)-$(VERSION).tar.gz
+	gpg --no-armor --detach-sign --default-key $(KEYID) $(PACKAGE)-$(VERSION).tar.gz
 	gpg --verify $(PACKAGE)-$(VERSION).tar.gz.sig
 	cd $(srcdir) && git push
 	cd $(srcdir) && git tag -u $(KEYID) -m $(VERSION) $(PACKAGE)-$(VERSION)
