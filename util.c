@@ -1167,6 +1167,7 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
   int retval = PAM_AUTH_ERR;
   size_t ndevs = 0;
   size_t ndevs_prev = 0;
+  size_t ndevs_suitable = 0;
   unsigned i = 0;
   struct opts opts;
   struct pk pk;
@@ -1247,6 +1248,7 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
           goto out;
         }
 
+        ++ndevs_suitable;
         if (opts.pin == FIDO_OPT_TRUE) {
           pin = converse(pamh, PAM_PROMPT_ECHO_OFF, "Please enter the PIN: ");
           if (pin == NULL) {
@@ -1308,6 +1310,7 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
                 "Devices max_index has changed: %zu (was %zu). Starting over",
                 ndevs, ndevs_prev);
       ndevs_prev = ndevs;
+      ndevs_suitable = 0;
       i = 0;
     }
 
@@ -1317,6 +1320,11 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
     }
 
     fido_assert_free(&assert);
+  }
+
+  if (ndevs_suitable == 0) {
+    debug_dbg(cfg, "No suitable devices found");
+    retval = PAM_CRED_UNAVAIL;
   }
 
 out:
