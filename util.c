@@ -22,6 +22,10 @@
 #include <string.h>
 #include <arpa/inet.h>
 
+#ifdef HAVE_SECURITY_PAM_EXT_H
+#include <security/pam_ext.h>
+#endif
+
 #include "b64.h"
 #include "debug.h"
 #include "util.h"
@@ -1483,6 +1487,9 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
 
     r = fido_assert_verify(assert[i], 0, pk[i].type, pk[i].ptr);
     if (r == FIDO_OK) {
+#ifdef HAVE_PAM_SYSLOG
+      pam_syslog(pamh, LOG_INFO, "Successful FIDO authentication with publicKey %s (idx %u)", devices[i].publicKey, i);
+#endif
       retval = PAM_SUCCESS;
       break;
     }

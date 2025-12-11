@@ -45,11 +45,11 @@ AM_CONDITIONAL([ENABLE_FUZZING], [test "$enable_fuzzing" = "yes"])
 
 AC_CHECK_HEADERS([security/pam_appl.h], [],
   [AC_MSG_ERROR([[PAM header files not found, install libpam-dev.]])])
-AC_CHECK_HEADERS([security/pam_modules.h security/pam_modutil.h security/openpam.h], [], [],
+AC_CHECK_HEADERS([security/pam_modules.h security/pam_modutil.h security/pam_ext.h security/openpam.h], [], [],
   [#include <sys/types.h>
 #include <security/pam_appl.h>])
 AC_CHECK_LIB([pam], [pam_start])
-AC_CHECK_FUNCS([pam_modutil_drop_priv openpam_borrow_cred])
+AC_CHECK_FUNCS([pam_modutil_drop_priv openpam_borrow_cred pam_syslog])
 
 case "$host" in
      *darwin*)  PAMDIR="/usr/lib/pam";;
