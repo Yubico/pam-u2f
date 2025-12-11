@@ -201,12 +201,7 @@ static int make_cred(const struct args *args, const char *path, fido_dev_t *dev,
   if ((devopts & PIN_SET) &&
       (r == FIDO_ERR_PIN_REQUIRED || r == FIDO_ERR_UV_BLOCKED ||
        r == FIDO_ERR_PIN_BLOCKED)) {
-    n = snprintf(prompt, sizeof(prompt), "Enter PIN for %s: ", path);
-    if (n < 0 || (size_t) n >= sizeof(prompt)) {
-      fprintf(stderr, "error: snprintf prompt");
-      return -1;
-    }
-    if (!readpassphrase(prompt, pin, sizeof(pin), RPP_ECHO_OFF)) {
+    if (!readpassphrase("Enter PIN (then touch device): ", pin, sizeof(pin), RPP_ECHO_OFF)) {
       fprintf(stderr, "error: failed to read pin");
       explicit_bzero(pin, sizeof(pin));
       return -1;
