@@ -100,6 +100,9 @@ and response read from standard input. Useful for debugging and SSH
 sessions without FIDO support from the SSH client/server. If enabled,
 interactive mode becomes redundant and has no effect.
 
+*webauthn*::
+Set to change challenge behaviour to clientDataJSON instead of clientDataHash.
+
 *cue*::
 Set to prompt a message to remind to touch the FIDO authenticator.
 

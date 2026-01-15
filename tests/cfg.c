@@ -113,6 +113,7 @@ static void config_flip_all(const struct conf_file *cf, const cfg_t *cfg) {
   config_different_bool(conf_out, "nouserok", cfg->nouserok);
   config_different_bool(conf_out, "openasuser", cfg->openasuser);
   config_different_bool(conf_out, "sshformat", cfg->sshformat);
+  config_different_bool(conf_out, "webauthn", cfg->webauthn);
 
   config_different_str(conf_out, "appid", cfg->appid);
   config_different_str(conf_out, "authfile", cfg->auth_file);
@@ -187,6 +188,7 @@ static void test_regular(void) {
   assert(cfg.pinverification != cfg_defaults.pinverification);
   assert(cfg.sshformat != cfg_defaults.sshformat);
   assert(cfg.expand != cfg_defaults.expand);
+  assert(cfg.webauthn != cfg_defaults.webauthn);
 
   assert(str_opt_cmp(cfg.auth_file, cfg_defaults.auth_file));
   assert(str_opt_cmp(cfg.authpending_file, cfg_defaults.authpending_file));
@@ -351,7 +353,7 @@ static void test_file_parser(void) {
   assert(!cfg_defaults.cue);
   assert(!cfg_defaults.origin);
   assert(!cfg_defaults.appid);
-  assert(!cfg_defaults.appid);
+  assert(!cfg_defaults.webauthn);
   assert(!cfg_defaults.authpending_file);
 
   fputs("   \n", cf.out);

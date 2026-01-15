@@ -49,6 +49,7 @@ struct opts {
   fido_opt_t up;
   fido_opt_t uv;
   fido_opt_t pin;
+  fido_opt_t webauthn;
 };
 
 struct pk {
@@ -875,6 +876,7 @@ static void init_opts(struct opts *opts) {
   opts->up = FIDO_OPT_FALSE;
   opts->uv = FIDO_OPT_OMIT;
   opts->pin = FIDO_OPT_FALSE;
+  opts->webauthn = FIDO_OPT_FALSE;
 }
 
 static void parse_opts(const cfg_t *cfg, const char *attr, struct opts *opts) {
@@ -900,6 +902,14 @@ static void parse_opts(const cfg_t *cfg, const char *attr, struct opts *opts) {
     opts->pin = FIDO_OPT_FALSE;
   } else {
     opts->pin = FIDO_OPT_OMIT;
+  }
+
+  if (cfg->webauthn == 1 || strstr(attr, "+webauthn")) {
+    opts->webauthn = FIDO_OPT_TRUE;
+  } else if (cfg->webauthn == 0)
+    opts->webauthn = FIDO_OPT_FALSE;
+  else {
+    opts->webauthn = FIDO_OPT_OMIT;
   }
 }
 
@@ -978,7 +988,13 @@ static int set_cdh(const cfg_t *cfg, fido_assert_t *assert) {
     return 0;
   }
 
-  r = fido_assert_set_clientdata_hash(assert, cdh, sizeof(cdh));
+  if (cfg->webauthn == 1) {
+    debug_dbg(cfg, "Request is WebAuthn origin");
+    r = fido_assert_set_clientdata(assert, cdh, sizeof(cdh));
+  }
+  else {
+    r = fido_assert_set_clientdata_hash(assert, cdh, sizeof(cdh));
+  }
   if (r != FIDO_OK) {
     debug_dbg(cfg, "Unable to set challenge: %s (%d)", fido_strerr(r), r);
     return 0;
