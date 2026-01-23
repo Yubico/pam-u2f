@@ -32,6 +32,10 @@ typedef struct {
   const char *appid;
   const char *prompt;
   const char *cue_prompt;
+  // webauthn client verification expects https://example.com
+  // and currently origin should be example.com
+  // so this is tmp workaround for that
+  const char *webauthn_origin;
   FILE *debug_file;
   char *defaults_buffer;
 } cfg_t;

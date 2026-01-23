@@ -68,6 +68,8 @@ static void cfg_load_arg(cfg_t *cfg, const char *arg) {
     cfg->prompt = arg + strlen("prompt=");
   } else if (strncmp(arg, "cue_prompt=", strlen("cue_prompt=")) == 0) {
     cfg->cue_prompt = arg + strlen("cue_prompt=");
+  } else if (strncmp(arg, "webauthn_origin=", strlen("webauthn_origin=")) == 0) {
+    cfg->webauthn_origin = arg + strlen("webauthn_origin=");
   } else
     cfg_load_arg_debug(cfg, arg);
 }

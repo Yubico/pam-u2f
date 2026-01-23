@@ -3,6 +3,7 @@
  */
 
 #include <fido.h>
+#include <fido/err.h>
 #include <fido/es256.h>
 #include <fido/rs256.h>
 #include <fido/eddsa.h>
@@ -23,6 +24,7 @@
 #include <arpa/inet.h>
 
 #include "b64.h"
+#include "cfg.h"
 #include "debug.h"
 #include "util.h"
 
@@ -990,7 +992,9 @@ static int set_cdh(const cfg_t *cfg, fido_assert_t *assert) {
 
   if (cfg->webauthn == 1) {
     debug_dbg(cfg, "Request is WebAuthn origin");
+    // real client data is got from the client!
     r = fido_assert_set_clientdata(assert, cdh, sizeof(cdh));
+    // r = FIDO_OK;
   }
   else {
     r = fido_assert_set_clientdata_hash(assert, cdh, sizeof(cdh));
@@ -1047,7 +1051,7 @@ static fido_assert_t *prepare_assert(const cfg_t *cfg, const device_t *device,
     goto err;
   }
 
-  if (!set_cdh(cfg, assert)) {
+  if (!cfg->webauthn && !set_cdh(cfg, assert)) {
     debug_dbg(cfg, "Failed to set client data hash");
     goto err;
   }
@@ -1353,6 +1357,183 @@ out:
 
 #define MAX_PROMPT_LEN (1024)
 
+static char *ccdtostring(const char *str) {
+  char *ccd = NULL;
+  asprintf(&ccd, "\"%s\"", str);
+  return ccd;
+}
+
+static int base64_to_baseurl(const char *base64, char **out) {
+  size_t base64_size = strlen(base64);
+  char *b64url = calloc(base64_size + 1, 1);
+  // TODO: should we validate that base64 is valid?
+  for (size_t idx = 0; idx < base64_size; idx++) {
+    if (base64[idx] == '=') {
+      break;
+    }
+    if (base64[idx] == '+') {
+      b64url[idx] = '-';
+    } else if (base64[idx] == '/') {
+      b64url[idx] = '_';
+    } else {
+      b64url[idx] = base64[idx];
+    }
+  }
+
+  *out = b64url;
+
+  return 0;
+}
+
+// https://www.w3.org/TR/webauthn-3/#clientdatajson-verification
+// not implementing topOrigin verification
+static int limited_verification_algorithm(const cfg_t *cfg,
+                                   const char *clientDataJson, const char *type,
+                                   const char *origin, const char *challenge) {
+  int ok = 0;
+  char *expected = NULL;
+  char *challengeb64Url = NULL;
+  char *ccdtype = NULL;
+  char *ccdchallenge = NULL;
+  char *ccdorigin = NULL;
+  size_t clientDataLen = 0;
+  size_t expectedLen = 0;
+
+  ccdtype = ccdtostring(type);
+  base64_to_baseurl(challenge, &challengeb64Url);
+  ccdchallenge = ccdtostring(challengeb64Url);
+  ccdorigin = ccdtostring(origin);
+
+  asprintf(&expected,
+           "{\"type\":%s,\"challenge\":%s,\"origin\":%s,\"crossOrigin\":false",
+           ccdtype, ccdchallenge, ccdorigin);
+
+  clientDataLen = strlen(clientDataJson);
+  expectedLen = strlen(expected);
+  if (expectedLen >= clientDataLen) {
+    debug_dbg(cfg, "Expected data is not shorted than clientDataJson");
+    // expected needs to be at least 1 byte shorter than clientData
+    goto end;
+  }
+
+  if (strncmp(clientDataJson, expected, expectedLen) != 0) {
+    // expected needs to be the prefix of clientDataJson
+    debug_dbg(cfg, "Expected data is not a prefix of clientDataJson");
+    goto end;
+  }
+
+  char endchar = clientDataJson[expectedLen];
+  if (endchar != '}' && endchar != ',') {
+    // the byte of clientDataJSON at the offset equal to the length of expected
+    // needs to be 0x7d or 0x2c
+    debug_dbg(cfg, "Character at exected lenght offset is incorrect");
+    goto end;
+  }
+
+  ok = 1;
+end:
+  free(challengeb64Url);
+  free(ccdtype);
+  free(ccdchallenge);
+  free(ccdorigin);
+  return ok;
+}
+
+static int webauthn_get_assert(const cfg_t *cfg, const char *prompt,
+                             pam_handle_t *pamh, fido_assert_t *assert,
+                             const char* b64_challenge) {
+  char *b64_cdj = NULL;
+  char *b64_rpid = NULL;
+  char *b64_authdata = NULL;
+  char *b64_sig = NULL;
+  unsigned char *clientjson = NULL;
+  unsigned char *authdata = NULL;
+  unsigned char *sig = NULL;
+  size_t authdata_len;
+  size_t clientjson_len;
+  size_t sig_len;
+  int r;
+  int ok = 0;
+
+  b64_cdj = converse(pamh, PAM_PROMPT_ECHO_ON, prompt);
+  b64_rpid = converse(pamh, PAM_PROMPT_ECHO_ON, prompt);
+  b64_authdata = converse(pamh, PAM_PROMPT_ECHO_ON, prompt);
+  b64_sig = converse(pamh, PAM_PROMPT_ECHO_ON, prompt);
+
+  debug_dbg(cfg, "cdj: %s", b64_cdj);
+  debug_dbg(cfg, "rpid: %s", b64_rpid);
+  debug_dbg(cfg, "auth: %s", b64_authdata);
+  debug_dbg(cfg, "sig: %s", b64_sig);
+  debug_dbg(cfg, "expected challenge: %s", b64_challenge);
+
+  if (!b64_decode(b64_cdj, (void **) &clientjson, &clientjson_len)) {
+    debug_dbg(cfg, "Failed to decode clientdata json");
+    goto err;
+  }
+
+  if (!limited_verification_algorithm(cfg, (char*)clientjson, "webauthn.get",
+      cfg->webauthn_origin, b64_challenge)) {
+    debug_dbg(cfg, "Failed to verify webauthn clientDataJSON");
+    goto err;
+  }
+
+  if (!b64_decode(b64_authdata, (void **) &authdata, &authdata_len)) {
+    debug_dbg(cfg, "Failed to decode authenticator data");
+    goto err;
+  }
+
+  if (!b64_decode(b64_sig, (void **) &sig, &sig_len)) {
+    debug_dbg(cfg, "Failed to decode signature");
+    goto err;
+  }
+
+  r = fido_assert_set_count(assert, 1);
+  if (r != FIDO_OK) {
+    debug_dbg(cfg, "Failed to set signature count of assertion");
+    goto err;
+  }
+
+  // FIXME: this only work with modified libfido2
+  //        handle the clientdata challenge setting properly for webauthn
+  r = fido_assert_set_clientdata_hash(assert, clientjson, clientjson_len);
+  if (r != FIDO_OK) {
+    debug_dbg(cfg, "Failed to set clientdata of assertion");
+    goto err;
+  }
+
+  r = fido_assert_set_authdata(assert, 0, authdata, authdata_len);
+  if (r != FIDO_OK) {
+    debug_dbg(cfg, "Failed to set authdata of assertion");
+    goto err;
+  }
+
+  r = fido_assert_set_sig(assert, 0, sig, sig_len);
+  if (r != FIDO_OK) {
+    debug_dbg(cfg, "Failed to set signature of assertion");
+    goto err;
+  }
+
+  // TODO: get this from libfido2 headers
+  #define FIDO_EXT_WEBAUTHN	0x80
+  r = fido_assert_set_extensions(assert, FIDO_EXT_WEBAUTHN);
+  if (r != FIDO_OK) {
+    debug_dbg(cfg, "Failed to set webauthn extension of assertion");
+    goto err;
+  }
+
+  ok = 1;
+err:
+  free(b64_cdj);
+  free(b64_rpid);
+  free(b64_authdata);
+  free(b64_sig);
+  free(authdata);
+  free(clientjson);
+  free(sig);
+
+  return ok;
+}
+
 static int manual_get_assert(const cfg_t *cfg, const char *prompt,
                              pam_handle_t *pamh, fido_assert_t *assert) {
   char *b64_cdh = NULL;
@@ -1415,7 +1596,8 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
                              const unsigned n_devs, pam_handle_t *pamh) {
   fido_assert_t *assert[n_devs];
   struct pk pk[n_devs];
-  char *b64_challenge = NULL;
+  char *b64_challenges[n_devs];
+  char challenge_buf[32];
   char prompt[MAX_PROMPT_LEN];
   char buf[MAX_PROMPT_LEN];
   int retval = PAM_AUTH_ERR;
@@ -1425,6 +1607,7 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
   struct opts opts;
 
   init_opts(&opts);
+  memset(b64_challenges, 0, sizeof(b64_challenges));
   memset(assert, 0, sizeof(assert));
   memset(pk, 0, sizeof(pk));
 
@@ -1451,14 +1634,25 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
       goto out;
     }
 
-    if (!b64_encode(fido_assert_clientdata_hash_ptr(assert[i]),
+    if (cfg->webauthn) {
+        if (!random_bytes(challenge_buf, sizeof(challenge_buf))) {
+          debug_dbg(cfg, "Failed to generate challenge for webauthn");
+          goto out;
+        }
+        if (!b64_encode(challenge_buf, sizeof(challenge_buf), &b64_challenges[i])) {
+                debug_dbg(cfg, "Failed to encode challenge for webauthn");
+                goto out;
+            }
+    } else {
+        if (!b64_encode(fido_assert_clientdata_hash_ptr(assert[i]),
                     fido_assert_clientdata_hash_len(assert[i]),
-                    &b64_challenge)) {
-      debug_dbg(cfg, "Failed to encode challenge");
-      goto out;
+                    &b64_challenges[i])) {
+                debug_dbg(cfg, "Failed to encode challenge");
+                goto out;
+            }
     }
 
-    debug_dbg(cfg, "Challenge: %s", b64_challenge);
+    debug_dbg(cfg, "Challenge: %s", b64_challenges[i]);
 
     n = snprintf(prompt, sizeof(prompt), "Challenge #%u:", i + 1);
     if (n <= 0 || (size_t) n >= sizeof(prompt)) {
@@ -1468,7 +1662,7 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
 
     converse(pamh, PAM_TEXT_INFO, prompt);
 
-    n = snprintf(buf, sizeof(buf), "%s\n%s\n%s", b64_challenge, cfg->origin,
+    n = snprintf(buf, sizeof(buf), "%s\n%s\n%s", b64_challenges[i], cfg->origin,
                  devices[i].keyHandle);
     if (n <= 0 || (size_t) n >= sizeof(buf)) {
       debug_dbg(cfg, "Failed to print fido2-assert input string");
@@ -1476,9 +1670,6 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
     }
 
     converse(pamh, PAM_TEXT_INFO, buf);
-
-    free(b64_challenge);
-    b64_challenge = NULL;
   }
 
   converse(pamh, PAM_TEXT_INFO,
@@ -1492,9 +1683,16 @@ int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
       goto out;
     }
 
-    if (!manual_get_assert(cfg, prompt, pamh, assert[i])) {
-      debug_dbg(cfg, "Failed to get assert %u", i);
-      goto out;
+    if (cfg->webauthn) {
+      if (!webauthn_get_assert(cfg, prompt, pamh, assert[i], b64_challenges[i])) {
+          debug_dbg(cfg, "Failed to get webauthn assert %u", i);
+          goto out;
+      }
+    } else {
+      if (!manual_get_assert(cfg, prompt, pamh, assert[i])) {
+          debug_dbg(cfg, "Failed to get manual assert %u", i);
+          goto out;
+      }
     }
 
     r = fido_assert_verify(assert[i], 0, pk[i].type, pk[i].ptr);
@@ -1508,9 +1706,8 @@ out:
   for (i = 0; i < n_devs; i++) {
     fido_assert_free(&assert[i]);
     reset_pk(&pk[i]);
+    free(b64_challenges[i]);
   }
-
-  free(b64_challenge);
 
   return retval;
 }
