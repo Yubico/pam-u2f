@@ -1493,9 +1493,7 @@ static int webauthn_get_assert(const cfg_t *cfg, const char *prompt,
     goto err;
   }
 
-  // FIXME: this only work with modified libfido2
-  //        handle the clientdata challenge setting properly for webauthn
-  r = fido_assert_set_clientdata_hash(assert, clientjson, clientjson_len);
+  r = fido_assert_set_clientdata(assert, clientjson, clientjson_len);
   if (r != FIDO_OK) {
     debug_dbg(cfg, "Failed to set clientdata of assertion");
     goto err;
@@ -1510,14 +1508,6 @@ static int webauthn_get_assert(const cfg_t *cfg, const char *prompt,
   r = fido_assert_set_sig(assert, 0, sig, sig_len);
   if (r != FIDO_OK) {
     debug_dbg(cfg, "Failed to set signature of assertion");
-    goto err;
-  }
-
-  // TODO: get this from libfido2 headers
-  #define FIDO_EXT_WEBAUTHN	0x80
-  r = fido_assert_set_extensions(assert, FIDO_EXT_WEBAUTHN);
-  if (r != FIDO_OK) {
-    debug_dbg(cfg, "Failed to set webauthn extension of assertion");
     goto err;
   }
 
