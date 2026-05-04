@@ -1165,6 +1165,7 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
   int cued = 0;
   int r;
   int retval = PAM_AUTH_ERR;
+  bool device_found = false;
   size_t ndevs = 0;
   size_t ndevs_prev = 0;
   unsigned i = 0;
@@ -1225,6 +1226,7 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
 
     if (get_authenticators(cfg, devlist, ndevs, assert,
                            is_resident(devices[i].keyHandle), authlist)) {
+      device_found = true;
       for (size_t j = 0; authlist[j] != NULL; j++) {
         /* options used during authentication */
         parse_opts(cfg, devices[i].attributes, &opts);
@@ -1318,6 +1320,9 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
 
     fido_assert_free(&assert);
   }
+
+  if (!device_found)
+    retval = PAM_AUTHINFO_UNAVAIL;
 
 out:
   reset_pk(&pk);
