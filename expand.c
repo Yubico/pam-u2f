@@ -2,12 +2,14 @@
  * Copyright (C) 2023 Yubico AB - See COPYING
  */
 
+#include <errno.h>
+#include <limits.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <limits.h>
 
 #include "util.h"
+#include "logging.h"
 
 static int buf_write(uint8_t **dst, size_t *size, const void *src, size_t n) {
   if (*size < n) {
@@ -42,7 +44,11 @@ char *expand_variables(const char *str, const char *user) {
   size_t size = PATH_MAX;
   int ok = -1;
 
-  if (str == NULL || (tail = head = malloc(size)) == NULL) {
+  if (str == NULL)
+    return NULL;
+
+  if ((tail = head = malloc(size)) == NULL) {
+    LOG(LOG_CRIT, "Unable to allocate memory (errno=%d)", errno);
     return NULL;
   }
 

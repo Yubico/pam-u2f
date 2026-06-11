@@ -5,11 +5,14 @@
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #ifndef PATH_MAX
 #define PATH_MAX 4096
 #endif
+
+#include <syslog.h>
 
 #include <security/pam_appl.h>
 
@@ -106,6 +109,7 @@ static void config_flip_all(const struct conf_file *cf, const cfg_t *cfg) {
   config_different_bool(conf_out, "alwaysok", cfg->alwaysok);
   config_different_bool(conf_out, "cue", cfg->cue);
   config_different_bool(conf_out, "debug", cfg->debug);
+  fprintf(conf_out, "loglevel=debug\n");
   config_different_bool(conf_out, "expand", cfg->expand);
   config_different_bool(conf_out, "interactive", cfg->interactive);
   config_different_bool(conf_out, "manual", cfg->manual);
@@ -127,11 +131,6 @@ static void config_flip_all(const struct conf_file *cf, const cfg_t *cfg) {
                              cfg->userverification);
 
   fprintf(conf_out, "max_devices=%d\n", cfg->max_devs + 1);
-
-  if (cfg->debug_file)
-    fprintf(conf_out, "debug_file=syslog\n");
-  else
-    fprintf(conf_out, "debug_file=stderr\n");
 
   fflush(conf_out);
 }
@@ -187,6 +186,7 @@ static void test_regular(void) {
   assert(cfg.pinverification != cfg_defaults.pinverification);
   assert(cfg.sshformat != cfg_defaults.sshformat);
   assert(cfg.expand != cfg_defaults.expand);
+  assert(cfg.loglevel != cfg_defaults.loglevel);
 
   assert(str_opt_cmp(cfg.auth_file, cfg_defaults.auth_file));
   assert(str_opt_cmp(cfg.authpending_file, cfg_defaults.authpending_file));
@@ -194,8 +194,6 @@ static void test_regular(void) {
   assert(str_opt_cmp(cfg.appid, cfg_defaults.appid));
   assert(str_opt_cmp(cfg.prompt, cfg_defaults.prompt));
   assert(str_opt_cmp(cfg.cue_prompt, cfg_defaults.cue_prompt));
-
-  assert(cfg.debug_file != cfg_defaults.debug_file);
 
   cfg_free(&cfg_defaults);
   cfg_free(&cfg);
@@ -386,6 +384,91 @@ static void test_file_parser(void) {
   conf_file_clear(&cf);
 }
 
+static void test_config_rejections(void) {
+  // open_safely() rejects configuration files that are not a regular
+  // file, or whose permissions are too open. Both cases are logged at
+  // LOG_WARNING and reported as PAM_SERVICE_ERR.
+
+  const char *argv[] = {NULL, "debug"};
+  struct conf_file cf;
+  char *dir_arg;
+  char *dir_path;
+  int r;
+  cfg_t cfg;
+
+  // 1. Not a regular file (a directory).
+  dir_arg = generate_template();
+  dir_path = dir_arg + strlen("conf=");
+  assert(mkdtemp(dir_path) != NULL);
+
+  argv[0] = dir_arg;
+  r = cfg_init(&cfg, 0, sizeof(argv) / sizeof(*argv), argv);
+  assert(r == PAM_SERVICE_ERR);
+
+  rmdir(dir_path);
+  free(dir_arg);
+
+  // 2. Permissions too open (group/world-writable).
+  conf_file_init(&cf, NULL);
+  fputs("alwaysok\n", cf.out);
+  r = fflush(cf.out);
+  assert(r == 0);
+  assert(chmod(cf.path, 0666) == 0);
+
+  argv[0] = cf.arg;
+  r = cfg_init(&cfg, 0, sizeof(argv) / sizeof(*argv), argv);
+  assert(r == PAM_SERVICE_ERR);
+
+  conf_file_clear(&cf);
+}
+
+static void test_loglevel(void) {
+  // loglevel= takes a syslog level name and overrides the legacy
+  // debug bool; unknown level names are ignored.
+
+  struct conf_file cf;
+  int r;
+  cfg_t cfg;
+  const char *argv_none[] = {NULL};
+  const char *argv_warning[] = {NULL, "loglevel=warning"};
+  const char *argv_bogus[] = {NULL, "loglevel=bogus"};
+  const char *argv_debug_and_warning[] = {NULL, "debug", "loglevel=warning"};
+
+  conf_file_init(&cf, NULL);
+
+  argv_none[0] = cf.arg;
+  r = cfg_init(&cfg, 0, sizeof(argv_none) / sizeof(*argv_none), argv_none);
+  assert(r == PAM_SUCCESS);
+  assert(cfg.loglevel == -1);
+  cfg_free(&cfg);
+
+  argv_warning[0] = cf.arg;
+  r = cfg_init(&cfg, 0, sizeof(argv_warning) / sizeof(*argv_warning),
+               argv_warning);
+  assert(r == PAM_SUCCESS);
+  assert(cfg.loglevel == LOG_WARNING);
+  cfg_free(&cfg);
+
+  // Unknown level names are ignored, leaving loglevel unset.
+  argv_bogus[0] = cf.arg;
+  r = cfg_init(&cfg, 0, sizeof(argv_bogus) / sizeof(*argv_bogus), argv_bogus);
+  assert(r == PAM_SUCCESS);
+  assert(cfg.loglevel == -1);
+  cfg_free(&cfg);
+
+  // An explicit loglevel= takes precedence over the legacy debug bool.
+  argv_debug_and_warning[0] = cf.arg;
+  r = cfg_init(&cfg, 0,
+               sizeof(argv_debug_and_warning) / sizeof(*argv_debug_and_warning),
+               argv_debug_and_warning);
+  assert(r == PAM_SUCCESS);
+  assert(cfg.debug);
+  assert(cfg.loglevel == LOG_WARNING);
+  cfg_free(&cfg);
+
+  conf_file_clear(&cf);
+}
+
 int main(int argc, char **argv) {
   (void) argc, (void) argv;
 
@@ -394,4 +477,6 @@ int main(int argc, char **argv) {
   test_last_config_wins();
   test_file_corner_cases();
   test_file_parser();
+  test_config_rejections();
+  test_loglevel();
 }

@@ -11,7 +11,7 @@
 #include "cfg.h"
 
 #define BUFSIZE 1024
-#define MAX_DEVS 24
+#define MAX_DEVS 24U
 #define DEFAULT_AUTHFILE_DIR_VAR "XDG_CONFIG_HOME"
 #define DEFAULT_AUTHFILE "Yubico/u2f_keys"
 #define DEFAULT_AUTHFILE_SSH "id_ecdsa_sk"
@@ -46,6 +46,7 @@ int random_bytes(void *, size_t);
 int cose_type(const char *, int *);
 const char *cose_string(int);
 char *expand_variables(const char *, const char *);
+const char *fido_failure_reason(int);
 
 #if !defined(HAVE_EXPLICIT_BZERO)
 void explicit_bzero(void *, size_t);

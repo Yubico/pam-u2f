@@ -14,6 +14,7 @@ typedef struct {
   unsigned max_devs;
   int manual;
   int debug;
+  int loglevel;
   int nouserok;
   int openasuser;
   int alwaysok;
@@ -31,7 +32,6 @@ typedef struct {
   const char *appid;
   const char *prompt;
   const char *cue_prompt;
-  FILE *debug_file;
   char *defaults_buffer;
 } cfg_t;
 

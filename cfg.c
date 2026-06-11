@@ -13,15 +13,41 @@
 #include <security/pam_modules.h>
 
 #include "cfg.h"
-#include "debug.h"
+#include "logging.h"
 
 static void cfg_load_arg_debug(cfg_t *cfg, const char *arg) {
   if (strcmp(arg, "debug") == 0)
     cfg->debug = 1;
-  else if (strncmp(arg, "debug_file=", strlen("debug_file=")) == 0) {
-    debug_close(cfg->debug_file);
-    cfg->debug_file = debug_open(arg + strlen("debug_file="));
+}
+
+static int cfg_parse_loglevel(const char *name) {
+  static const struct {
+    const char *name;
+    int level;
+  } levels[] = {
+    {"emerg", LOG_EMERG},     {"alert", LOG_ALERT}, {"crit", LOG_CRIT},
+    {"err", LOG_ERR},         {"error", LOG_ERR},   {"warning", LOG_WARNING},
+    {"warn", LOG_WARNING},    {"notice", LOG_NOTICE},
+    {"info", LOG_INFO},       {"debug", LOG_DEBUG},
+  };
+  size_t i;
+
+  for (i = 0; i < sizeof(levels) / sizeof(levels[0]); i++)
+    if (strcmp(name, levels[i].name) == 0)
+      return levels[i].level;
+
+  return -1;
+}
+
+static void cfg_load_arg_loglevel(cfg_t *cfg, const char *value) {
+  int level = cfg_parse_loglevel(value);
+
+  if (level < 0) {
+    LOG(LOG_WARNING, "unknown loglevel '%s', ignoring", value);
+    return;
   }
+
+  cfg->loglevel = level;
 }
 
 static void cfg_load_arg(cfg_t *cfg, const char *arg) {
@@ -66,6 +92,8 @@ static void cfg_load_arg(cfg_t *cfg, const char *arg) {
     cfg->prompt = arg + strlen("prompt=");
   } else if (strncmp(arg, "cue_prompt=", strlen("cue_prompt=")) == 0) {
     cfg->cue_prompt = arg + strlen("cue_prompt=");
+  } else if (strncmp(arg, "loglevel=", strlen("loglevel=")) == 0) {
+    cfg_load_arg_loglevel(cfg, arg + strlen("loglevel="));
   } else
     cfg_load_arg_debug(cfg, arg);
 }
@@ -111,8 +139,11 @@ static int open_safely(int *outfd, size_t *outsize, const char *path) {
   int fd, r = -EINVAL;
   struct stat st;
 
-  if (*path != '/')
+  if (*path != '/') {
+    LOG(LOG_WARNING, "configuration file path '%s' is not absolute, ignoring",
+        path);
     return r;
+  }
 
   fd = open(path, O_RDONLY | O_CLOEXEC | O_NOCTTY | O_NOFOLLOW, 0);
   if (fd == -1)
@@ -122,11 +153,24 @@ static int open_safely(int *outfd, size_t *outsize, const char *path) {
     goto fail;
 
 #ifndef PAM_U2F_TESTING
-  if (st.st_uid != 0)
+  if (st.st_uid != 0) {
+    LOG(LOG_WARNING, "configuration file '%s' is not owned by root, ignoring",
+        path);
     goto fail;
+  }
 #endif
-  if (!S_ISREG(st.st_mode) || st.st_mode & (S_IWGRP | S_IWOTH))
+  if (!S_ISREG(st.st_mode)) {
+    LOG(LOG_WARNING, "configuration file '%s' is not a regular file, ignoring",
+        path);
     goto fail;
+  }
+  if (st.st_mode & (S_IWGRP | S_IWOTH)) {
+    LOG(LOG_WARNING,
+        "permissions %04o for configuration file '%s' are too open. Please "
+        "change the file mode bits to 0644 or more restrictive",
+        (unsigned int) st.st_mode & 0777, path);
+    goto fail;
+  }
   if (st.st_size < 0)
     goto fail;
 
@@ -212,8 +256,9 @@ static int cfg_load_defaults(cfg_t *cfg, const char *config_path) {
   int fd = -1, r;
   size_t fsize = 0;
   char *buffer = NULL;
+  const char *path = config_path ? config_path : CFG_DEFAULT_PATH;
 
-  r = open_safely(&fd, &fsize, config_path ? config_path : CFG_DEFAULT_PATH);
+  r = open_safely(&fd, &fsize, path);
 
   /* Only the default config file is allowed to be missing. */
   if (r == -ENOENT && config_path == NULL)
@@ -223,8 +268,10 @@ static int cfg_load_defaults(cfg_t *cfg, const char *config_path) {
     return PAM_SERVICE_ERR;
 
   r = slurp(fd, fsize, &buffer);
-  if (r)
+  if (r) {
+    LOG(LOG_WARNING, "unable to read configuration file '%s'", path);
     goto exit;
+  }
 
   cfg_load_buffer(cfg, buffer);
   cfg->defaults_buffer = buffer;
@@ -239,10 +286,10 @@ exit:
 
 static void cfg_reset(cfg_t *cfg) {
   memset(cfg, 0, sizeof(cfg_t));
-  cfg->debug_file = DEFAULT_DEBUG_FILE;
   cfg->userpresence = -1;
   cfg->userverification = -1;
   cfg->pinverification = -1;
+  cfg->loglevel = -1;
 }
 
 int cfg_init(cfg_t *cfg, int flags, int argc, const char **argv) {
@@ -268,33 +315,37 @@ int cfg_init(cfg_t *cfg, int flags, int argc, const char **argv) {
     cfg_load_arg(cfg, argv[i]);
 
 exit:
-  if (cfg->debug) {
-    debug_dbg(cfg, "called.");
-    debug_dbg(cfg, "flags %d argc %d", flags, argc);
-    for (i = 0; i < argc; i++) {
-      debug_dbg(cfg, "argv[%d]=%s", i, argv[i]);
-    }
-    debug_dbg(cfg, "max_devices=%d", cfg->max_devs);
-    debug_dbg(cfg, "debug=%d", cfg->debug);
-    debug_dbg(cfg, "interactive=%d", cfg->interactive);
-    debug_dbg(cfg, "cue=%d", cfg->cue);
-    debug_dbg(cfg, "nodetect=%d", cfg->nodetect);
-    debug_dbg(cfg, "userpresence=%d", cfg->userpresence);
-    debug_dbg(cfg, "userverification=%d", cfg->userverification);
-    debug_dbg(cfg, "pinverification=%d", cfg->pinverification);
-    debug_dbg(cfg, "manual=%d", cfg->manual);
-    debug_dbg(cfg, "nouserok=%d", cfg->nouserok);
-    debug_dbg(cfg, "openasuser=%d", cfg->openasuser);
-    debug_dbg(cfg, "alwaysok=%d", cfg->alwaysok);
-    debug_dbg(cfg, "sshformat=%d", cfg->sshformat);
-    debug_dbg(cfg, "expand=%d", cfg->expand);
-    debug_dbg(cfg, "authfile=%s", cfg->auth_file ? cfg->auth_file : "(null)");
-    debug_dbg(cfg, "authpending_file=%s",
-              cfg->authpending_file ? cfg->authpending_file : "(null)");
-    debug_dbg(cfg, "origin=%s", cfg->origin ? cfg->origin : "(null)");
-    debug_dbg(cfg, "appid=%s", cfg->appid ? cfg->appid : "(null)");
-    debug_dbg(cfg, "prompt=%s", cfg->prompt ? cfg->prompt : "(null)");
+  if (cfg->loglevel >= 0)
+    log_set_level(cfg->loglevel);
+  else if (cfg->debug)
+    log_set_level(LOG_DEBUG);
+
+  LOG(LOG_DEBUG, "called.");
+  LOG(LOG_DEBUG, "flags %d argc %d", flags, argc);
+  for (i = 0; i < argc; i++) {
+    LOG(LOG_DEBUG, "argv[%d]=%s", i, argv[i]);
   }
+  LOG(LOG_DEBUG, "max_devices=%u", cfg->max_devs);
+  LOG(LOG_DEBUG, "debug=%d", cfg->debug);
+  LOG(LOG_DEBUG, "loglevel=%d", cfg->loglevel);
+  LOG(LOG_DEBUG, "interactive=%d", cfg->interactive);
+  LOG(LOG_DEBUG, "cue=%d", cfg->cue);
+  LOG(LOG_DEBUG, "nodetect=%d", cfg->nodetect);
+  LOG(LOG_DEBUG, "userpresence=%d", cfg->userpresence);
+  LOG(LOG_DEBUG, "userverification=%d", cfg->userverification);
+  LOG(LOG_DEBUG, "pinverification=%d", cfg->pinverification);
+  LOG(LOG_DEBUG, "manual=%d", cfg->manual);
+  LOG(LOG_DEBUG, "nouserok=%d", cfg->nouserok);
+  LOG(LOG_DEBUG, "openasuser=%d", cfg->openasuser);
+  LOG(LOG_DEBUG, "alwaysok=%d", cfg->alwaysok);
+  LOG(LOG_DEBUG, "sshformat=%d", cfg->sshformat);
+  LOG(LOG_DEBUG, "expand=%d", cfg->expand);
+  LOG(LOG_DEBUG, "authfile=%s", cfg->auth_file ? cfg->auth_file : "(null)");
+  LOG(LOG_DEBUG, "authpending_file=%s",
+      cfg->authpending_file ? cfg->authpending_file : "(null)");
+  LOG(LOG_DEBUG, "origin=%s", cfg->origin ? cfg->origin : "(null)");
+  LOG(LOG_DEBUG, "appid=%s", cfg->appid ? cfg->appid : "(null)");
+  LOG(LOG_DEBUG, "prompt=%s", cfg->prompt ? cfg->prompt : "(null)");
 
   if (r != PAM_SUCCESS)
     cfg_free(cfg);
@@ -303,7 +354,6 @@ exit:
 }
 
 void cfg_free(cfg_t *cfg) {
-  debug_close(cfg->debug_file);
   free(cfg->defaults_buffer);
   cfg_reset(cfg);
 }

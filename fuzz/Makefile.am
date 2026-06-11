@@ -15,3 +15,4 @@ noinst_PROGRAMS = fuzz_format_parsers fuzz_auth
 
 EXTRA_DIST = coverage.sh make_seed.py export.sym
 EXTRA_DIST += export.gnu CMakeLists.txt
+EXTRA_DIST += make_seed_auth.c seed/auth_pin_invalid

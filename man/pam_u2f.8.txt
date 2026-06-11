@@ -16,15 +16,14 @@ compliant authenticators.
 
 == OPTIONS
 *debug*::
-Enables debug output
+Enables debug output to syslog(3). Equivalent to *loglevel*=_debug_ unless
+*loglevel* is also set, in which case *loglevel* takes precedence. See
+*LOGGING* below.
 
-*debug_file*::
-Filename to write debugging messages to. **If this file is missing,
-nothing will be logged**. This regular file **has to be created by the
-user** or **must exist and be a regular file** for anything getting
-logged to it. It is not created by pam-u2f on purpose (for security
-considerations). This filename may be alternatively set to "stderr"
-(default), "stdout", or "syslog".
+*loglevel*=_level_::
+Set the minimum severity of messages sent to syslog(3): one of "debug",
+"info" (the default), "notice", "warning", "err", "crit", "alert", or
+"emerg". An unrecognized value is logged and ignored. See *LOGGING* below.
 
 *origin*=_origin_::
 Set the relying party ID for the FIDO authentication procedure. If no
@@ -189,6 +188,30 @@ A configuration file can be used to set the default module arguments.
 
 - The options specified on the module command line override the values from the
   configuration file.
+
+== LOGGING
+
+pam_u2f always logs to syslog(3), via the LOG_AUTHPRIV facility,
+regardless of the *debug*/*loglevel* settings:
+
+- A successful FIDO authentication logs the public key of the credential
+  used and its index in the authorization mapping file, at "info" level.
+
+- A failed FIDO authentication logs the public key of the credential that
+  came closest to succeeding (if any) and the reason for the failure, at
+  "notice" level.
+
+- A configuration file that is rejected (wrong owner, unsafe permissions,
+  not a regular file, or unreadable) logs the reason, at "warning" level.
+
+Set *loglevel*=_warning_ (or higher) to suppress the per-authentication
+audit records above while still receiving configuration warnings and
+errors. The public key logged on each attempt is not secret, but is
+identifying information; restrict access to the AUTHPRIV logs (typically
+/var/log/auth.log or /var/log/secure) accordingly.
+
+*debug* (or *loglevel*=_debug_) additionally enables verbose diagnostic
+messages at "debug" level, useful for troubleshooting.
 
 == NOTES
 

@@ -197,15 +197,15 @@ Test your configuration thoroughly before closing the root shell.
 
 [horizontal]
 debug::
-Enables debug output
+Enables debug output to syslog. Equivalent to `loglevel=debug` unless
+`loglevel` is also set, in which case `loglevel` takes precedence. See
+<<logging,Logging>>.
 
-debug_file::
-Filename to write debugging messages to. **If this file is missing,
-nothing will be logged**. This regular file **has to be created by the
-user** or **must exist and be a regular file** for anything getting
-logged to it. It is not created by pam-u2f on purpose (for security
-considerations). This filename may be alternatively set to "stderr"
-(default), "stdout", or "syslog".
+loglevel=level::
+Set the minimum severity of messages sent to syslog: one of `debug`,
+`info` (the default), `notice`, `warning`, `err`, `crit`, `alert`, or
+`emerg`. An unrecognized value is logged and ignored. See
+<<logging,Logging>>.
 
 origin=origin::
 Set the relying party ID for the FIDO authentication procedure. If no
@@ -518,6 +518,31 @@ A configuration file can be used to set the default
 
 - The options specified on the module command line override the values from the
   configuration file.
+
+[[logging]]
+== Logging
+
+pam_u2f always logs to syslog, via the `LOG_AUTHPRIV` facility, regardless
+of the `debug`/`loglevel` settings:
+
+- A successful FIDO authentication logs the public key of the credential
+  used and its index in the authorization mapping file, at `info` level.
+
+- A failed FIDO authentication logs the public key of the credential that
+  came closest to succeeding (if any) and the reason for the failure, at
+  `notice` level.
+
+- A configuration file that is rejected (wrong owner, unsafe permissions,
+  not a regular file, or unreadable) logs the reason, at `warning` level.
+
+Set `loglevel=warning` (or higher) to suppress the per-authentication audit
+records above while still receiving configuration warnings and errors. The
+public key logged on each attempt is not secret, but is identifying
+information; restrict access to the AUTHPRIV logs (typically
+`/var/log/auth.log` or `/var/log/secure`) accordingly.
+
+`debug` (or `loglevel=debug`) additionally enables verbose diagnostic
+messages at `debug` level, useful for troubleshooting.
 
 == SELinux Note
 

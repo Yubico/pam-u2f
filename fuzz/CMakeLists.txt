@@ -22,6 +22,7 @@ target_link_options(pam_u2f_fuzz PRIVATE
 	-Wl,--wrap=pam_get_item
 	-Wl,--wrap=pam_modutil_drop_priv
 	-Wl,--wrap=pam_modutil_regain_priv
+	-Wl,--wrap=pam_syslog
 	-Wl,--wrap=BIO_new
 	-Wl,--wrap=BIO_write
 	-Wl,--wrap=BIO_read

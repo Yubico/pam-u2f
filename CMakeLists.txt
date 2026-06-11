@@ -113,9 +113,13 @@ cmake_push_check_state(RESET)
 	set(CMAKE_REQUIRED_LIBRARIES PAM::PAM)
 	check_symbol_exists(openpam_borrow_cred security/pam_modules.h HAVE_OPENPAM_BORROW_CRED)
 	check_symbol_exists(pam_modutil_drop_priv security/pam_modutil.h HAVE_PAM_MODUTIL_DROP_PRIV)
+	check_symbol_exists(pam_syslog security/pam_ext.h HAVE_PAM_SYSLOG)
+	check_include_file(security/pam_ext.h HAVE_SECURITY_PAM_EXT_H)
 	foreach (v
 		HAVE_OPENPAM_BORROW_CRED
 		HAVE_PAM_MODUTIL_DROP_PRIV
+		HAVE_PAM_SYSLOG
+		HAVE_SECURITY_PAM_EXT_H
 	)
 		if (${v})
 			target_compile_definitions(common INTERFACE ${v})
@@ -154,11 +158,11 @@ set(PAM_U2F_SOURCES
 	pam-u2f.c
 	b64.c
 	cfg.c
-	debug.c
 	drop_privs.h
 	expand.c
-	util.c
 	explicit_bzero.c
+	logging.c
+	util.c
 )
 list(TRANSFORM PAM_U2F_SOURCES PREPEND ${CMAKE_CURRENT_SOURCE_DIR}/)
 

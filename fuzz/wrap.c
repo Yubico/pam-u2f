@@ -15,7 +15,7 @@
 #include <openssl/ec.h>
 #include <fido.h>
 
-#include "debug.h"
+#include "logging.h"
 #include "drop_privs.h"
 #include "fuzz/fuzz.h"
 
@@ -243,6 +243,26 @@ extern int __wrap_pam_modutil_regain_priv(pam_handle_t *pamh,
 
   return uniform_random(400) < 1 ? -1 : 0;
 }
+
+#ifdef HAVE_PAM_SYSLOG
+/* util.c's AUDIT_LOG() calls pam_syslog(pamh, ...) for audit records, but
+ * pamh is the fake FUZZ_PAM_HANDLE here, which a real pam_syslog() would
+ * dereference. Stand in for it, only validating the format string and its
+ * arguments (mirroring do_log()'s snprintf(NULL, 0, ...) no-op path). */
+extern void __wrap_pam_syslog(const pam_handle_t *, int, const char *, ...)
+  ATTRIBUTE_FORMAT(printf, 3, 4);
+extern void __wrap_pam_syslog(const pam_handle_t *pamh, int priority,
+                              const char *fmt, ...) {
+  va_list ap;
+
+  assert(pamh == (void *) FUZZ_PAM_HANDLE);
+  (void) priority;
+
+  va_start(ap, fmt);
+  (void) vsnprintf(NULL, 0, fmt, ap);
+  va_end(ap);
+}
+#endif /* HAVE_PAM_SYSLOG */
 
 extern char *__wrap_secure_getenv(const char *);
 extern char *__wrap_secure_getenv(const char *name) {
