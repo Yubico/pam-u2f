@@ -79,6 +79,14 @@ target_link_libraries(get_devices PRIVATE
 )
 add_test(NAME get_devices COMMAND get_devices)
 
+add_executable(manual_authdata manual_authdata.c)
+target_link_libraries(manual_authdata PRIVATE
+	common
+	pam_u2f_testing
+	cbor
+)
+add_test(NAME manual_authdata COMMAND manual_authdata)
+
 add_executable(expand expand.c)
 target_link_libraries(expand PRIVATE
 	common

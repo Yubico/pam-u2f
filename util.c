@@ -1337,6 +1337,54 @@ out:
 
 #define MAX_PROMPT_LEN (1024)
 
+/* Unwrap a definite-length CBOR byte string (RFC 8949 major type 2).
+ * Accepts exactly one item whose declared length equals the remaining
+ * input; rejects indefinite-length strings, reserved additional
+ * information values, truncated headers and trailing data. On success
+ * *out points into in and *out_len is the payload length. */
+int unwrap_cbor_bytestring(const unsigned char *in, size_t in_len,
+                           const unsigned char **out, size_t *out_len) {
+  size_t hdr;
+  size_t len = 0;
+  size_t i;
+  unsigned char ai;
+
+  if (in == NULL || in_len == 0 || (in[0] & 0xe0) != 0x40)
+    return 0;
+
+  ai = in[0] & 0x1f;
+  if (ai < 24) {
+    hdr = 1;
+    len = ai;
+  } else if (ai == 24) {
+    hdr = 2;
+  } else if (ai == 25) {
+    hdr = 3;
+  } else if (ai == 26) {
+    hdr = 5;
+  } else if (ai == 27) {
+    hdr = 9;
+  } else {
+    return 0; /* 28-30 reserved, 31 indefinite */
+  }
+
+  if (in_len < hdr)
+    return 0;
+
+  for (i = 1; i < hdr; i++) {
+    if (len > (SIZE_MAX >> 8))
+      return 0;
+    len = (len << 8) | in[i];
+  }
+
+  if (len != in_len - hdr)
+    return 0;
+
+  *out = in + hdr;
+  *out_len = len;
+  return 1;
+}
+
 static int manual_get_assert(const cfg_t *cfg, const char *prompt,
                              pam_handle_t *pamh, fido_assert_t *assert) {
   char *b64_cdh = NULL;
@@ -1345,7 +1393,9 @@ static int manual_get_assert(const cfg_t *cfg, const char *prompt,
   char *b64_sig = NULL;
   unsigned char *authdata = NULL;
   unsigned char *sig = NULL;
+  const unsigned char *raw = NULL;
   size_t authdata_len;
+  size_t raw_len;
   size_t sig_len;
   int r;
   int ok = 0;
@@ -1371,7 +1421,18 @@ static int manual_get_assert(const cfg_t *cfg, const char *prompt,
     goto err;
   }
 
-  r = fido_assert_set_authdata(assert, 0, authdata, authdata_len);
+  /* The pasted value is a CBOR byte string wrapping the authenticator data,
+   * as fido2-assert(1) prints it. Unwrap it here and hand libfido2 the raw
+   * bytes: fido_assert_set_authdata() would parse the user's bytes with
+   * cbor_load(), which preallocates storage from unchecked header counts
+   * (PJK/libcbor#418), so a few pasted bytes could cost gigabytes.
+   * fido_assert_set_authdata_raw() builds its own encoding instead. */
+  if (!unwrap_cbor_bytestring(authdata, authdata_len, &raw, &raw_len)) {
+    debug_dbg(cfg, "Authenticator data is not a definite CBOR byte string");
+    goto err;
+  }
+
+  r = fido_assert_set_authdata_raw(assert, 0, raw, raw_len);
   if (r != FIDO_OK) {
     debug_dbg(cfg, "Failed to set authdata of assertion");
     goto err;

@@ -2,6 +2,12 @@ Copyright (c) 2014-2025 Yubico AB - See COPYING
 
 pam-u2f NEWS -- History of user-visible changes.          -*- outline -*-
 
+* Version 1.4.1 (unreleased)
+** Manual mode no longer parses the pasted authenticator data as CBOR.
+The byte-string wrapper is unwrapped locally and the raw bytes are passed
+to libfido2, so a crafted paste can no longer make the PAM process
+allocate memory proportional to a declared element count.
+
 * Version 1.4.0 (released 2025-03-25)
 ** Add module configuration file support (default: /etc/security/pam_u2f.conf).
 ** Add support for building in CMake. This deprecates the autotools build

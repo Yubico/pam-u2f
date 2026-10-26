@@ -42,6 +42,8 @@ int do_authentication(const cfg_t *cfg, const device_t *devices,
 int do_manual_authentication(const cfg_t *cfg, const device_t *devices,
                              const unsigned n_devs, pam_handle_t *pamh);
 char *converse(pam_handle_t *pamh, int echocode, const char *prompt);
+int unwrap_cbor_bytestring(const unsigned char *, size_t,
+                           const unsigned char **, size_t *);
 int random_bytes(void *, size_t);
 int cose_type(const char *, int *);
 const char *cose_string(int);
